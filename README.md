@@ -74,7 +74,6 @@ logging:
 app:
   sql-dir: classPath:monitor  # SQL文件存放目录
   sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
-#  sql-dir: D:\\SZH\\monitor
   wechat-webhook: 你的企业微信机器人回调入口
 #  schedule-cron: "0 0/2 * * * ?"  # 每5分钟执行一次
   schedule-cron: "0 0/30 * * * ?"  # 每60分钟执行一次
