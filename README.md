@@ -1,8 +1,10 @@
-#本项目目前实现了能读取某个文件夹下面的SQL检测脚本，执行后如果存在数据则通过企业微信机器人推送消息，达到外挂检测数据并实时报警的效果
-#关于配置说明
+****本项目目前实现了能读取某个文件夹下面的SQL检测脚本，执行后如果存在数据则通过企业微信机器人推送消息，达到外挂检测数据并实时报警的效果，以下是配置说明
+---------
+
+```
 server:
   port: 4000
-
+  
 datasource.config:
   primary:
     ip-port: yourip:yourport
@@ -17,8 +19,6 @@ datasource.config:
     password: yourpassword
     driver-class-name: org.postgresql.Driver
   relation: xx环境-primary,xx环境-secondary
-
-
 
 datasource.primary:
   jdbc-url: jdbc:postgresql://${datasource.config.primary.ip-port}/${datasource.config.primary.database-name}?TimeZone=Asia/Shanghai&tcpKeepAlive=true
@@ -78,3 +78,6 @@ app:
   wechat-webhook: 你的企业微信机器人回调入口
 #  schedule-cron: "0 0/2 * * * ?"  # 每5分钟执行一次
   schedule-cron: "0 0/30 * * * ?"  # 每60分钟执行一次
+```
+
+
