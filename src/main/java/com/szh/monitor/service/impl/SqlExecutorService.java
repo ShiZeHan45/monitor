@@ -139,7 +139,7 @@ public class SqlExecutorService implements ExecutorService {
                     appendMsg.append(MessageFormat.format("执行失败{0}次 请检查网络环境",failedCount));
                 });
             }
-            logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}",currEnvironmentName,failedCount),e);
+            logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}",currEnvironmentName[0],failedCount),e);
         }
     }
 

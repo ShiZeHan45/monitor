@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.szh.monitor.enums.MsgType;
 import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.form.WechatMessage;
 import com.szh.monitor.service.SendService;
@@ -27,7 +28,12 @@ public class SendWechatService implements SendService {
     @Override
     public void sendMsg(MsgForm msgForm, Consumer<StringBuilder> msg) {
         StringBuilder sendMessage = new StringBuilder();
-        sendMessage.append(msgForm.getMsgType().getIcon()).append(msgForm.getEnvironmentName()).append("-").append(msgForm.getTitle()).append("\n");
+        if(MsgType.ERROR.equals(msgForm.getMsgType())){
+            sendMessage.append("⚠️");
+        }else{
+            sendMessage.append("✅");
+        }
+        sendMessage.append(msgForm.getEnvironmentName()).append("-").append(msgForm.getTitle()).append("\n");
         msg.accept(sendMessage);
 
         WechatMessage wechatMessage = new WechatMessage();
