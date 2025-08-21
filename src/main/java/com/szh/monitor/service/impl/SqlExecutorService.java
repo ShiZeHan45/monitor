@@ -129,7 +129,7 @@ public class SqlExecutorService implements ExecutorService {
         if (exception) {
             logger.info("执行成功的SQL文件 {}", successSQLFileName);
             logger.info("执行失败的SQL文件 {}", failSQLFileName);
-            throw new SQLExecutorFailException(MessageFormat.format("环境{0}执行SQL出现异常", environmentName),failSQLFiles);
+            throw new SQLExecutorFailException(MessageFormat.format("环境{0}执行SQL出现异常", environmentName),failSQLFileName);
         }
         logger.info("全部SQL文件执行完成");
     }
