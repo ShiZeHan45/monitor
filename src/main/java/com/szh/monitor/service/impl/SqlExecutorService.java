@@ -73,7 +73,7 @@ public class SqlExecutorService implements ExecutorService {
 
         if(!CollectionUtils.isEmpty(failSQLFiles)){
             sqlFiles = Arrays.stream(sqlFiles)
-                    .filter(file -> !failSQLFiles.contains(file.getName())).toArray(File[]::new);
+                    .filter(file -> failSQLFiles.contains(file.getName())).toArray(File[]::new);
         }
 
         //获取SQL连接
