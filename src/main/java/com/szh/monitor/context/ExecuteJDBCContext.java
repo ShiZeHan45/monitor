@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Component
 public class ExecuteJDBCContext {
-    private Map<String, String> jdbcTemplateMap= new HashMap<>();
+    private Map<String, String> jdbcTemplateMap = new HashMap<>();
 
     //数据库连接获取失败次数
     private Map<String, Integer> failedToObtainConnectionCount = new HashMap<>();
@@ -19,24 +19,34 @@ public class ExecuteJDBCContext {
     public ExecuteJDBCContext() {
     }
 
-    public void clearFailedCount(String environmentName){
+    public void clearFailedCount(String environmentName) {
         failedToObtainConnectionCount.remove(environmentName);
         failedFilesMap.remove(environmentName);
     }
-    public void addFailFiles(String environmentName,List<String> failedFiles){
-        if(CollectionUtils.isEmpty(failedFiles)){
-            return ;
+
+    public void addFailFiles(String environmentName, List<String> failedFiles) {
+        if (CollectionUtils.isEmpty(failedFiles)) {
+            return;
         }
-        failedFilesMap.put(environmentName,failedFiles);
+        List<String> files = failedFilesMap.get(environmentName);
+        if (!CollectionUtils.isEmpty(files)) {
+            failedFilesMap.put(environmentName, failedFiles);
+        }else{
+            failedFiles.removeIf(x->files.contains(x));
+            if(!CollectionUtils.isEmpty(failedFiles)){
+                files.addAll(failedFiles);
+                failedFilesMap.put(environmentName, files);
+            }
+        }
     }
 
 
-    public int addFailedCount(String environmentName,List<String> failFiles){
-        if(!StringUtils.hasText(environmentName)){
+    public int addFailedCount(String environmentName, List<String> failFiles) {
+        if (!StringUtils.hasText(environmentName)) {
             return 0;
         }
-        addFailFiles(environmentName,failFiles);
-        failedToObtainConnectionCount.put(environmentName,failedToObtainConnectionCount.getOrDefault(environmentName,0)+1);
+        addFailFiles(environmentName, failFiles);
+        failedToObtainConnectionCount.put(environmentName, failedToObtainConnectionCount.getOrDefault(environmentName, 0) + 1);
         return failedToObtainConnectionCount.get(environmentName);
     }
 
@@ -45,11 +55,12 @@ public class ExecuteJDBCContext {
         this.jdbcTemplateMap.put(environmentName, jdbcTemplateName);
     }
 
-    public  Map<String, String> getJBDCTemplate() {
+    public Map<String, String> getJBDCTemplate() {
         return this.jdbcTemplateMap;
     }
-    public  List<String> getFailFiles(String environmentName) {
-        if(CollectionUtils.isEmpty(this.failedFilesMap)){
+
+    public List<String> getFailFiles(String environmentName) {
+        if (CollectionUtils.isEmpty(this.failedFilesMap)) {
             return null;
         }
         return this.failedFilesMap.get(environmentName);
