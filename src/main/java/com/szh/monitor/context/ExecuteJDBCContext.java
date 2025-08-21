@@ -7,6 +7,7 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class ExecuteJDBCContext {
@@ -32,9 +33,9 @@ public class ExecuteJDBCContext {
         if (!CollectionUtils.isEmpty(files)) {
             failedFilesMap.put(environmentName, failedFiles);
         }else{
-            failedFiles.removeIf(x->files.contains(x));
-            if(!CollectionUtils.isEmpty(failedFiles)){
-                files.addAll(failedFiles);
+            List<String> newFiles = failedFiles.stream().filter(x -> !files.contains(x)).collect(Collectors.toList());
+            if(!CollectionUtils.isEmpty(newFiles)){
+                files.addAll(newFiles);
                 failedFilesMap.put(environmentName, files);
             }
         }
