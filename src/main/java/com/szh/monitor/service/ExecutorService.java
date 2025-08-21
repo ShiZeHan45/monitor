@@ -5,6 +5,7 @@ package com.szh.monitor.service;
  */
 public interface ExecutorService {
     void execute();
+    void executeRetry();
 
     String getTitle();
 }

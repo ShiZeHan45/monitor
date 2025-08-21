@@ -3,6 +3,7 @@ package com.szh.monitor.service.impl;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.enums.MsgType;
+import com.szh.monitor.exception.SQLExecutorFailException;
 import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.service.ExecutorService;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
@@ -19,10 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -49,7 +52,7 @@ public class SqlExecutorService implements ExecutorService {
     @Autowired
     private SendDispatchService sendDispatchService;
 
-    public void executeSqlFiles(String environmentName, String jdbcTemplateName) {
+    public void executeSqlFiles(String environmentName, String jdbcTemplateName,List<String> failSQLFiles) {
         File directory = null;
         try {
             //初始化SQL文件夹
@@ -67,6 +70,12 @@ public class SqlExecutorService implements ExecutorService {
         //拉取文件夹下的SQL文件
         File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql"));
         if (sqlFiles == null) return;
+
+        if(!CollectionUtils.isEmpty(failSQLFiles)){
+            sqlFiles = Arrays.stream(sqlFiles)
+                    .filter(file -> !failSQLFiles.contains(file.getName())).toArray(File[]::new);
+        }
+
         //获取SQL连接
         JdbcTemplate jdbcTemplate = SpringContextUtil.getBean(jdbcTemplateName, JdbcTemplate.class);
         logger.info("当前环境：{} 开始执行SQL文件：{}", environmentName, Arrays.stream(sqlFiles).map(File::getName).collect(Collectors.joining(",")));
@@ -99,7 +108,12 @@ public class SqlExecutorService implements ExecutorService {
                         // 添加数据行
                         for (Map<String, Object> row : results) {
                             appendMsg.append(String.join("\t", row.values().stream()
-                                    .map(Object::toString)
+                                    .map(o -> {
+                                        if(o==null){
+                                            return "";
+                                        }
+                                        return o.toString();
+                                    })
                                     .toArray(String[]::new))
                             ).append("\n");
                         }
@@ -115,32 +129,56 @@ public class SqlExecutorService implements ExecutorService {
         if (exception) {
             logger.info("执行成功的SQL文件 {}", successSQLFileName);
             logger.info("执行失败的SQL文件 {}", failSQLFileName);
-            throw new RuntimeException(MessageFormat.format("环境{0}执行SQL出现异常", environmentName));
+            throw new SQLExecutorFailException(MessageFormat.format("环境{0}执行SQL出现异常", environmentName),failSQLFiles);
         }
         logger.info("全部SQL文件执行完成");
     }
 
-    @Override
-    public void execute() {
+    public void execute(BiConsumer<String,String> consumer){
         final String[] currEnvironmentName = {null};
         try {
             executeJDBCContext.getJBDCTemplate().forEach((environmentName, jdbcTemplateName) -> {
                 currEnvironmentName[0] = environmentName;
-                executeSqlFiles(environmentName, jdbcTemplateName);
+                consumer.accept(environmentName,jdbcTemplateName);
                 //成功执行则清0错误计数
                 executeJDBCContext.clearFailedCount(environmentName);
             });
 
-        } catch (Exception e){
+        } catch (SQLExecutorFailException e){
             //错误计数
-            int failedCount = executeJDBCContext.addFailedCount(currEnvironmentName[0]);
+            int failedCount = executeJDBCContext.addFailedCount(currEnvironmentName[0],e.getFailSQLFiles());
             if(failedCount==3||failedCount==6||failedCount==12||failedCount==24){
                 sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行异常", currEnvironmentName[0]),(StringBuilder appendMsg)->{
                     appendMsg.append(MessageFormat.format("执行失败{0}次 请检查网络环境",failedCount));
                 });
             }
             logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}",currEnvironmentName[0],failedCount),e);
+        }catch (Exception e){
+            sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行不可预见异常", currEnvironmentName[0]),(StringBuilder appendMsg)->{
+                appendMsg.append("数据脚本执行不可预见异常 请检查环境");
+            });
         }
+    }
+
+
+
+    @Override
+    public void execute() {
+        execute((environmentName,jdbcTemplateName)->{
+            executeSqlFiles(environmentName, jdbcTemplateName,null);
+        });
+    }
+
+    @Override
+    public void executeRetry() {
+        execute((environmentName,jdbcTemplateName)->{
+            List<String> failFiles = executeJDBCContext.getFailFiles(environmentName);
+            if(CollectionUtils.isEmpty(failFiles)){
+                return;
+            }
+            logger.info("{}环境，开始重试执行失败的SQL文件{}",environmentName,failFiles);
+            executeSqlFiles(environmentName, jdbcTemplateName,failFiles);
+        });
     }
 
     @Override

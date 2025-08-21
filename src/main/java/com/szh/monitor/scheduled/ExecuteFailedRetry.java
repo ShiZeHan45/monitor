@@ -9,26 +9,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 执行器总调度
+ * 执行异常的SQL重新尝试执行
  */
 @Component
-public class ExecutorScheduler {
-
+public class ExecuteFailedRetry {
     @Autowired
     private List<ExecutorService> executorServices;
 
-    @Autowired
-    public ExecutorScheduler(List<ExecutorService> executorServices) {
-        this.executorServices = executorServices;
-    }
-
-    @Scheduled(cron = "${app.schedule-cron}")
-    public void executor() {
+    @Scheduled(cron = "${app.schedule-retry-cron}")
+    public void retry(){
         int hour = LocalDateTime.now().getHour();
         if (hour >= 20 || hour <= 8) {
             // 20点-8点不执行调度
             return;
         }
-        executorServices.forEach(ExecutorService::execute);
+        executorServices.forEach(ExecutorService::executeRetry);
     }
 }
