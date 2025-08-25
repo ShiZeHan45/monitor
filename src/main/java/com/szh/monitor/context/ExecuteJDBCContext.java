@@ -43,7 +43,7 @@ public class ExecuteJDBCContext {
             return;
         }
         List<String> files = failedFilesMap.get(environmentName);
-        if (!CollectionUtils.isEmpty(files)) {
+        if (CollectionUtils.isEmpty(files)) {
             failedFilesMap.put(environmentName, failedFiles);
         }else{
             List<String> newFiles = failedFiles.stream().filter(x ->StringUtils.hasText(x) && !files.contains(x)).collect(Collectors.toList());
