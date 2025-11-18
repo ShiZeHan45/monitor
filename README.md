@@ -97,12 +97,9 @@ logging:
 watcher:
   error:
     log:
-      path: /data/wwwlogs/boss-bcs/error/boss-bcs.error.log
-  #      path: D:\\SZH\\Utils\\test.log
-  service: boss-bcs
-  keywords: ERROR,Exception,Failed
-  context-lines: 30
-  dedup-window-minutes: 10
+      path: 你的日志路径
+  keywords: ERROR,Exception,Failed   ## 遇到哪些关键词就拾取
+  context-lines: 30  ## 拾取多少行
 
 app:
   sql-dir: classPath:monitor  # SQL文件存放目录
