@@ -9,4 +9,5 @@ import java.util.function.Consumer;
  */
 public interface SendService {
     void sendMsg(MsgForm msgForm, Consumer<StringBuilder> msg);
+    void sendSimpleMarkDownMsgByLog(String content);
 }

@@ -1,5 +1,8 @@
 package com.szh.monitor;
 
+import com.szh.monitor.service.impl.ErrorLogService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -8,13 +11,21 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @EnableScheduling
-public class ProxyApplication {
+public class ProxyApplication  implements CommandLineRunner {
+    @Autowired
+    private ErrorLogService errorLogService;
+
     public static void main(String[] args) {
         SpringApplication.run(ProxyApplication.class, args);
     }
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        errorLogService.startWatching();
     }
 
 //    @Value("${spring.datasource.driver-class-name}")

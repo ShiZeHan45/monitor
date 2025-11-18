@@ -2,6 +2,7 @@ package com.szh.monitor.service.impl;
 
 import com.szh.monitor.enums.MsgType;
 import com.szh.monitor.form.MsgForm;
+import com.szh.monitor.form.WechatMarkDownMessage;
 import com.szh.monitor.form.WechatMessage;
 import com.szh.monitor.service.SendService;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +18,15 @@ public class SendWechatService implements SendService {
     @Value("${app.wechat-webhook}")
     private String webhookUrl;
 
+    @Value("${app.log-wechat-webhook}")
+    private String logWebhookUrl;
+
     public SendWechatService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+    }
+
+    public String getLogWebhookUrl() {
+        return logWebhookUrl;
     }
 
     public String getWebhookUrl() {
@@ -43,6 +51,18 @@ public class SendWechatService implements SendService {
         // 实际实现见定时任务类中的restTemplate
         restTemplate.postForEntity(
                 getWebhookUrl(),
+                wechatMessage,
+                String.class
+        );
+    }
+
+
+    @Override
+    public void sendSimpleMarkDownMsgByLog(String content) {
+        WechatMarkDownMessage wechatMessage = new WechatMarkDownMessage();
+        wechatMessage.setMarkdown(new WechatMarkDownMessage.Text(content));
+        restTemplate.postForEntity(
+                getLogWebhookUrl(),
                 wechatMessage,
                 String.class
         );

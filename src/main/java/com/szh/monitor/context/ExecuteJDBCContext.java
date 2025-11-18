@@ -1,5 +1,8 @@
 package com.szh.monitor.context;
 
+import com.szh.monitor.service.impl.SqlExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class ExecuteJDBCContext {
+    Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
     //缓存各环境的jdbcTemplate
     private Map<String, String> jdbcTemplateMap = new HashMap<>();
 
@@ -78,6 +82,7 @@ public class ExecuteJDBCContext {
 
     public void addJdbcTemplate(String environmentName, String jdbcTemplateName) {
         this.jdbcTemplateMap.put(environmentName, jdbcTemplateName);
+        logger.info("{}-jdbcTemplate 已载入",environmentName);
     }
 
     public Map<String, String> getJBDCTemplate() {

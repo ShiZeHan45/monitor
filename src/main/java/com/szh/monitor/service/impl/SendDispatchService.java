@@ -25,4 +25,10 @@ public class SendDispatchService {
             sendService.sendMsg(msgForm,appendMsg);
         }
     }
+
+    public void sendSimpleMarkDownMsg(String content){
+        for (SendService sendService : sendServices) {
+            sendService.sendSimpleMarkDownMsgByLog(content);
+        }
+    }
 }

@@ -4,6 +4,7 @@ import com.szh.monitor.context.ExecuteJDBCContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +44,7 @@ public class MultiDataSourceConfig {
 
     @Bean("secondaryDataSource")
     @ConfigurationProperties(prefix = "datasource.secondary")
+    @ConditionalOnProperty(prefix = "datasource.secondary", name = "enabled", havingValue = "true")
     public DataSource secondaryDatasource() {
         return DataSourceBuilder.create().build();
     }
@@ -55,6 +57,7 @@ public class MultiDataSourceConfig {
     }
 
     @Bean("secondaryJdbcTemplate")
+    @ConditionalOnProperty(prefix = "datasource.secondary", name = "enabled", havingValue = "true")
     public JdbcTemplate secondaryJdbcTemplate(@Qualifier("secondaryDataSource") DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         executeJDBCContext.addJdbcTemplate(getName("secondary"),"secondaryJdbcTemplate");

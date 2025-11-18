@@ -2,6 +2,7 @@ package com.szh.monitor.scheduled;
 
 import com.szh.monitor.service.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,12 @@ import java.util.List;
  */
 @Component
 public class ExecutorScheduler {
+    @Value("${app.enable-sql-check}")
+    private Boolean enableSqlCheck;
+
+    public Boolean getEnableSqlCheck() {
+        return enableSqlCheck;
+    }
 
     @Autowired
     private List<ExecutorService> executorServices;
@@ -24,6 +31,9 @@ public class ExecutorScheduler {
 
     @Scheduled(cron = "${app.schedule-cron}")
     public void executor() {
+        if(!enableSqlCheck){
+            return;
+        }
         int hour = LocalDateTime.now().getHour();
         if (hour >= 20 || hour <= 8) {
             // 20点-8点不执行调度

@@ -1,6 +1,7 @@
 package com.szh.monitor.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -24,6 +25,7 @@ public class TransactionManagerConfig {
 
     // 数据源2事务管理器
     @Bean(name = "secondaryTransactionManager")
+    @ConditionalOnProperty(prefix = "datasource.secondary", name = "enabled", havingValue = "true")
     public PlatformTransactionManager secondaryTransactionManager(
             @Qualifier("secondaryDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
