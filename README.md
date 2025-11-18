@@ -32,13 +32,13 @@ server:
 datasource.config:
   primary:
     ip-port: yourip:yourport
-    database-name: prod_saas_thinkwater
+    database-name: yourDataBaseName
     username: yourusername
     password: yourpassword
     driver-class-name: org.postgresql.Driver
   secondary:
     ip-port: yourip:yourport
-    database-name: prod_saas_thinkwater
+    database-name: yourDataBaseName
     username: yourusername
     password: yourpassword
     driver-class-name: org.postgresql.Driver
