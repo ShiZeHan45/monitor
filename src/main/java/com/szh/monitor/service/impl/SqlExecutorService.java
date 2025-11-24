@@ -147,7 +147,7 @@ public class SqlExecutorService implements ExecutorService {
         } catch (SQLExecutorFailException e){
             //错误计数
             int failedCount = executeJDBCContext.addFailedCount(currEnvironmentName[0],e.getFailSQLFiles());
-            if(failedCount==6||failedCount==12||failedCount==24){
+            if(failedCount%8==0){
                 sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行异常", currEnvironmentName[0]),(StringBuilder appendMsg)->{
                     appendMsg.append(MessageFormat.format("执行失败{0}次 请检查网络环境",failedCount));
                 });
@@ -184,5 +184,9 @@ public class SqlExecutorService implements ExecutorService {
     @Override
     public String getTitle() {
         return "SQL预警通知";
+    }
+
+    public static void main(String[] args) {
+        System.out.println(16%8);
     }
 }
