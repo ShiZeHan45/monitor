@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 @Service
@@ -35,6 +36,11 @@ public class SendWechatService implements SendService {
 
     @Override
     public void sendMsg(MsgForm msgForm, Consumer<StringBuilder> msg) {
+        int hour = LocalDateTime.now().getHour();
+        if (hour >= 20 || hour <= 8) {
+            // 20点-8点不推送短信
+            return;
+        }
         StringBuilder sendMessage = new StringBuilder();
         if(MsgType.ERROR.equals(msgForm.getMsgType())){
             sendMessage.append("⚠️");
@@ -59,6 +65,11 @@ public class SendWechatService implements SendService {
 
     @Override
     public void sendSimpleMarkDownMsgByLog(String content) {
+        int hour = LocalDateTime.now().getHour();
+        if (hour >= 20 || hour <= 8) {
+            // 20点-8点不推送短信
+            return;
+        }
         WechatMarkDownMessage wechatMessage = new WechatMarkDownMessage();
         wechatMessage.setMarkdown(new WechatMarkDownMessage.Text(content));
         restTemplate.postForEntity(

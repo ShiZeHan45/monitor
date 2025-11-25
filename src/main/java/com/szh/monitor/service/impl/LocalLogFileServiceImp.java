@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.szh.monitor.service.WatchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -8,36 +9,40 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.*;
 import java.security.MessageDigest;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 @Service
-public class ErrorLogService {
-
-    @Value("${watcher.error.log.path:/data/wwwlogs/boss-bcs/error/boss-bcs.error.log}")
+public class LocalLogFileServiceImp implements WatchService {
+    @Value("${watcher.local.error.log.path:/data/wwwlogs/boss-bcs/error/boss-bcs.error.log}")
     private String errorLogPath;
 
-    @Value("#{'${watcher.keywords:ERROR,Exception}'.split(',')}")
+    @Value("#{'${watcher.local.keywords:ERROR,Exception}'.split(',')}")
     private List<String> keywords;
 
-    @Value("${watcher.context-lines:5}")
+    @Value("${watcher.local.context-lines:5}")
     private int contextLines;
 
-    @Value("${watcher.dedup-window-minutes:10}")
+    @Value("${watcher.local.dedup-window-minutes:10}")
     private int dedupWindowMinutes;  // 去重窗口时间（分钟）
+
+    @Value("${watcher.local.enabled:true}")
+    private boolean enable;
+    @Value("${watcher.local.name}")
+    private String name;
 
     @Autowired
     private SendDispatchService sendDispatchService;
 
     private final Map<String, Long> recentErrors = new ConcurrentHashMap<>();
-
-    public void startWatching() {
-        new Thread(this::watchFile, "log-file-watcher-thread").start();
-    }
-
-    private void watchFile() {
+    @Override
+    public void watchFile() {
+        if(!enable){
+            return;
+        }
         File logFile = new File(errorLogPath);
         if (!logFile.exists()) {
             System.err.println("❌ 日志文件不存在: " + errorLogPath);
@@ -52,7 +57,7 @@ public class ErrorLogService {
         try (RandomAccessFile raf = new RandomAccessFile(logFile, "r")) {
             long filePointer = raf.length(); // 从文件末尾开始
             Path path = logFile.toPath();
-            WatchService watcher = FileSystems.getDefault().newWatchService();
+            java.nio.file.WatchService watcher = FileSystems.getDefault().newWatchService();
             path.getParent().register(watcher, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
 
             StringBuilder buffer = new StringBuilder();
@@ -122,7 +127,8 @@ public class ErrorLogService {
             }
 
             recentErrors.put(key, now);
-            String content = "🚨 **检测到异常日志**\n```\n" + errorBlock + "\n```";
+
+            String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",name,errorBlock);
 
             sendDispatchService.sendSimpleMarkDownMsg(content);
 
