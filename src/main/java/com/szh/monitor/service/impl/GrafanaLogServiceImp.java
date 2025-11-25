@@ -1,17 +1,14 @@
 package com.szh.monitor.service.impl;
 
-import com.sun.javafx.binding.StringFormatter;
 import com.szh.monitor.config.MonitorRules;
 import com.szh.monitor.config.WatcherConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -50,13 +47,11 @@ public class GrafanaLogServiceImp {
     }
 
 
-    @Scheduled(fixedRate = 15000)
+    @Scheduled(fixedRate = 30000)
     public void runMonitor() {
         for (MonitorRules.Rule item : monitorListConfig.getList()) {
 
-
             if (!item.isEnabled()) continue;
-
 
             try {
                 processMonitor(item);
@@ -156,7 +151,6 @@ public class GrafanaLogServiceImp {
 
 // 聚合推送
         String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
-        logger.info(content);
         sendDispatchService.sendSimpleMarkDownMsg(content);
         return Mono.empty();
     }
