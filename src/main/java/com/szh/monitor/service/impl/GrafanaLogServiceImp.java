@@ -76,7 +76,7 @@ public class GrafanaLogServiceImp {
 
         webClient.get()
                 .uri(url + "?query={query}&start={start}&end={end}&limit={limit}",
-                        item.getQueryExpr(), start, now, 500)
+                        item.getQueryExpr(), start, now, 200)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .flatMap(body -> handleResult(watcherConfig.getGrafana().getPrimary().getEnvironmentName(),item, body))
