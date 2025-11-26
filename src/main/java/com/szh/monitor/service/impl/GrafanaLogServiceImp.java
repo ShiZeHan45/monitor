@@ -43,6 +43,7 @@ public class GrafanaLogServiceImp {
         this.webClient = WebClient.builder()
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(config -> config.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
                 .build();
     }
 
