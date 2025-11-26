@@ -120,7 +120,7 @@ watcher:
     primary:
       environment-name: "xxx" 应用到推送企业微信的title
       url: "http://IP:port" #你的grafana地址
-      datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "dev:Anso@dev2025" http://10.65.4.25:3000/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
+      datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
       username: "xx"   # 你的账号
       password: "xx" # 你的密码
 app:
