@@ -70,7 +70,6 @@ public class SqlExecutorService implements ExecutorService {
         //拉取文件夹下的SQL文件
         File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql"));
         if (sqlFiles == null) return;
-
         if(!CollectionUtils.isEmpty(failSQLFiles)){
             sqlFiles = Arrays.stream(sqlFiles)
                     .filter(file -> failSQLFiles.contains(file.getName())).toArray(File[]::new);
@@ -86,6 +85,9 @@ public class SqlExecutorService implements ExecutorService {
         List<String> failSQLFileName = new ArrayList<>();
         //遍历从SQL文件夹获取的文件
         for (File sqlFile : sqlFiles) {
+            if(!executeJDBCContext.executeAble(environmentName,sqlFile.getName())){
+                continue;
+            }
             String sql = null;
             try {
                 sql = new String(FileCopyUtils.copyToByteArray(sqlFile), StandardCharsets.UTF_8);
@@ -120,6 +122,7 @@ public class SqlExecutorService implements ExecutorService {
                     });
                 }
                 successSQLFileName.add(sqlFile.getName());
+                executeJDBCContext.executeFileCount(environmentName,sqlFile.getName());
             } catch (Exception e) {
                 failSQLFileName.add(sqlFile.getName());
                 logger.error("执行SQL文件【{}】出错,跳过，执行下一个文件", sqlFile.getName(), e);
