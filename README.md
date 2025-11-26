@@ -115,7 +115,7 @@ watcher:
     context-lines: 30  ## 拾取多少行
     dedup-window-minutes: 10 #窗口时间10分钟
     enabled: false  # 是否用本地日志监听
-    name: "5.0开发环境" # 本地日志监听名称,应用到推送企业微信的title
+    name: "xxx" # 本地日志监听名称,应用到推送企业微信的title
   grafana:
     primary:
       environment-name: "xxx" 应用到推送企业微信的title
