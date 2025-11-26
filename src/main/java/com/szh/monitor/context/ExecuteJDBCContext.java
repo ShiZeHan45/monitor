@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 
 @Component
 public class ExecuteJDBCContext {
-    @Value("app.check-limit")
+    @Value("${app.check-limit}")
     private Integer checkLimit;
-    @Value("app.un-limit-check-files")
+    @Value("${app.un-limit-check-files}")
     private List<String> unLimitCheckFiles;
 
     Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
