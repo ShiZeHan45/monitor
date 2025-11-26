@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.szh.monitor.config.BaseConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.enums.MsgType;
@@ -37,17 +38,8 @@ public class SqlExecutorService implements ExecutorService {
     @Autowired
     private ExecuteJDBCContext executeJDBCContext;
 
-    @Value("${app.sql-dir}")
-    private Resource sqlDir;
-    @Value("${app.sql-absolute-dir}")
-    private String absoluteSqlDir;
-
-    @Value("${app.wechat-webhook}")
-    private String webhookUrl;
-
-    public String getWebhookUrl() {
-        return webhookUrl;
-    }
+    @Autowired
+    private BaseConfig baseConfig;
 
     @Autowired
     private SendDispatchService sendDispatchService;
@@ -56,16 +48,16 @@ public class SqlExecutorService implements ExecutorService {
         File directory = null;
         try {
             //初始化SQL文件夹
-            if(StringUtils.hasText(absoluteSqlDir)){
-                directory = new File(absoluteSqlDir);
+            if(StringUtils.hasText(baseConfig.getSqlAbsoluteDir())){
+                directory = new File(baseConfig.getSqlAbsoluteDir());
             }else{
-                directory = sqlDir.getFile();
+                directory = baseConfig.getSqlDir().getFile();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         if (!directory.exists() || !directory.isDirectory()) {
-            throw new RuntimeException("SQL目录不存在: " + sqlDir);
+            throw new RuntimeException("SQL目录不存在");
         }
         //拉取文件夹下的SQL文件
         File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql"));

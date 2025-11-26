@@ -1,10 +1,11 @@
 package com.szh.monitor.context;
 
+import com.szh.monitor.config.BaseConfig;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -19,10 +20,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class ExecuteJDBCContext {
-    @Value("${app.check-limit}")
-    private Integer checkLimit;
-    @Value("${app.un-limit-check-files}")
-    private List<String> unLimitCheckFiles;
+    @Autowired
+    private BaseConfig baseConfig;
 
     Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
     //缓存各环境的jdbcTemplate
@@ -39,13 +38,6 @@ public class ExecuteJDBCContext {
     public ExecuteJDBCContext() {
     }
 
-    public Integer getCheckLimit() {
-        return checkLimit;
-    }
-
-    public List<String> getUnLimitCheckFiles() {
-        return unLimitCheckFiles;
-    }
 
     /**
      * 判断SQL文件是否可以执行
@@ -55,14 +47,14 @@ public class ExecuteJDBCContext {
      */
     public boolean executeAble(String environmentName, String sqlFileName){
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        if(!CollectionUtils.isEmpty(unLimitCheckFiles)){
+        if(!CollectionUtils.isEmpty(baseConfig.getUnLimitCheckFiles())){
             logger.info("{} 该SQL文件执行次数无上限",sqlFileName);
-            return unLimitCheckFiles.stream().anyMatch(x -> x.equals(sqlFileName));
+            return baseConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName));
         }
         if (StringUtils.hasText(sqlFileName)) {
             List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, new ArrayList<>());
-            boolean executeAble = fileCountInfos.stream().anyMatch(x -> x.getDate().equals(currDate) && x.getFileName().equals(sqlFileName)&& x.getCount() < checkLimit);
-            logger.info("{} 该SQL文件执行次数没超上限{}",sqlFileName,checkLimit);
+            boolean executeAble = fileCountInfos.stream().anyMatch(x -> x.getDate().equals(currDate) && x.getFileName().equals(sqlFileName)&& x.getCount() < baseConfig.getCheckLimit());
+            logger.info("{} 该SQL文件执行次数没超上限{}",sqlFileName,baseConfig.getCheckLimit());
             return executeAble;
         }
         return true;
