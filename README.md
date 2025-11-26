@@ -4,11 +4,22 @@
 
 > ❗数据库访问目前暂支持两个数据源的配置，一份SQL脚本可以检测两个不同的环境
 
+
+# 更新日志
+> 2025-11-26
+> 
+> 1.新增特性:监听grafana日志,动态读取grafana日志,识别关键词后截取往下N行推送到企业微信
+> 
+> 2.调整yml配置
+> 
+> 3.SQL监控-新增SQL执行阈值拦截,默认SQL文件每天累计执行成功不大于2次,通过app.check-limit空值,如需无上限则使用app.un-limit-check-files配置
+> 
 > 2025-11-08
 > 
 > 新增特性，根据配置的关键词拾取指定路径的日志文件，推送至企业微信
 > 
 > 新增多数据源可配置失效，enabled=false时，数据源将不会加载
+
 
 
 
@@ -96,17 +107,29 @@ logging:
   file:
    name: app.log
 watcher:
-  error:
-    log:
-      path: 你的日志路径
-  keywords: ERROR,Exception,Failed   ## 遇到哪些关键词就拾取
-  context-lines: 30  ## 拾取多少行
-
+  local:
+    error:
+      log:
+        path: 你的日志路径
+    keywords: ERROR,Exception,Failed   ## 遇到哪些关键词就拾取
+    context-lines: 30  ## 拾取多少行
+    dedup-window-minutes: 10 #窗口时间10分钟
+    enabled: false  # 是否用本地日志监听
+    name: "5.0开发环境" # 本地日志监听名称,应用到推送企业微信的title
+  grafana:
+    primary:
+      environment-name: "xxx" 应用到推送企业微信的title
+      url: "http://IP:port" #你的grafana地址
+      datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "dev:Anso@dev2025" http://10.65.4.25:3000/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
+      username: "xx"   # 你的账号
+      password: "xx" # 你的密码
 app:
   sql-dir: classPath:monitor  # SQL文件存放目录
   sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
   wechat-webhook: 你的企业微信机器人回调入口
   log-wechat-webhook: 你的企业微信机器人回调入口 日志错误发送渠道
+  check-limit: 2 # SQL文件每日执行多少次  节省资源
+  un-limit-check-files: ["xxx.sql"] # 每日不设上限执行次数的SQL文件 节省资源
   schedule-cron: "0 0/29 * * * ?"  # 每29分钟执行一次
   schedule-retry-cron: "0 0/5 * * * ?"  # 执行失败重试定时器
 ```
