@@ -152,6 +152,7 @@ public class SqlExecutorService implements ExecutorService {
             }
             logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}",currEnvironmentName[0],failedCount),e);
         }catch (Exception e){
+            logger.error("数据脚本执行不可预见异常 请检查环境 ",e);
             sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行不可预见异常", currEnvironmentName[0]),(StringBuilder appendMsg)->{
                 appendMsg.append("数据脚本执行不可预见异常 请检查环境");
             });
