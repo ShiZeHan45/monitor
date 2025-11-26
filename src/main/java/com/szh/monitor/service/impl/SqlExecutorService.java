@@ -74,10 +74,12 @@ public class SqlExecutorService implements ExecutorService {
         boolean exception = false;
         //记录执行成功的SQL文件和执行失败的SQL文件
         List<String> successSQLFileName = new ArrayList<>();
+        List<String> skipSQLFileName = new ArrayList<>();
         List<String> failSQLFileName = new ArrayList<>();
         //遍历从SQL文件夹获取的文件
         for (File sqlFile : sqlFiles) {
             if(!executeJDBCContext.executeAble(environmentName,sqlFile.getName())){
+                skipSQLFileName.add(sqlFile.getName());
                 continue;
             }
             String sql = null;
@@ -123,6 +125,7 @@ public class SqlExecutorService implements ExecutorService {
         }
         if (exception) {
             logger.info("执行成功的SQL文件 {}", successSQLFileName);
+            logger.info("执行超阈值,跳过的SQL文件{}", skipSQLFileName);
             logger.info("执行失败的SQL文件 {}", failSQLFileName);
             throw new SQLExecutorFailException(MessageFormat.format("环境{0}执行SQL出现异常", environmentName),failSQLFileName);
         }

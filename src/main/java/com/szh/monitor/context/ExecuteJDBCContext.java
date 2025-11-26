@@ -46,16 +46,22 @@ public class ExecuteJDBCContext {
      * @return
      */
     public boolean executeAble(String environmentName, String sqlFileName){
+        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
         if(!CollectionUtils.isEmpty(baseConfig.getUnLimitCheckFiles())){
-            logger.info("{} 该SQL文件执行次数无上限",sqlFileName);
-            return baseConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName));
+            //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
+            if(baseConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){
+                logger.debug("{} 该SQL文件执行次数无上限",sqlFileName);
+                return true;
+            }
         }
-        if (StringUtils.hasText(sqlFileName)) {
-            List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, new ArrayList<>());
-            boolean executeAble = fileCountInfos.stream().anyMatch(x -> x.getDate().equals(currDate) && x.getFileName().equals(sqlFileName)&& x.getCount() < baseConfig.getCheckLimit());
-            logger.info("{} 该SQL文件执行次数没超上限{}",sqlFileName,baseConfig.getCheckLimit());
-            return executeAble;
+        if (StringUtils.hasText(sqlFileName)&&!CollectionUtils.isEmpty(fileCountInfos)) {
+            FileCountInfo fileCountInfo = fileCountInfos.stream().filter(x -> x.getDate().equals(currDate) && x.getFileName().equals(sqlFileName)).findFirst().orElse(null);
+            if(fileCountInfo==null){
+                //首次执行 匹配不上都为可执行
+                return true;
+            }
+            return fileCountInfo.getCount()<baseConfig.getCheckLimit();
         }
         return true;
     }
@@ -70,11 +76,12 @@ public class ExecuteJDBCContext {
         if (StringUtils.hasText(sqlFileName)) {
             List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, new ArrayList<>());
             FileCountInfo fileCountInfo = fileCountInfos.stream().filter(x -> x.getDate().equals(currDate)
-                    && x.getFileName().equals(sqlFileName)).findFirst().orElse(new FileCountInfo(currDate, sqlFileName, 0));
+                    && x.getFileName().equals(sqlFileName)).findFirst().orElse(new FileCountInfo(currDate, sqlFileName, 0,fileCountInfos));
             fileCountInfo.setCount(fileCountInfo.getCount() + 1);
-            logger.info("{}  该SQL文件累计执行成功了{}次",sqlFileName,fileCountInfo.getCount());
+            logger.debug("{}  该SQL文件累计执行成功了{}次",sqlFileName,fileCountInfo.getCount());
             //移除掉历史数据
             fileCountInfos.removeIf(x->x.getDate()<currDate);
+            executeFileCountInfo.put(environmentName,fileCountInfos);
         }
     }
 
@@ -158,10 +165,11 @@ public class ExecuteJDBCContext {
         public FileCountInfo() {
         }
 
-        public FileCountInfo(Integer date, String fileName, Integer count) {
+        public FileCountInfo(Integer date, String fileName, Integer count,List<FileCountInfo> fileCountInfos) {
             this.date = date;
             this.fileName = fileName;
             this.count = count;
+            fileCountInfos.add(this);
         }
     }
 
