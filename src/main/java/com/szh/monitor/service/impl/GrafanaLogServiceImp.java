@@ -130,8 +130,8 @@ public class GrafanaLogServiceImp {
                 if (ts <= lastTs) {
                     continue;
                 }
-
-                if (item.getKeywords().stream().anyMatch(log::contains)) {
+                //匹配上关键词 同时匹配不上移除关键词
+                if (item.getKeywords().stream().anyMatch(log::contains)&&item.getExclusionKeywords().stream().noneMatch(log::contains)) {
                     int end = Math.min(i + item.getContextLines(), values.size());
                     List<String> context = values.subList(i, end).stream()
                             .map(v -> (String) v.get(1))

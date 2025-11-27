@@ -123,6 +123,17 @@ watcher:
       datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
       username: "xx"   # 你的账号
       password: "xx" # 你的密码
+      
+monitors:
+  list:
+    - name: "xx" # 监控规则名称
+      query-expr: '{service="xxxx"}' # LogQL 基础标签
+      keywords: ["ERROR"] # 捕获关键词
+      exclusion-keywords: ["xxx"] # 忽略的关键词
+      context-lines: 10
+      enabled: true
+      
+      
 app:
   sql-dir: classPath:monitor  # SQL文件存放目录
   sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
