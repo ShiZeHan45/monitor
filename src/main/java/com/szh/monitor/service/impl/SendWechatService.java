@@ -1,6 +1,7 @@
 package com.szh.monitor.service.impl;
 
 import com.szh.monitor.config.BaseConfig;
+import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.enums.MsgType;
 import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.form.WechatMarkDownMessage;

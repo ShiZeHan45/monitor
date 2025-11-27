@@ -16,7 +16,7 @@ public class ExecuteFailedRetry {
     @Autowired
     private List<ExecutorService> executorServices;
 
-    @Scheduled(cron = "${app.schedule-retry-cron}")
+    @Scheduled(cron = "${watcher.sql.schedule-retry-cron}")
     public void retry(){
         int hour = LocalDateTime.now().getHour();
         if (hour >= 20 || hour <= 8) {

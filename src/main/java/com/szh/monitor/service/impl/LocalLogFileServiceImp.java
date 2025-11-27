@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.szh.monitor.config.LocalLogConfig;
 import com.szh.monitor.service.WatchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,22 +18,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class LocalLogFileServiceImp implements WatchService {
-    @Value("${watcher.local.error.log.path:/data/wwwlogs/boss-bcs/error/boss-bcs.error.log}")
-    private String errorLogPath;
-
-    @Value("#{'${watcher.local.keywords:ERROR,Exception}'.split(',')}")
-    private List<String> keywords;
-
-    @Value("${watcher.local.context-lines:5}")
-    private int contextLines;
-
-    @Value("${watcher.local.dedup-window-minutes:10}")
-    private int dedupWindowMinutes;  // 去重窗口时间（分钟）
-
-    @Value("${watcher.local.enabled:true}")
-    private boolean enable;
-    @Value("${watcher.local.name}")
-    private String name;
+    @Autowired
+    private LocalLogConfig localLogConfig;
 
     @Autowired
     private SendDispatchService sendDispatchService;
@@ -40,19 +27,19 @@ public class LocalLogFileServiceImp implements WatchService {
     private final Map<String, Long> recentErrors = new ConcurrentHashMap<>();
     @Override
     public void watchFile() {
-        if(!enable){
+        if(!localLogConfig.isEnabled()){
             return;
         }
-        File logFile = new File(errorLogPath);
+        File logFile = new File(localLogConfig.getErrorLogPath());
         if (!logFile.exists()) {
-            System.err.println("❌ 日志文件不存在: " + errorLogPath);
+            System.err.println("❌ 日志文件不存在: " + localLogConfig.getErrorLogPath());
             return;
         }
 
-        System.out.println("📡 开始监听日志文件: " + errorLogPath);
+        System.out.println("📡 开始监听日志文件: " + localLogConfig.getErrorLogPath());
 
-        Pattern keywordPattern = Pattern.compile(String.join("|", keywords), Pattern.CASE_INSENSITIVE);
-        final int captureLimit = contextLines; // 匹配后向下截取行数
+        Pattern keywordPattern = Pattern.compile(String.join("|", localLogConfig.getKeywords()), Pattern.CASE_INSENSITIVE);
+        final int captureLimit = localLogConfig.getContextLines(); // 匹配后向下截取行数
 
         try (RandomAccessFile raf = new RandomAccessFile(logFile, "r")) {
             long filePointer = raf.length(); // 从文件末尾开始
@@ -118,7 +105,7 @@ public class LocalLogFileServiceImp implements WatchService {
         try {
             String key = sha1(errorBlock);
             long now = System.currentTimeMillis();
-            long windowMs = dedupWindowMinutes * 60_000L;
+            long windowMs = localLogConfig.getDedupWindowMinutes() * 60_000L;
 
             Long lastSent = recentErrors.get(key);
             if (lastSent != null && now - lastSent < windowMs) {
@@ -128,7 +115,7 @@ public class LocalLogFileServiceImp implements WatchService {
 
             recentErrors.put(key, now);
 
-            String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",name,errorBlock);
+            String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",localLogConfig.getName(),errorBlock);
 
             sendDispatchService.sendSimpleMarkDownMsg(content);
 

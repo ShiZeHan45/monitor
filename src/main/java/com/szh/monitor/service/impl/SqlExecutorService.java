@@ -1,6 +1,6 @@
 package com.szh.monitor.service.impl;
 
-import com.szh.monitor.config.BaseConfig;
+import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.enums.MsgType;
@@ -10,8 +10,6 @@ import com.szh.monitor.service.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -24,9 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +34,7 @@ public class SqlExecutorService implements ExecutorService {
     private ExecuteJDBCContext executeJDBCContext;
 
     @Autowired
-    private BaseConfig baseConfig;
+    private SQLConfig SQLConfig;
 
     @Autowired
     private SendDispatchService sendDispatchService;
@@ -48,10 +43,10 @@ public class SqlExecutorService implements ExecutorService {
         File directory = null;
         try {
             //初始化SQL文件夹
-            if(StringUtils.hasText(baseConfig.getSqlAbsoluteDir())){
-                directory = new File(baseConfig.getSqlAbsoluteDir());
+            if(StringUtils.hasText(SQLConfig.getSqlAbsoluteDir())){
+                directory = new File(SQLConfig.getSqlAbsoluteDir());
             }else{
-                directory = baseConfig.getSqlDir().getFile();
+                directory = SQLConfig.getSqlDir().getFile();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

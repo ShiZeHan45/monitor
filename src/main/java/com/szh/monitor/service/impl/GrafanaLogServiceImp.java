@@ -1,7 +1,7 @@
 package com.szh.monitor.service.impl;
 
 import com.szh.monitor.config.MonitorRules;
-import com.szh.monitor.config.WatcherConfig;
+import com.szh.monitor.config.GrafanaConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class GrafanaLogServiceImp {
     Logger logger = LoggerFactory.getLogger(GrafanaLogServiceImp.class);
-    private final WatcherConfig watcherConfig;
+    private final GrafanaConfig grafanaConfig;
     private final MonitorRules monitorListConfig;
     private final WebClient webClient;
 
@@ -32,14 +32,14 @@ public class GrafanaLogServiceImp {
     private final Map<String, Long> lastTsMap = new HashMap<>();
 
 
-    public GrafanaLogServiceImp(WatcherConfig watcherConfig, MonitorRules monitorListConfig,SendDispatchService sendDispatchService) {
-        this.watcherConfig = watcherConfig;
+    public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, MonitorRules monitorListConfig, SendDispatchService sendDispatchService) {
+        this.grafanaConfig = grafanaConfig;
         this.monitorListConfig = monitorListConfig;
         this.sendDispatchService = sendDispatchService;
 
 
         String basicAuth = Base64Utils.encodeToString(
-                (watcherConfig.getGrafana().getPrimary().getUsername() + ":" + watcherConfig.getGrafana().getPrimary().getPassword()).getBytes()
+                (grafanaConfig.getGrafana().getPrimary().getUsername() + ":" + grafanaConfig.getGrafana().getPrimary().getPassword()).getBytes()
         );
 
 
@@ -75,8 +75,8 @@ public class GrafanaLogServiceImp {
         logger.debug("{} 查询时间区间 {} ~ {} 产生的日志 ",item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
-        String baseUrl = watcherConfig.getGrafana().getPrimary().getUrl();
-        String dsId = watcherConfig.getGrafana().getPrimary().getDatasourceId();
+        String baseUrl = grafanaConfig.getGrafana().getPrimary().getUrl();
+        String dsId = grafanaConfig.getGrafana().getPrimary().getDatasourceId();
 
 
         String url = baseUrl + "/api/datasources/proxy/" + dsId + "/loki/api/v1/query_range";
@@ -87,7 +87,7 @@ public class GrafanaLogServiceImp {
                         item.getQueryExpr(), start, now, 200)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .flatMap(body -> handleResult(watcherConfig.getGrafana().getPrimary().getEnvironmentName(),item, body))
+                .flatMap(body -> handleResult(grafanaConfig.getGrafana().getPrimary().getEnvironmentName(),item, body))
                 .onErrorResume(e -> {
                     logger.error("❌ WebClient 调用 Loki 失败", e);
                     return Mono.empty();

@@ -1,6 +1,6 @@
 package com.szh.monitor.context;
 
-import com.szh.monitor.config.BaseConfig;
+import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Component
 public class ExecuteJDBCContext {
     @Autowired
-    private BaseConfig baseConfig;
+    private SQLConfig SQLConfig;
 
     Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
     //缓存各环境的jdbcTemplate
@@ -48,9 +48,9 @@ public class ExecuteJDBCContext {
     public boolean executeAble(String environmentName, String sqlFileName){
         List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        if(!CollectionUtils.isEmpty(baseConfig.getUnLimitCheckFiles())){
+        if(!CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())){
             //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
-            if(baseConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){
+            if(SQLConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){
                 logger.debug("{} 该SQL文件执行次数无上限",sqlFileName);
                 return true;
             }
@@ -61,7 +61,7 @@ public class ExecuteJDBCContext {
                 //首次执行 匹配不上都为可执行
                 return true;
             }
-            return fileCountInfo.getCount()<baseConfig.getCheckLimit();
+            return fileCountInfo.getCount()< SQLConfig.getCheckLimit();
         }
         return true;
     }

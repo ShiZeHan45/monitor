@@ -107,42 +107,45 @@ logging:
   file:
    name: app.log
 watcher:
-  local:
+  notify-webhook:
+    wechat-webhook: 你的企业微信机器人回调入口
+    log-wechat-webhook: 你的企业微信机器人回调入口 日志错误发送渠道
+  sql:
+   enable: true # 是否开启SQL监控
+   sql-dir: classPath:monitor  # SQL文件存放目录
+   sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
+   check-limit: 2 # SQL文件每日执行多少次  节省资源
+   un-limit-check-files: ["xxx.sql"] # 每日不设上限执行次数的SQL文件 节省资源
+   schedule-cron: "0 0/29 * * * ?"  # 每29分钟执行一次
+   schedule-retry-cron: "0 0/5 * * * ?"  # 执行失败重试定时器
+  log:
+   local:# 本地日志监听
+    enabled: true  # 是否用本地日志监听
     error:
       log:
         path: 你的日志路径
     keywords: ERROR,Exception,Failed   ## 遇到哪些关键词就拾取
     context-lines: 30  ## 拾取多少行
     dedup-window-minutes: 10 #窗口时间10分钟
-    enabled: false  # 是否用本地日志监听
     name: "xxx" # 本地日志监听名称,应用到推送企业微信的title
-  grafana:
+   grafana:  # 远程日志监听
     primary:
       environment-name: "xxx" 应用到推送企业微信的title
       url: "http://IP:port" #你的grafana地址
       datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
       username: "xx"   # 你的账号
       password: "xx" # 你的密码
+    monitors:  # 监听规则
+      list:
+        - name: "xx" # 监控规则名称
+          query-expr: '{service="xxxx"}' # LogQL 基础标签
+          keywords: ["ERROR"] # 捕获关键词
+          exclusion-keywords: ["xxx"] # 忽略的关键词
+          context-lines: 10 # 截取行数
+          enabled: true # 规则是否启用
       
-monitors:
-  list:
-    - name: "xx" # 监控规则名称
-      query-expr: '{service="xxxx"}' # LogQL 基础标签
-      keywords: ["ERROR"] # 捕获关键词
-      exclusion-keywords: ["xxx"] # 忽略的关键词
-      context-lines: 10
-      enabled: true
       
-      
-app:
-  sql-dir: classPath:monitor  # SQL文件存放目录
-  sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
-  wechat-webhook: 你的企业微信机器人回调入口
-  log-wechat-webhook: 你的企业微信机器人回调入口 日志错误发送渠道
-  check-limit: 2 # SQL文件每日执行多少次  节省资源
-  un-limit-check-files: ["xxx.sql"] # 每日不设上限执行次数的SQL文件 节省资源
-  schedule-cron: "0 0/29 * * * ?"  # 每29分钟执行一次
-  schedule-retry-cron: "0 0/5 * * * ?"  # 执行失败重试定时器
+
 ```
 
 

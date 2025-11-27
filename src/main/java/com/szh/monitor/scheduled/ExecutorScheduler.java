@@ -1,9 +1,8 @@
 package com.szh.monitor.scheduled;
 
-import com.szh.monitor.config.BaseConfig;
+import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.service.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +15,7 @@ import java.util.List;
 @Component
 public class ExecutorScheduler {
     @Autowired
-    private BaseConfig baseConfig;
+    private SQLConfig SQLConfig;
 
     @Autowired
     private List<ExecutorService> executorServices;
@@ -26,9 +25,9 @@ public class ExecutorScheduler {
         this.executorServices = executorServices;
     }
 
-    @Scheduled(cron = "${app.schedule-cron}")
+    @Scheduled(cron = "${watcher.sql.schedule-cron}")
     public void executor() {
-        if(!baseConfig.isEnableSqlCheck()){
+        if(!SQLConfig.isEnable()){
             return;
         }
         int hour = LocalDateTime.now().getHour();

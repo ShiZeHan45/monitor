@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "monitors")
+@ConfigurationProperties(prefix = "watcher.log.grafana.monitors")
 public class MonitorRules {
     private List<Rule> list;
 

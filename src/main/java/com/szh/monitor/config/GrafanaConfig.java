@@ -5,9 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "watcher")
+@ConfigurationProperties(prefix = "watcher.log")
 @Data
-public class WatcherConfig {
+public class GrafanaConfig {
     private Grafana grafana;
 
 
