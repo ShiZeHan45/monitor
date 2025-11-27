@@ -72,7 +72,7 @@ public class GrafanaLogServiceImp {
         LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start / 1_000_000), ZoneId.systemDefault());
         LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now / 1_000_000), ZoneId.systemDefault());
 
-        logger.info("{} 查询时间区间 {} ~ {} 产生的日志 ",item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+        logger.debug("{} 查询时间区间 {} ~ {} 产生的日志 ",item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         String baseUrl = watcherConfig.getGrafana().getPrimary().getUrl();
@@ -164,7 +164,8 @@ public class GrafanaLogServiceImp {
 // 聚合推送
         String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
         sendDispatchService.sendSimpleMarkDownMsg(content);
-        logger.info("📩 已推送 {} 条日志，并更新 lastTs={}", hitLogs.size(), maxTs);
+        logger.info("📩 已推送 {} 条日志，并更新 lastTs={},时间：{}", hitLogs.size(), maxTs,
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         return Mono.empty();
     }
 }
