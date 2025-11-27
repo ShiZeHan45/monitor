@@ -14,6 +14,9 @@ import reactor.core.publisher.Mono;
 
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,8 +68,12 @@ public class GrafanaLogServiceImp {
 
     private void processMonitor(MonitorRules.Rule item) {
         long now = Instant.now().toEpochMilli() * 1_000_000;
-        long start = now - 2 * 60 * 1_000_000_000L;
+        long start = lastTsMap.getOrDefault(item.getName(),now - 2 * 60 * 1_000_000_000L);
+        LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start / 1_000_000), ZoneId.systemDefault());
+        LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now / 1_000_000), ZoneId.systemDefault());
 
+        logger.info("{} 查询时间区间 {} ~ {} 产生的日志 ",item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         String baseUrl = watcherConfig.getGrafana().getPrimary().getUrl();
         String dsId = watcherConfig.getGrafana().getPrimary().getDatasourceId();
@@ -81,6 +88,10 @@ public class GrafanaLogServiceImp {
                 .retrieve()
                 .bodyToMono(Map.class)
                 .flatMap(body -> handleResult(watcherConfig.getGrafana().getPrimary().getEnvironmentName(),item, body))
+                .onErrorResume(e -> {
+                    logger.error("❌ WebClient 调用 Loki 失败", e);
+                    return Mono.empty();
+                })
                 .subscribe();
     }
 
@@ -153,6 +164,7 @@ public class GrafanaLogServiceImp {
 // 聚合推送
         String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
         sendDispatchService.sendSimpleMarkDownMsg(content);
+        logger.info("📩 已推送 {} 条日志，并更新 lastTs={}", hitLogs.size(), maxTs);
         return Mono.empty();
     }
 }
