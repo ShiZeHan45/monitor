@@ -17,7 +17,7 @@ public class TransactionManagerConfig {
 
     // 主数据源事务管理器
     @Bean(name = "primaryTransactionManager")
-    @Primary
+    @ConditionalOnProperty(prefix = "datasource.primary", name = "enabled", havingValue = "true")
     public PlatformTransactionManager primaryTransactionManager(
             @Qualifier("primaryDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);

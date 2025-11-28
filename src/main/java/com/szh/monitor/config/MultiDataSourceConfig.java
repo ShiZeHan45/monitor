@@ -36,8 +36,8 @@ public class MultiDataSourceConfig {
 
 
     @Bean("primaryDataSource")
-    @Primary
     @ConfigurationProperties(prefix = "datasource.primary")
+    @ConditionalOnProperty(prefix = "datasource.primary", name = "enabled", havingValue = "true")
     public DataSource primaryDatasource() {
         return DataSourceBuilder.create().build();
     }
@@ -50,6 +50,7 @@ public class MultiDataSourceConfig {
     }
 
     @Bean("primaryJdbcTemplate")
+    @ConditionalOnProperty(prefix = "datasource.primary", name = "enabled", havingValue = "true")
     public JdbcTemplate primaryJdbcTemplate(@Qualifier("primaryDataSource") DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         executeJDBCContext.addJdbcTemplate(getName("primary"),"primaryJdbcTemplate");

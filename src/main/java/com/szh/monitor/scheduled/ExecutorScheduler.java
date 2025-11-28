@@ -1,6 +1,5 @@
 package com.szh.monitor.scheduled;
 
-import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.service.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,9 +14,6 @@ import java.util.List;
 @Component
 public class ExecutorScheduler {
     @Autowired
-    private SQLConfig SQLConfig;
-
-    @Autowired
     private List<ExecutorService> executorServices;
 
     @Autowired
@@ -27,9 +23,6 @@ public class ExecutorScheduler {
 
     @Scheduled(cron = "${watcher.sql.schedule-cron}")
     public void executor() {
-        if(!SQLConfig.isEnable()){
-            return;
-        }
         int hour = LocalDateTime.now().getHour();
         if (hour >= 20 || hour <= 8) {
             // 20点-8点不执行调度

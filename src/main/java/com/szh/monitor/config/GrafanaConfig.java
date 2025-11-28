@@ -4,26 +4,23 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
-@ConfigurationProperties(prefix = "watcher.log")
+@ConfigurationProperties(prefix = "watcher.log.grafana")
 @Data
 public class GrafanaConfig {
-    private Grafana grafana;
+    private List<GrafanaInfo> list;
 
 
     @Data
-    public static class Grafana {
-        private Primary primary;
-
-
-        @Data
-        public static class Primary {
-            private String url;
-            private String environmentName;
-            private String datasourceId;
-            private String username;
-            private String password;
-            private String webhook;
-        }
+    public static class GrafanaInfo {
+        private String url;
+        private String environmentName;
+        private String datasourceId;
+        private String username;
+        private String password;
+        private String webhook;
+        private List<MonitorRules> monitors;
     }
 }

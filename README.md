@@ -55,6 +55,7 @@ datasource.config:
   relation: xx环境-primary,xx环境-secondary
 
 datasource.primary:
+  enabled: false
   jdbc-url: jdbc:postgresql://${datasource.config.primary.ip-port}/${datasource.config.primary.database-name}?TimeZone=Asia/Shanghai&tcpKeepAlive=true
   username: ${datasource.config.primary.username}
   password: ${datasource.config.primary.password}
@@ -111,7 +112,6 @@ watcher:
     wechat-webhook: 你的企业微信机器人回调入口
     log-wechat-webhook: 你的企业微信机器人回调入口 日志错误发送渠道
   sql:
-   enable: true # 是否开启SQL监控
    sql-dir: classPath:monitor  # SQL文件存放目录
    sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
    check-limit: 2 # SQL文件每日执行多少次  节省资源

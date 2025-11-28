@@ -7,6 +7,7 @@ import com.szh.monitor.enums.MsgType;
 import com.szh.monitor.exception.SQLExecutorFailException;
 import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.service.ExecutorService;
+import com.szh.monitor.service.SqlExecuteLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,10 @@ import java.util.stream.Collectors;
 @Service
 public class SqlExecutorService implements ExecutorService {
     Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
+
+    @Autowired
+    private SqlExecuteLogService sqlExecuteLogService;
+
     @Autowired
     private ExecuteJDBCContext executeJDBCContext;
 
@@ -112,6 +120,7 @@ public class SqlExecutorService implements ExecutorService {
                 }
                 successSQLFileName.add(sqlFile.getName());
                 executeJDBCContext.executeFileCount(environmentName,sqlFile.getName());
+                sqlExecuteLogService.saveOrUpdate(environmentName,sqlFile.getName());
             } catch (Exception e) {
                 failSQLFileName.add(sqlFile.getName());
                 logger.error("执行SQL文件【{}】出错,跳过，执行下一个文件", sqlFile.getName(), e);

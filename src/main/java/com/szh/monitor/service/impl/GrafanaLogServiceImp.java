@@ -4,6 +4,7 @@ import com.szh.monitor.config.MonitorRules;
 import com.szh.monitor.config.GrafanaConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,60 +24,60 @@ import java.util.stream.Collectors;
 @Service
 public class GrafanaLogServiceImp {
     Logger logger = LoggerFactory.getLogger(GrafanaLogServiceImp.class);
-    private final GrafanaConfig grafanaConfig;
-    private final MonitorRules monitorListConfig;
-    private final WebClient webClient;
-
+    private final Map<String, WebClient> webClientMap = new HashMap<>();
+    private final Map<String, GrafanaConfig.GrafanaInfo> grafanaInfoMap = new HashMap<>();
     private final SendDispatchService sendDispatchService;
     // 每个监控项独立记住上次处理的时间戳
     private final Map<String, Long> lastTsMap = new HashMap<>();
 
 
-    public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, MonitorRules monitorListConfig, SendDispatchService sendDispatchService) {
-        this.grafanaConfig = grafanaConfig;
-        this.monitorListConfig = monitorListConfig;
+    public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, SendDispatchService sendDispatchService) {
         this.sendDispatchService = sendDispatchService;
-
-
-        String basicAuth = Base64Utils.encodeToString(
-                (grafanaConfig.getGrafana().getPrimary().getUsername() + ":" + grafanaConfig.getGrafana().getPrimary().getPassword()).getBytes()
-        );
-
-
-        this.webClient = WebClient.builder()
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .codecs(config -> config.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
-                .build();
-    }
-
-
-    @Scheduled(fixedRate = 30000)
-    public void runMonitor() {
-        for (MonitorRules.Rule item : monitorListConfig.getList()) {
-
-            if (!item.isEnabled()) continue;
-
-            try {
-                processMonitor(item);
-            } catch (Exception e) {
-                logger.error("Monitor {} error", item.getName(), e);
-            }
+        for (GrafanaConfig.GrafanaInfo grafanaInfo : grafanaConfig.getList()) {
+            String basicAuth = Base64Utils.encodeToString(
+                    (grafanaInfo.getUsername() + ":" + grafanaInfo.getPassword()).getBytes()
+            );
+            webClientMap.put(grafanaInfo.getEnvironmentName(),WebClient.builder()
+                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .codecs(config -> config.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+                    .build());
+            grafanaInfoMap.put(grafanaInfo.getEnvironmentName(),grafanaInfo);
         }
+        logger.info("webClient初始化完成 {}",webClientMap.keySet());
+
     }
 
 
-    private void processMonitor(MonitorRules.Rule item) {
+    @Scheduled(fixedRate = 30_000)
+    public void runMonitor() {
+        webClientMap.forEach((environmentName, webClient) -> {
+            GrafanaConfig.GrafanaInfo grafanaInfo = grafanaInfoMap.get(environmentName);
+            for (MonitorRules item : grafanaInfo.getMonitors()) {
+                if (!item.isEnabled()) continue;
+                try {
+                    processMonitor(item,webClient,grafanaInfo);
+                } catch (Exception e) {
+                    logger.error("Monitor {} error", item.getName(), e);
+                }
+            }
+
+        });
+
+    }
+
+
+    private void processMonitor(MonitorRules item,WebClient webClient,GrafanaConfig.GrafanaInfo grafanaInfo) {
         long now = Instant.now().toEpochMilli() * 1_000_000;
         long start = lastTsMap.getOrDefault(item.getName(),now - 2 * 60 * 1_000_000_000L);
         LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start / 1_000_000), ZoneId.systemDefault());
         LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now / 1_000_000), ZoneId.systemDefault());
 
-        logger.debug("{} 查询时间区间 {} ~ {} 产生的日志 ",item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+        logger.debug("{}-{} 查询时间区间 {} ~ {} 产生的日志 ",grafanaInfo.getEnvironmentName(),item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
-        String baseUrl = grafanaConfig.getGrafana().getPrimary().getUrl();
-        String dsId = grafanaConfig.getGrafana().getPrimary().getDatasourceId();
+        String baseUrl = grafanaInfo.getUrl();
+        String dsId = grafanaInfo.getDatasourceId();
 
 
         String url = baseUrl + "/api/datasources/proxy/" + dsId + "/loki/api/v1/query_range";
@@ -87,7 +88,7 @@ public class GrafanaLogServiceImp {
                         item.getQueryExpr(), start, now, 200)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .flatMap(body -> handleResult(grafanaConfig.getGrafana().getPrimary().getEnvironmentName(),item, body))
+                .flatMap(body -> handleResult(grafanaInfo.getEnvironmentName(),item, body))
                 .onErrorResume(e -> {
                     logger.error("❌ WebClient 调用 Loki 失败", e);
                     return Mono.empty();
@@ -95,17 +96,26 @@ public class GrafanaLogServiceImp {
                 .subscribe();
     }
 
-    private Mono<Void> handleResult(String environmentName,MonitorRules.Rule item, Map body) {
-        if (body == null) return Mono.empty();
+    private Mono<Void> handleResult(String environmentName,MonitorRules item, Map body) {
+        if (body == null) {
+            logger.debug("{}该时间区间无日志记录",environmentName);
+            return Mono.empty();
+        }
 
 
         Map data = (Map) body.get("data");
-        if (data == null) return Mono.empty();
+        if (data == null) {
+            logger.debug("{}该时间区间无日志记录",environmentName);
+            return Mono.empty();
+        }
 
 
         List result = (List) data.get("result");
-        if (result == null) return Mono.empty();
-
+        if (result == null) {
+            logger.debug("{}该时间区间无日志记录",environmentName);
+            return Mono.empty();
+        }
+        logger.debug("{}获取到{}条日志,开始分析匹配关键词：{}",environmentName,result.size(),item.getKeywords());
 
         long lastTs = lastTsMap.getOrDefault(item.getName(), 0L);
 
@@ -168,7 +178,7 @@ public class GrafanaLogServiceImp {
             content = content.substring(0, 1500);
         }
         sendDispatchService.sendSimpleMarkDownMsg(content);
-        logger.info("📩 已推送 {} 条日志，并更新 lastTs={},时间：{} 推送内容：{}", hitLogs.size(), maxTs,
+        logger.info("📩 {} 已推送 {} 条日志，并更新 lastTs={},时间：{} 推送内容：{}",environmentName, hitLogs.size(), maxTs,
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs/1_000_000), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),content);
         return Mono.empty();
     }

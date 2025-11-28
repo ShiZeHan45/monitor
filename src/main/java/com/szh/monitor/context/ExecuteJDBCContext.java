@@ -1,6 +1,8 @@
 package com.szh.monitor.context;
 
 import com.szh.monitor.config.SQLConfig;
+import com.szh.monitor.entity.SqlExecuteLog;
+import com.szh.monitor.service.SqlExecuteLogService;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
 public class ExecuteJDBCContext {
     @Autowired
     private SQLConfig SQLConfig;
+    @Autowired
+    private SqlExecuteLogService sqlExecuteLogService;
 
     Logger logger = LoggerFactory.getLogger(SqlExecutorService.class);
     //缓存各环境的jdbcTemplate
@@ -46,7 +50,8 @@ public class ExecuteJDBCContext {
      * @return
      */
     public boolean executeAble(String environmentName, String sqlFileName){
-        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
+//        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
+        List<SqlExecuteLog> sqlExecuteLogs = sqlExecuteLogService.findEnvironmentName(environmentName);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
         if(!CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())){
             //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
@@ -55,12 +60,13 @@ public class ExecuteJDBCContext {
                 return true;
             }
         }
-        if (StringUtils.hasText(sqlFileName)&&!CollectionUtils.isEmpty(fileCountInfos)) {
-            FileCountInfo fileCountInfo = fileCountInfos.stream().filter(x -> x.getDate().equals(currDate) && x.getFileName().equals(sqlFileName)).findFirst().orElse(null);
+        if (StringUtils.hasText(sqlFileName)&&!CollectionUtils.isEmpty(sqlExecuteLogs)) {
+            SqlExecuteLog fileCountInfo = sqlExecuteLogs.stream().filter(x -> x.getExecuteDate().equals(currDate) && x.getSqlFileName().equals(sqlFileName)).findFirst().orElse(null);
             if(fileCountInfo==null){
                 //首次执行 匹配不上都为可执行
                 return true;
             }
+            logger.debug("{} 该SQL文件执行次数{} 阈值为{}",sqlFileName,fileCountInfo.getCount(),SQLConfig.getCheckLimit());
             return fileCountInfo.getCount()< SQLConfig.getCheckLimit();
         }
         return true;
