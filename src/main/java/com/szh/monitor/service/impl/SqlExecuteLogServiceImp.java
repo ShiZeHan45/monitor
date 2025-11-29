@@ -18,7 +18,7 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
     @Transactional
     public void saveOrUpdate(String environmentName, String name) {
         Integer yyyyMMdd = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name);
+        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,yyyyMMdd);
         if(sqlExecuteLog!=null){
             sqlExecuteLog.setCount(sqlExecuteLog.getCount()+1);
         }else{
