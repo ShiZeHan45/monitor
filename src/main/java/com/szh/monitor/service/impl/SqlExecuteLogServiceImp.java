@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szh.monitor.entity.SqlExecuteLog;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.service.SqlExecuteLogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +16,7 @@ import java.util.List;
 
 @Service
 public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, SqlExecuteLog> implements SqlExecuteLogService {
-
+    Logger logger = LoggerFactory.getLogger(SqlExecuteLogServiceImp.class);
     private static final Integer currYYYYMMDD = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
     private static final Integer currHHMMSS = Integer.parseInt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")));
 
@@ -53,5 +55,11 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
     @Override
     public void resetFailedCount(String environmentName) {
         getBaseMapper().resetFailedCount(environmentName,currYYYYMMDD,currHHMMSS);
+    }
+
+    @Override
+    public void clear() {
+        int clearCount = getBaseMapper().clear(currYYYYMMDD);
+        logger.info("删除执行记录条数{}",clearCount);
     }
 }

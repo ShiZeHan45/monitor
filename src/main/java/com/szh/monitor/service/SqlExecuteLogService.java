@@ -15,4 +15,6 @@ public interface SqlExecuteLogService extends IService<SqlExecuteLog> {
     int findMaxFailedCount(String environmentName);
 
     void resetFailedCount(String environmentName);
+
+    void clear();
 }

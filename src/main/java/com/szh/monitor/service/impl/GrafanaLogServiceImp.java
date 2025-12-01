@@ -1,10 +1,9 @@
 package com.szh.monitor.service.impl;
 
-import com.szh.monitor.config.MonitorRules;
 import com.szh.monitor.config.GrafanaConfig;
+import com.szh.monitor.config.MonitorRules;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;

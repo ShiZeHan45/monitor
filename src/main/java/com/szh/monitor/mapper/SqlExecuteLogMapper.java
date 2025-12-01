@@ -2,6 +2,7 @@ package com.szh.monitor.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.szh.monitor.entity.SqlExecuteLog;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -22,4 +23,7 @@ public interface SqlExecuteLogMapper extends BaseMapper<SqlExecuteLog> {
     Integer findMaxFailedCount(String environmentName, Integer date);
     @Update("UPDATE sql_execute_log SET failed_count=0,failed_count_reset_time=#{currTime} where environment_name=#{environmentName} and execute_date=#{date} and failed_count>0")
     void resetFailedCount(String environmentName, Integer date,Integer currTime);
+
+    @Delete("delete from sql_execute_log where execute_date<#{date}")
+    int clear(Integer date);
 }
