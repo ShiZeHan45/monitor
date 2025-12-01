@@ -131,7 +131,7 @@ public class ExecuteJDBCContext {
                 }
             }
         }
-        sqlExecuteLogService.saveBatch(sqlExecuteLogs);
+        sqlExecuteLogService.saveOrUpdateBatch(sqlExecuteLogs);
     }
 
     /**
