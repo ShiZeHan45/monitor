@@ -11,11 +11,15 @@ public class SqlExecuteLog {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private String environmentName; // environment_name
+    private String environmentName;
 
-    private String sqlFileName;    // sql_file_name
+    private String sqlFileName;
 
-    private Integer executeDate;   // execute_date
+    private Integer executeDate;
 
-    private Integer count;         // count
+    private Integer count;
+
+    private Integer failedCount;
+
+    private Integer failedCountResetTime;
 }

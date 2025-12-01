@@ -8,17 +8,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, SqlExecuteLog> implements SqlExecuteLogService {
 
+    private static final Integer currYYYYMMDD = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+    private static final Integer currHHMMSS = Integer.parseInt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")));
+
     @Override
     @Transactional
     public void saveOrUpdate(String environmentName, String name) {
-        Integer yyyyMMdd = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,yyyyMMdd);
+        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,currYYYYMMDD);
         if(sqlExecuteLog!=null){
             sqlExecuteLog.setCount(sqlExecuteLog.getCount()+1);
         }else{
@@ -26,14 +29,29 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
             sqlExecuteLog.setEnvironmentName(environmentName);
             sqlExecuteLog.setSqlFileName(name);
             sqlExecuteLog.setCount(1);
-            sqlExecuteLog.setExecuteDate(yyyyMMdd);
+            sqlExecuteLog.setExecuteDate(currYYYYMMDD);
         }
         this.saveOrUpdate(sqlExecuteLog);
     }
 
     @Override
     public List<SqlExecuteLog> findEnvironmentName(String environmentName) {
-        Integer yyyyMMdd = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        return getBaseMapper().findEnvironmentName(environmentName,yyyyMMdd);
+        return getBaseMapper().findEnvironmentName(environmentName,currYYYYMMDD);
+    }
+
+    @Override
+    public List<SqlExecuteLog> findEnvironmentNameAndFailedCountGt0(String environmentName) {
+        return getBaseMapper().findEnvironmentNameAndFailedCountGt0(environmentName,currYYYYMMDD);
+    }
+
+    @Override
+    public int findMaxFailedCount(String environmentName) {
+        Integer maxFailedCount = getBaseMapper().findMaxFailedCount(environmentName, currYYYYMMDD);
+        return maxFailedCount==null?0:maxFailedCount;
+    }
+
+    @Override
+    public void resetFailedCount(String environmentName) {
+        getBaseMapper().resetFailedCount(environmentName,currYYYYMMDD,currHHMMSS);
     }
 }

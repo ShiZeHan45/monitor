@@ -146,7 +146,7 @@ public class SqlExecutorService implements ExecutorService {
             executeJDBCContext.getJBDCTemplate().forEach((environmentName, jdbcTemplateName) -> {
                 currEnvironmentName[0] = environmentName;
                 consumer.accept(environmentName,jdbcTemplateName);
-                //成功执行则清0错误计数
+                //执行到此处，肯定是全部成功执行，那么会将所有文件的失败计数归零
                 executeJDBCContext.clearFailedCount(environmentName);
             });
 

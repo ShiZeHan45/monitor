@@ -31,13 +31,8 @@ public class ExecuteJDBCContext {
     //缓存各环境的jdbcTemplate
     private Map<String, String> jdbcTemplateMap = new HashMap<>();
 
-    //数据库连接获取失败次数
-    private Map<String, Integer> failedToObtainConnectionCount = new HashMap<>();
-
     //各环境无需再次执行的SQL文件
     private Map<String, List<FileCountInfo>> executeFileCountInfo = new HashMap<>();
-    //缓存各环境执行失败的文件集合
-    private Map<String, List<String>> failedFilesMap = new HashMap<>();
 
     public ExecuteJDBCContext() {
     }
@@ -97,10 +92,11 @@ public class ExecuteJDBCContext {
      * @param environmentName 环境名称
      */
     public void clearFailedCount(String environmentName) {
-        //充值执行失败次数计数
-        failedToObtainConnectionCount.remove(environmentName);
-        //清除执行失败文件缓存
-        failedFilesMap.remove(environmentName);
+        sqlExecuteLogService.resetFailedCount(environmentName);
+//        //充值执行失败次数计数
+//        failedToObtainConnectionCount.remove(environmentName);
+//        //清除执行失败文件缓存
+//        failedFilesMap.remove(environmentName);
     }
 
     /**
@@ -112,16 +108,30 @@ public class ExecuteJDBCContext {
         if (CollectionUtils.isEmpty(failedFiles)) {
             return;
         }
-        List<String> files = failedFilesMap.get(environmentName);
-        if (CollectionUtils.isEmpty(files)) {
-            failedFilesMap.put(environmentName, failedFiles);
+        List<SqlExecuteLog> failedInfos = sqlExecuteLogService.findEnvironmentNameAndFailedCountGt0(environmentName);
+        List<SqlExecuteLog> sqlExecuteLogs=new ArrayList<>();
+        if (CollectionUtils.isEmpty(failedInfos)) {
+            for (String failedFile : failedFiles) {
+                SqlExecuteLog sqlExecuteLog = new SqlExecuteLog();
+                sqlExecuteLog.setEnvironmentName(environmentName);
+                sqlExecuteLog.setSqlFileName(failedFile);
+                sqlExecuteLog.setFailedCount(1);
+                sqlExecuteLogs.add(sqlExecuteLog);
+            }
         } else {
-            List<String> newFiles = failedFiles.stream().filter(x -> StringUtils.hasText(x) && !files.contains(x)).collect(Collectors.toList());
-            if (!CollectionUtils.isEmpty(newFiles)) {
-                files.addAll(newFiles);
-                failedFilesMap.put(environmentName, files);
+            for (String failedFile : failedFiles) {
+                SqlExecuteLog sqlExecuteLog = failedInfos.stream().filter(x -> x.getSqlFileName().equals(failedFile)).findAny().orElse(null);
+                if(sqlExecuteLog==null){
+                    sqlExecuteLog = new SqlExecuteLog();
+                    sqlExecuteLog.setEnvironmentName(environmentName);
+                    sqlExecuteLog.setSqlFileName(failedFile);
+                    sqlExecuteLog.setFailedCount(1);
+                }else{
+                    sqlExecuteLog.setFailedCount(sqlExecuteLog.getFailedCount()+1);
+                }
             }
         }
+        sqlExecuteLogService.saveBatch(sqlExecuteLogs);
     }
 
     /**
@@ -136,8 +146,7 @@ public class ExecuteJDBCContext {
             return 0;
         }
         addFailFiles(environmentName, failFiles);
-        failedToObtainConnectionCount.put(environmentName, failedToObtainConnectionCount.getOrDefault(environmentName, 0) + 1);
-        return failedToObtainConnectionCount.get(environmentName);
+        return sqlExecuteLogService.findMaxFailedCount(environmentName);
     }
 
     /**
@@ -156,10 +165,11 @@ public class ExecuteJDBCContext {
     }
 
     public List<String> getFailFiles(String environmentName) {
-        if (CollectionUtils.isEmpty(this.failedFilesMap)) {
+        List<SqlExecuteLog> failedInfos = sqlExecuteLogService.findEnvironmentNameAndFailedCountGt0(environmentName);
+        if (CollectionUtils.isEmpty(failedInfos)) {
             return null;
         }
-        return this.failedFilesMap.get(environmentName);
+        return failedInfos.stream().map(SqlExecuteLog::getSqlFileName).collect(Collectors.toList());
     }
 
     @Data
