@@ -122,8 +122,12 @@ public class SqlExecutorService implements ExecutorService {
                 executeJDBCContext.executeFileCount(environmentName,sqlFile.getName());
                 sqlExecuteLogService.saveOrUpdate(environmentName,sqlFile.getName());
             } catch (Exception e) {
-                failSQLFileName.add(sqlFile.getName());
-                logger.error("执行SQL文件【{}】出错,跳过，执行下一个文件", sqlFile.getName(), e);
+                //无上限次数的SQL文件不计失败次数
+                if(CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())||
+                        SQLConfig.getUnLimitCheckFiles().stream().noneMatch(x -> x.equals(sqlFile.getName()))){
+                    failSQLFileName.add(sqlFile.getName());
+                    logger.error("执行SQL文件【{}】出错,跳过，执行下一个文件", sqlFile.getName(), e);
+                }
                 exception = true;
             }
         }
