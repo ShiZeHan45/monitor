@@ -10,7 +10,7 @@ public class ExecutorLogClear {
     @Autowired
     private SqlExecuteLogService sqlExecuteLogService;
 
-    @Scheduled(cron = "0 5 0 * * ?")
+    @Scheduled(cron = "0 5 0 * * ?")//不想保留历史执行记录可以把这个定时器开起来
     public void clear() {
         sqlExecuteLogService.clear();
     }
