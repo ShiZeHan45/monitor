@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -49,6 +50,7 @@ public class SendWechatService implements SendService {
 
     @Scheduled(cron = "0 30 9 * * ?")
 //    @Scheduled(cron = "0 0/5 * * * ?")
+    @Transactional
     public void pushMsg(){
        List<MsgSendLog> msgSendLogs = sendLogService.findSendStatusFalse();
         for (MsgSendLog msgSendLog : msgSendLogs) {
