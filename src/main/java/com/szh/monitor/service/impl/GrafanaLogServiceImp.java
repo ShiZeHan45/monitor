@@ -171,7 +171,7 @@ public class GrafanaLogServiceImp {
         lastTsMap.put(item.getName(), maxTs);
 
 // 聚合推送
-        String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
+        String content = MessageFormat.format("**{0}** 检测到异常日志\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
         if (content.length() > 1500) {
             logger.info("推送内容超长，截取1500字符");
             content = content.substring(0, 1500);

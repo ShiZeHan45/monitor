@@ -105,7 +105,8 @@ public class SendWechatService implements SendService {
 
     @Override
     public void sendSimpleMarkDownMsgByLog(String content) {
-        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook());
+        String sendContent = "🚨"+content;
+        sendNewMsgAndStore(sendContent,"markdown",baseConfig.getLogWechatWebhook());
     }
 
 
