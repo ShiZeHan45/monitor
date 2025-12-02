@@ -18,11 +18,6 @@ public class ExecuteFailedRetry {
 
     @Scheduled(cron = "${watcher.sql.schedule-retry-cron}")
     public void retry(){
-        int hour = LocalDateTime.now().getHour();
-        if (hour >= 20 || hour <= 8) {
-            // 20点-8点不执行调度
-            return;
-        }
         executorServices.forEach(ExecutorService::executeRetry);
     }
 }

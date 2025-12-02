@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class WechatMessage {
-    private String msgtype = "text";
+    private String msgtype;
     private Text text;
+    private Text markdown;
 
     @Data
     public static class Text {

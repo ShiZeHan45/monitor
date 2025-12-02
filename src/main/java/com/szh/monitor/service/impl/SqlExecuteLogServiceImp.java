@@ -36,6 +36,7 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
             sqlExecuteLog.setEnvironmentName(environmentName);
             sqlExecuteLog.setSqlFileName(name);
             sqlExecuteLog.setCount(1);
+            sqlExecuteLog.setFailedCount(0);
             sqlExecuteLog.setExecuteDate(getCurrYYYYMMDD());
         }
         this.saveOrUpdate(sqlExecuteLog);

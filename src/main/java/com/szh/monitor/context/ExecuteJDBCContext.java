@@ -127,7 +127,7 @@ public class ExecuteJDBCContext {
                     sqlExecuteLog.setSqlFileName(failedFile);
                     sqlExecuteLog.setFailedCount(1);
                 }else{
-                    sqlExecuteLog.setFailedCount(sqlExecuteLog.getFailedCount()+1);
+                    sqlExecuteLog.setFailedCount((sqlExecuteLog.getFailedCount()==null?0:sqlExecuteLog.getFailedCount())+1);
                 }
             }
         }
