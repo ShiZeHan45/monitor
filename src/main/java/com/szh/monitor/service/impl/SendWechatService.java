@@ -67,6 +67,7 @@ public class SendWechatService implements SendService {
         msgSendLog.setMsgType(msgType);
         msgSendLog.setSendStatus(true);
         msgSendLog.setContent(msg);
+        msgSendLog.setSendWebhook(webHook);
         sendMsgAndStore(msg, msgType, webHook, msgSendLog);
     }
 
