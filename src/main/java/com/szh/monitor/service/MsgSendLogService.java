@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MsgSendLogService extends IService<MsgSendLog> {
     List<MsgSendLog> findSendStatusFalse();
+
+    void clear();
 }
