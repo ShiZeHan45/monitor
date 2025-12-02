@@ -17,13 +17,18 @@ import java.util.List;
 @Service
 public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, SqlExecuteLog> implements SqlExecuteLogService {
     Logger logger = LoggerFactory.getLogger(SqlExecuteLogServiceImp.class);
-    private static final Integer currYYYYMMDD = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-    private static final Integer currHHMMSS = Integer.parseInt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")));
+    private static Integer getCurrYYYYMMDD(){
+        return Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+    }
+    private static Integer getCurrHHMMSS(){
+        return Integer.parseInt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")));
+    }
+
 
     @Override
     @Transactional
     public void saveOrUpdate(String environmentName, String name) {
-        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,currYYYYMMDD);
+        SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,getCurrYYYYMMDD());
         if(sqlExecuteLog!=null){
             sqlExecuteLog.setCount(sqlExecuteLog.getCount()+1);
         }else{
@@ -31,35 +36,35 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
             sqlExecuteLog.setEnvironmentName(environmentName);
             sqlExecuteLog.setSqlFileName(name);
             sqlExecuteLog.setCount(1);
-            sqlExecuteLog.setExecuteDate(currYYYYMMDD);
+            sqlExecuteLog.setExecuteDate(getCurrYYYYMMDD());
         }
         this.saveOrUpdate(sqlExecuteLog);
     }
 
     @Override
     public List<SqlExecuteLog> findEnvironmentName(String environmentName) {
-        return getBaseMapper().findEnvironmentName(environmentName,currYYYYMMDD);
+        return getBaseMapper().findEnvironmentName(environmentName,getCurrYYYYMMDD());
     }
 
     @Override
     public List<SqlExecuteLog> findEnvironmentNameAndFailedCountGt0(String environmentName) {
-        return getBaseMapper().findEnvironmentNameAndFailedCountGt0(environmentName,currYYYYMMDD);
+        return getBaseMapper().findEnvironmentNameAndFailedCountGt0(environmentName,getCurrYYYYMMDD());
     }
 
     @Override
     public int findMaxFailedCount(String environmentName) {
-        Integer maxFailedCount = getBaseMapper().findMaxFailedCount(environmentName, currYYYYMMDD);
+        Integer maxFailedCount = getBaseMapper().findMaxFailedCount(environmentName, getCurrYYYYMMDD());
         return maxFailedCount==null?0:maxFailedCount;
     }
 
     @Override
     public void resetFailedCount(String environmentName) {
-        getBaseMapper().resetFailedCount(environmentName,currYYYYMMDD,currHHMMSS);
+        getBaseMapper().resetFailedCount(environmentName,getCurrYYYYMMDD(),getCurrHHMMSS());
     }
 
     @Override
     public void clear() {
-        int clearCount = getBaseMapper().clear(currYYYYMMDD);
+        int clearCount = getBaseMapper().clear(getCurrYYYYMMDD());
         logger.info("删除执行记录条数{}",clearCount);
     }
 }
