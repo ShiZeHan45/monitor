@@ -6,6 +6,14 @@
 
 
 # 更新日志
+> 2025-12-02
+>
+> 1.新增特性:监听grafana日志,动态读取grafana日志,识别关键词后截取往下N行推送到企业微信
+>
+> 2.调整yml配置
+>
+> 3.SQL监控-新增SQL执行阈值拦截,默认SQL文件每天累计执行成功不大于2次,通过app.check-limit空值,如需无上限则使用app.un-limit-check-files配置
+>
 > 2025-11-26
 > 
 > 1.新增特性:监听grafana日志,动态读取grafana日志,识别关键词后截取往下N行推送到企业微信
@@ -38,6 +46,15 @@
 ```
 server:
   port: 4000
+  
+spring:
+  datasource:
+    jdbc-url: jdbc:sqlite:/soft/sqlite/monitor.db  # sqlite存储位置
+    driver-class-name: org.sqlite.JDBC
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql # sqlite初始文件
   
 datasource.config:
   primary:
