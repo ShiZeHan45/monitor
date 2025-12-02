@@ -48,6 +48,7 @@ public class SendWechatService implements SendService {
     }
 
     @Scheduled(cron = "0 30 9 * * ?")
+//    @Scheduled(cron = "0 0/5 * * * ?")
     public void pushMsg(){
        List<MsgSendLog> msgSendLogs = sendLogService.findSendStatusFalse();
         for (MsgSendLog msgSendLog : msgSendLogs) {
@@ -65,7 +66,6 @@ public class SendWechatService implements SendService {
         MsgSendLog msgSendLog = new MsgSendLog();
         msgSendLog.setCreateTime(LocalDateTime.now());
         msgSendLog.setMsgType(msgType);
-        msgSendLog.setSendStatus(true);
         msgSendLog.setContent(msg);
         msgSendLog.setSendWebhook(webHook);
         sendMsgAndStore(msg, msgType, webHook, msgSendLog);
@@ -95,6 +95,7 @@ public class SendWechatService implements SendService {
                     String.class
             );
             msgSendLog.setSendDate(LocalDateTime.now());
+            msgSendLog.setSendStatus(true);
         }
         sendLogService.saveOrUpdate(msgSendLog);
     }
