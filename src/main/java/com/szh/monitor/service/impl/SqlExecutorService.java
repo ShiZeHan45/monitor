@@ -127,8 +127,8 @@ public class SqlExecutorService implements ExecutorService {
                         SQLConfig.getUnLimitCheckFiles().stream().noneMatch(x -> x.equals(sqlFile.getName()))){
                     failSQLFileName.add(sqlFile.getName());
                     logger.error("执行SQL文件【{}】出错,跳过，执行下一个文件", sqlFile.getName(), e);
+                    exception = true;
                 }
-                exception = true;
             }
         }
         if (exception) {
