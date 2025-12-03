@@ -60,7 +60,9 @@ public class SendWechatService implements SendService {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            sendMsgAndStore(msgSendLog.getContent(),msgSendLog.getMsgType(),msgSendLog.getSendWebhook(),msgSendLog);
+            String content = "> 22点~08点 产生的异常消息补推 \n"+msgSendLog.getContent();
+
+            sendMsgAndStore(content,msgSendLog.getMsgType(),msgSendLog.getSendWebhook(),msgSendLog);
         }
     }
 

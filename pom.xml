@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <version>42.7.7</version>
         </dependency>
 
         <!-- 定时任务支持 -->
