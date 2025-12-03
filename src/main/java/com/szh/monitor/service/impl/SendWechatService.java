@@ -36,6 +36,7 @@ public class SendWechatService implements SendService {
 
 
     @Override
+    @Transactional
     public void sendMsg(MsgForm msgForm, Consumer<StringBuilder> msg) {
         StringBuilder sendMessage = new StringBuilder();
         if(MsgType.ERROR.equals(msgForm.getMsgType())){
@@ -73,7 +74,7 @@ public class SendWechatService implements SendService {
         sendMsgAndStore(msg, msgType, webHook, msgSendLog);
     }
 
-    private void sendMsgAndStore(String msg, String msgType, String webHook, MsgSendLog msgSendLog) {
+    public void sendMsgAndStore(String msg, String msgType, String webHook, MsgSendLog msgSendLog) {
         int hour = LocalDateTime.now().getHour();
         if (hour >= 20 || hour <= 8) {
             // 20点-8点不推送短信
@@ -104,6 +105,7 @@ public class SendWechatService implements SendService {
 
 
     @Override
+    @Transactional
     public void sendSimpleMarkDownMsgByLog(String content) {
         sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook());
     }
