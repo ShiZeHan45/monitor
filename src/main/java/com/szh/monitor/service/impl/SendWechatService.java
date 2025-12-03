@@ -36,7 +36,6 @@ public class SendWechatService implements SendService {
 
 
     @Override
-    @Transactional
     public void sendMsg(MsgForm msgForm, Consumer<StringBuilder> msg) {
         StringBuilder sendMessage = new StringBuilder();
         if(MsgType.ERROR.equals(msgForm.getMsgType())){
@@ -105,7 +104,6 @@ public class SendWechatService implements SendService {
 
 
     @Override
-    @Transactional
     public void sendSimpleMarkDownMsgByLog(String content) {
         sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook());
     }
