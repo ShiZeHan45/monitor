@@ -60,7 +60,7 @@ public class SendWechatService implements SendService {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            String appendContent="22点~08点 产生的异常消息补推\n";
+            String appendContent="20点~08点 产生的异常消息补推\n";
             switch (msgSendLog.getMsgType()){
                 case "markdown":
                     appendContent = "> "+appendContent;
