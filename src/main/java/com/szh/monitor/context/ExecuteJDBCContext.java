@@ -3,6 +3,7 @@ package com.szh.monitor.context;
 import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.entity.SqlExecuteLog;
 import com.szh.monitor.service.SqlExecuteLogService;
+import com.szh.monitor.service.impl.SqlExecuteLogServiceImp;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -116,6 +117,7 @@ public class ExecuteJDBCContext {
                 sqlExecuteLog.setEnvironmentName(environmentName);
                 sqlExecuteLog.setSqlFileName(failedFile);
                 sqlExecuteLog.setFailedCount(1);
+                sqlExecuteLog.setExecuteDate(SqlExecuteLogServiceImp.getCurrYYYYMMDD());
                 sqlExecuteLogs.add(sqlExecuteLog);
             }
         } else {
@@ -125,6 +127,7 @@ public class ExecuteJDBCContext {
                     sqlExecuteLog = new SqlExecuteLog();
                     sqlExecuteLog.setEnvironmentName(environmentName);
                     sqlExecuteLog.setSqlFileName(failedFile);
+                    sqlExecuteLog.setExecuteDate(SqlExecuteLogServiceImp.getCurrYYYYMMDD());
                     sqlExecuteLog.setFailedCount(1);
                 }else{
                     sqlExecuteLog.setFailedCount((sqlExecuteLog.getFailedCount()==null?0:sqlExecuteLog.getFailedCount())+1);

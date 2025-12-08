@@ -17,10 +17,10 @@ import java.util.List;
 @Service
 public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, SqlExecuteLog> implements SqlExecuteLogService {
     Logger logger = LoggerFactory.getLogger(SqlExecuteLogServiceImp.class);
-    private static Integer getCurrYYYYMMDD(){
+    public static Integer getCurrYYYYMMDD(){
         return Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
     }
-    private static Integer getCurrHHMMSS(){
+    public static Integer getCurrHHMMSS(){
         return Integer.parseInt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")));
     }
 
