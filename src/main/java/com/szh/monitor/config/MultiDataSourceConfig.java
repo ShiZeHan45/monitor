@@ -5,12 +5,14 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,32 +21,21 @@ import java.util.Map;
 @Data
 public class MultiDataSourceConfig {
 
-    private String relation;
     private Map<String, DataSourceProperties> list = new HashMap<>();
 
     @Data
     public static class DataSourceProperties {
+        private String environmentName;
         private boolean enabled;
         private String jdbcUrl;
         private String username;
         private String password;
         private String driverClassName;
-        private Map<String, Object> hikari = new HashMap<>();  // ⭐ 支持 hikari.* 全量映射
+        private Map<String, Object> hikari = new HashMap<>();  // 保留全量 Hikari 配置
     }
 
     @Autowired
     private ExecuteJDBCContext executeJDBCContext;
-
-    public String getName(String code){
-        String[] split = this.relation.split(",");
-        for (String s : split) {
-            String[] nameCode = s.split("-");
-            if(nameCode[1].equals(code)){
-                return nameCode[0];
-            }
-        }
-        return "-";
-    }
 
     @Bean("dynamicDataSources")
     public Map<String, DataSource> dynamicDataSources() {
@@ -54,33 +45,86 @@ public class MultiDataSourceConfig {
             if (!props.isEnabled()) return;
 
             HikariConfig config = new HikariConfig();
-
             config.setJdbcUrl(props.getJdbcUrl());
             config.setUsername(props.getUsername());
             config.setPassword(props.getPassword());
             config.setDriverClassName(props.getDriverClassName());
 
-            // ⭐ 自动绑定 hikari.* 下面所有配置
-            props.getHikari().forEach((k, v) -> {
-                try {
-                    // HikariConfig 自带 setter 调用
-                    config.getClass()
-                            .getMethod("set" + camel(k), v.getClass())
-                            .invoke(config, v);
-                } catch (Exception ignored) {
-                    // 无对应 setter 的字段自动跳过
-                }
-            });
+            bindHikariProperties(config, props.getHikari());
 
-            HikariDataSource dataSource = new HikariDataSource(config);
-
-            dataSourceMap.put(name, dataSource);
+            dataSourceMap.put(props.getEnvironmentName(), new HikariDataSource(config));
         });
 
         return dataSourceMap;
     }
 
-    // 下划线/短横线转驼峰
+    /**
+     * 安全绑定 HikariConfig 属性（优化版）
+     */
+    private void bindHikariProperties(HikariConfig config, Map<String, Object> hikariProps) {
+
+        for (Map.Entry<String, Object> entry : hikariProps.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            String setterName = "set" + camel(key);
+
+            try {
+                // 找到方法（不限参数类型）
+                Method setter = findCompatibleSetter(config.getClass(), setterName);
+
+                if (setter != null) {
+                    Class<?> paramType = setter.getParameterTypes()[0];
+                    Object convertedValue = convertIfNeeded(value, paramType);
+                    setter.invoke(config, convertedValue);
+                }
+
+            } catch (Exception e) {
+                // 如果要调试可以打印日志，这里为保持安静忽略即可
+                System.out.println("⚠ Hikari 参数未绑定: " + key + " = " + value);
+            }
+        }
+    }
+
+    /**
+     * 支持 long/int/boolean/String 等自动转换
+     */
+    private Object convertIfNeeded(Object value, Class<?> targetType) {
+        if (value == null) return null;
+
+        if (targetType.isAssignableFrom(value.getClass())) return value;
+
+        if (targetType == long.class || targetType == Long.class) {
+            return Long.parseLong(value.toString());
+        }
+        if (targetType == int.class || targetType == Integer.class) {
+            return Integer.parseInt(value.toString());
+        }
+        if (targetType == boolean.class || targetType == Boolean.class) {
+            return Boolean.parseBoolean(value.toString());
+        }
+        if (targetType == String.class) {
+            return value.toString();
+        }
+
+        return value;  // 默认返回原值
+    }
+
+    /**
+     * 查找兼容 setter（参数类型自动匹配）
+     */
+    private Method findCompatibleSetter(Class<?> clazz, String name) {
+        for (Method m : clazz.getMethods()) {
+            if (m.getName().equals(name) && m.getParameterCount() == 1) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 下划线/短横线转驼峰
+     */
     private static String camel(String key) {
         String[] arr = key.split("[-_]");
         StringBuilder sb = new StringBuilder();
@@ -91,13 +135,12 @@ public class MultiDataSourceConfig {
     }
 
     @Bean("dynamicJdbcTemplates")
-    public Map<String, JdbcTemplate> dynamicJdbcTemplates(Map<String, DataSource> dynamicDataSources) {
-
+    public Map<String, JdbcTemplate> dynamicJdbcTemplates(@Qualifier("dynamicDataSources") Map<String, DataSource> dynamicDataSources) {
         Map<String, JdbcTemplate> jdbcTemplateMap = new HashMap<>();
 
         dynamicDataSources.forEach((name, dataSource) -> {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            executeJDBCContext.addJdbcTemplate(getName(name), name + "JdbcTemplate");
+            executeJDBCContext.addJdbcTemplate(name, name + "JdbcTemplate");
             jdbcTemplateMap.put(name, jdbcTemplate);
         });
 
