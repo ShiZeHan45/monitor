@@ -17,19 +17,19 @@ import javax.sql.DataSource;
 @Configuration
 @MapperScan(
         basePackages = "com.szh.monitor.mapper",
-        sqlSessionFactoryRef = "h2SqlSessionFactory"
+        sqlSessionFactoryRef = "sqliteSqlSessionFactory"
 )
-public class H2DataSourceConfig {
+public class SQLiteDataSourceConfig {
 
-    @Bean(name = "h2DataSource")
+    @Bean(name = "sqliteDataSource")
     @Primary
     @ConfigurationProperties(prefix = "spring.datasource")
-    public DataSource h2DataSource() {
+    public DataSource sqliteDataSource() {
         return DataSourceBuilder.create().build();
     }
 
-    @Bean(name = "h2SqlSessionFactory")
-    public SqlSessionFactory h2SqlSessionFactory(@Qualifier("h2DataSource") DataSource dataSource) throws Exception {
+    @Bean(name = "sqliteSqlSessionFactory")
+    public SqlSessionFactory sqliteSqlSessionFactory(@Qualifier("sqliteDataSource") DataSource dataSource) throws Exception {
         MybatisSqlSessionFactoryBean bean = new MybatisSqlSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setMapperLocations(
@@ -38,8 +38,8 @@ public class H2DataSourceConfig {
         return bean.getObject();
     }
 
-    @Bean(name = "h2SqlSessionTemplate")
-    public SqlSessionTemplate sqlSessionTemplate(@Qualifier("h2SqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+    @Bean(name = "sqliteSqlSessionTemplate")
+    public SqlSessionTemplate sqlSessionTemplate(@Qualifier("sqliteSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         return new SqlSessionTemplate(sqlSessionFactory);
     }
 

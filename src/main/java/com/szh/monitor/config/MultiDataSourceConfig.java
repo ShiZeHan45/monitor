@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -37,6 +38,9 @@ public class MultiDataSourceConfig {
     @Autowired
     private ExecuteJDBCContext executeJDBCContext;
 
+    @Autowired
+    private GenericApplicationContext applicationContext;
+
     @Bean("dynamicDataSources")
     public Map<String, DataSource> dynamicDataSources() {
         Map<String, DataSource> dataSourceMap = new HashMap<>();
@@ -53,6 +57,14 @@ public class MultiDataSourceConfig {
             bindHikariProperties(config, props.getHikari());
 
             dataSourceMap.put(props.getEnvironmentName(), new HikariDataSource(config));
+            String dsName = props.getEnvironmentName();  // 生产环境名字
+            String beanName = dsName + "JdbcTemplate";
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSourceMap.get(props.getEnvironmentName()));
+            // ---------- 注册为 Spring Bean ----------
+            applicationContext.registerBean(beanName, JdbcTemplate.class, () -> jdbcTemplate);
+
+            // ---------- 注册到自定义上下文 ----------
+            executeJDBCContext.addJdbcTemplate(dsName, beanName);
         });
 
         return dataSourceMap;
@@ -132,18 +144,5 @@ public class MultiDataSourceConfig {
             sb.append(Character.toUpperCase(s.charAt(0))).append(s.substring(1));
         }
         return sb.toString();
-    }
-
-    @Bean("dynamicJdbcTemplates")
-    public Map<String, JdbcTemplate> dynamicJdbcTemplates(@Qualifier("dynamicDataSources") Map<String, DataSource> dynamicDataSources) {
-        Map<String, JdbcTemplate> jdbcTemplateMap = new HashMap<>();
-
-        dynamicDataSources.forEach((name, dataSource) -> {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            executeJDBCContext.addJdbcTemplate(name, name + "JdbcTemplate");
-            jdbcTemplateMap.put(name, jdbcTemplate);
-        });
-
-        return jdbcTemplateMap;
     }
 }
