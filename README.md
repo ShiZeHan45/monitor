@@ -1,168 +1,188 @@
->本项目目前实现了读取并执行某个文件夹目录下的SQL检测脚本，执行后如果有数据响应，则将响应数据通过企业微信机器人推送出去，达到外挂检测SQL异常并实时报警的效果
+# 监控系统（日志 + SQL + 推送）
+支持无限环境配置 · 企业微信机器人实时推送 · WebFlux · MyBatis-Plus · 多数据源 HikariCP
 
-> 从项目的规划上，后续可以实现各种协议的检测，只需要实现ExecutorService接口，即可拓展一种新的检测方式。推送同理，实现SendService即可
+---
 
-> ❗数据库访问目前暂支持两个数据源的配置，一份SQL脚本可以检测两个不同的环境
+## ✨ 功能特性
+
+### 1. 日志监听（Log Watcher）
+- **远程日志监听（Grafana Loki）**  
+  根据关键词匹配日志，支持自动截取上下文行数并推送企业微信  
+  配置参考：`watcher.log.grafana`
+- **本地日志监听**  
+  监控本地 log 文件，实时识别 `ERROR`、`Exception` 等关键词  
+  配置参考：`watcher.log.local`
+
+---
+
+### 2. SQL 脚本检查（SQL Monitor）
+- **自动读取 SQL 文件夹**
+- **远程数据库执行 SQL 检查（PostgreSQL）**
+- **执行失败自动重试（每 5 分钟）**
+- **每日 SQL 执行次数限制（默认 2 次）**
+- **可设置不限执行次数文件列表**
+
+> 执行失败记录持久化在 SQLite  
+> 重试成功后自动恢复正常频率
+
+---
+
+### 3. 企业微信机器人推送（Notify）
+- SQL 执行异常推送
+- 日志异常推送
+- **免打扰时间：20:00 - 08:00**  
+  期间的消息会在 **早上 9:30 补推**  
+  （作者懒，没有做成可配置  自问自答：为什么是9点半补推？因为9点上班😂）
+
+---
+
+## 🛠 技术栈
+
+- **Spring Boot 2.7.18**
+- **WebFlux**
+- **MyBatis-Plus**
+- **HikariCP 多数据源**
+- **SQLite（本地存储）**
+- **PostgreSQL（远程 SQL 检查）**
+
+---
+
+# 📝 更新日志 (Changelog)
+
+## **2025-12-11**
+- 新增特征：SQL检查环境配置无上限，重新整理配置归属
+- 升级底层springboot,重新整理pom依赖
+- 
+
+---
+
+## **2025-12-02**
+- 新增：Grafana 日志动态监听
+- 新增：关键字识别 + 截取上下文推送
+- 调整：YML 配置结构优化
+- SQL 新增：每日执行次数限制
+- SQL 新增：免次数限制文件配置
+
+---
+
+## **2025-11-26**
+- Grafana 日志监听增强
+- SQL 执行次数限制逻辑更新
+
+---
+
+## **2025-11-08**
+- 新增本地日志拾取规范并推送企业微信
+- 新增多数据源 `enabled=false` 控制是否加载
+
+---
 
 
-# 更新日志
-> 2025-12-02
->
-> 1.新增特性:监听grafana日志,动态读取grafana日志,识别关键词后截取往下N行推送到企业微信
->
-> 2.调整yml配置
->
-> 3.SQL监控-新增SQL执行阈值拦截,默认SQL文件每天累计执行成功不大于2次,通过app.check-limit空值,如需无上限则使用app.un-limit-check-files配置
->
-> 2025-11-26
-> 
-> 1.新增特性:监听grafana日志,动态读取grafana日志,识别关键词后截取往下N行推送到企业微信
-> 
-> 2.调整yml配置
-> 
-> 3.SQL监控-新增SQL执行阈值拦截,默认SQL文件每天累计执行成功不大于2次,通过app.check-limit空值,如需无上限则使用app.un-limit-check-files配置
-> 
-> 2025-11-08
-> 
-> 新增特性，根据配置的关键词拾取指定路径的日志文件，推送至企业微信
-> 
-> 新增多数据源可配置失效，enabled=false时，数据源将不会加载
-
-
-
-
-# 怎么使用？
-1. 配置两个数据源的datasource.config和datasource详见配置说明
-2. 准备好你的检测SQL脚本
-3. 将SQL脚本存放至项目的resources文件夹中的monitor文件夹，配置项为app.sql-dir或者用绝对路径app.sql-absolute-dir
-
-# 关于SQL执行失败的重试机制
-> 在SQL执行失败时，文件会被标记，被标记的SQL文件将会提高执行频率为5分钟执行一次，直至执行成功后停止重试
-
-
-#  以下是配置说明
----------
+# ⚙️ 完整配置（YAML）
 
 ```
 server:
   port: 4000
   
 spring:
-  datasource:
-    jdbc-url: jdbc:sqlite:/soft/sqlite/monitor.db  # sqlite存储位置
+  datasource: # 程序固化数据使用的数据库
+    jdbc-url: jdbc:sqlite:/soft/sqlite/monitor.db
     driver-class-name: org.sqlite.JDBC
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/schema.sql # sqlite初始文件
-  
-datasource.config:
-  primary:
-    ip-port: yourip:yourport
-    database-name: yourDataBaseName
-    username: yourusername
-    password: yourpassword
-    driver-class-name: org.postgresql.Driver
-  secondary:
-    ip-port: yourip:yourport
-    database-name: yourDataBaseName
-    username: yourusername
-    password: yourpassword
-    driver-class-name: org.postgresql.Driver
-  relation: xx环境-primary,xx环境-secondary
-
-datasource.primary:
-  enabled: false
-  jdbc-url: jdbc:postgresql://${datasource.config.primary.ip-port}/${datasource.config.primary.database-name}?TimeZone=Asia/Shanghai&tcpKeepAlive=true
-  username: ${datasource.config.primary.username}
-  password: ${datasource.config.primary.password}
-  driver-class-name: ${datasource.config.primary.driver-class-name}
-  hikari:
-    # 连接池大小配置
-    maximum-pool-size: 1
-    minimum-idle: 1
-    # 连接超时设置(毫秒)
-    connection-timeout: 60000
-    # 连接生命周期(毫秒)
-    max-lifetime: 1800000
-    # 空闲连接超时(毫秒)
-    idle-timeout: 600000
-    # 连接泄漏检测(毫秒)
-    leak-detection-threshold: 60000
-    # 连接验证
-    connection-test-query: SELECT 1
-    validation-timeout: 5000
-    # 保持活动设置
-    keepalive-time: 30000
-
-datasource.secondary:
-  enabled: false
-  jdbc-url: jdbc:postgresql://${datasource.config.secondary.ip-port}/${datasource.config.secondary.database-name}?TimeZone=Asia/Shanghai&tcpKeepAlive=true
-  username: ${datasource.config.secondary.username}
-  password: ${datasource.config.secondary.password}
-  driver-class-name: ${datasource.config.secondary.driver-class-name}
-  hikari:
-    # 连接池大小配置
-    maximum-pool-size: 1
-    minimum-idle: 1
-    # 连接超时设置(毫秒)
-    connection-timeout: 60000
-    # 连接生命周期(毫秒)
-    max-lifetime: 1800000
-    # 空闲连接超时(毫秒)
-    idle-timeout: 600000
-    # 连接泄漏检测(毫秒)
-    leak-detection-threshold: 60000
-    # 连接验证
-    connection-test-query: SELECT 1
-    validation-timeout: 5000
-    # 保持活动设置
-    keepalive-time: 30000
-
+      schema-locations: classpath:db/schema.sql
+ 
 logging:
   level:
-   root: INFO
+    root: INFO
   file:
-   name: app.log
+    name: app.log
+
 watcher:
   notify-webhook:
-    wechat-webhook: 你的企业微信机器人回调入口
-    log-wechat-webhook: 你的企业微信机器人回调入口 日志错误发送渠道
-  sql:
-   sql-dir: classPath:monitor  # SQL文件存放目录
-   sql-absolute-dir: 你的SQL文件夹绝对路径  # SQL文件绝对路径 优先级最高，有配置就会读取，不重启的情况下增加SQL检测文件
-   check-limit: 2 # SQL文件每日执行多少次  节省资源
-   un-limit-check-files: ["xxx.sql"] # 每日不设上限执行次数的SQL文件 节省资源
-   schedule-cron: "0 0/29 * * * ?"  # 每29分钟执行一次
-   schedule-retry-cron: "0 0/5 * * * ?"  # 执行失败重试定时器
-  log:
-   local:# 本地日志监听
-    enabled: true  # 是否用本地日志监听
-    error:
-      log:
-        path: 你的日志路径
-    keywords: ERROR,Exception,Failed   ## 遇到哪些关键词就拾取
-    context-lines: 30  ## 拾取多少行
-    dedup-window-minutes: 10 #窗口时间10分钟
-    name: "xxx" # 本地日志监听名称,应用到推送企业微信的title
-   grafana:  # 远程日志监听
-    primary:
-      environment-name: "xxx" 应用到推送企业微信的title
-      url: "http://IP:port" #你的grafana地址
-      datasource-id: "2"  # loki ID WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
-      username: "xx"   # 你的账号
-      password: "xx" # 你的密码
-    monitors:  # 监听规则
-      list:
-        - name: "xx" # 监控规则名称
-          query-expr: '{service="xxxx"}' # LogQL 基础标签
-          keywords: ["ERROR"] # 捕获关键词
-          exclusion-keywords: ["xxx"] # 忽略的关键词
-          context-lines: 10 # 截取行数
-          enabled: true # 规则是否启用
-      
-      
+    wechat-webhook: 你的企业微信机器人入口
+    log-wechat-webhook: 日志错误的企业微信入口
 
+  sql: # sql检测 配置
+    sql-dir: classPath:monitor  # SQL检测脚本文件读取的位置
+    sql-absolute-dir: 绝对路径 # SQL检测脚本文件读取的位置
+    check-limit: 2 # 每日检查上限
+    un-limit-check-files: ["xxx.sql"] # 无上限的脚本
+    schedule-cron: "0 0/29 * * * ?"  # SQL检查多久执行一次
+    schedule-retry-cron: "0 0/5 * * * ?" # 执行失败的SQL文件多少重试一次
+    datasource: #  配置连接参数
+      list:
+        primary:
+          environment-name: 你的环境简称
+          enabled: true # 是否开启，关闭则不检测此环境
+          jdbc-url: jdbc:postgresql://yourip:yourport/yourDB?TimeZone=Asia/Shanghai&tcpKeepAlive=true
+          username: yourusername
+          password: yourpassword
+          driver-class-name: org.postgresql.Driver
+          hikari:
+            maximum-pool-size: 1
+            minimum-idle: 0
+            max-lifetime: 120000
+            idle-timeout: 30000
+            connection-timeout: 60000
+            keepalive-time: 30000
+            connection-test-query: SELECT 1
+            validation-timeout: 10000
+        secondary:
+          environment-name: 你的环境简称
+          enabled: false
+          jdbc-url: jdbc:postgresql://yourip:yourport/yourDB?TimeZone=Asia/Shanghai&tcpKeepAlive=true
+          username: yourusername
+          password: yourpassword
+          driver-class-name: org.postgresql.Driver
+          hikari:
+            maximum-pool-size: 1
+            minimum-idle: 0
+            max-lifetime: 120000
+            idle-timeout: 30000
+            connection-timeout: 60000
+            keepalive-time: 30000
+            connection-test-query: SELECT 1
+            validation-timeout: 10000
+
+  log:
+    local: # 本地日志监听
+      enabled: false # 是否开启
+      error:
+        log:
+          path: 你的日志文件路径 
+      keywords: ERROR,Exception,Failed  # 捕获哪些关键词
+      context-lines: 30 # 向下截取多少行日志
+      dedup-window-minutes: 10 # 去重时间窗口 10分钟
+      name: "xxx"  # 名称 用于推送信息的头部
+
+    grafana:  # 远程日志监听
+      list:
+       - environment-name: "xxx" #第一个环境
+         url: "http://ip:port"
+         datasource-id: "2"  # 刚才查到的 ID  WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
+         username: "xx"   # 你的账号
+         password: "xx" # 你的密码
+         monitors: # 监听规则
+             - name: "营收服务日志监控" # 监控简称
+               query-expr: '{service="xxx"}' # LogQL 基础标签  要查哪个服务
+               keywords: [ " ERROR "] ## 捕获哪些关键词
+               exclusion-keywords: [ "xx"] ## 排除的关键词
+               context-lines: 10 # 向下截取多少行日志
+               enabled: true # 是否开启
+       - environment-name: "xxx" #第二个环境
+         url: "http://ip:port"
+         datasource-id: "2"  # 刚才查到的 ID  WINDOWS 可以使用curl -u "uesrname:password" http://ip:port/api/datasources 获取,响应数组,看到name为loki的对象,取对象里面的id
+         username: "xx"   # 你的账号
+         password: "xxx" # 你的密码
+         monitors: # 监听规则
+             - name: "营收服务日志监控" # 监控简称
+               query-expr: '{service="xxx"}' # LogQL 基础标签  要查哪个服务
+               keywords: [ " ERROR "] ## 捕获哪些关键词
+               exclusion-keywords: [ "xx"] ## 排除的关键词
+               context-lines: 10 # 向下截取多少行日志
+               enabled: true # 是否开启
 ```
 
-
+---
