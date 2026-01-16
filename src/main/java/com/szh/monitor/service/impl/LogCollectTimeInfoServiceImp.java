@@ -40,18 +40,19 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
     }
 
     @Override
-    @Transactional
     public void updateOrSave(String environmentName, String name, long maxTs) {
+        logger.debug("固化日志采集起始时间戳 key:[{}] , lastTs[{}] ",environmentName+"_"+name,maxTs);
         LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,name);
         if(logCollectTimeInfo==null){
             logCollectTimeInfo = new LogCollectTimeInfo();
             logCollectTimeInfo.setCreateTime(LocalDateTime.now());
-            logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs / 1_000_000), ZoneId.systemDefault()));
             logCollectTimeInfo.setEnvironmentName(environmentName);
             logCollectTimeInfo.setRuleName(name);
+
         }
         logCollectTimeInfo.setLastTs(maxTs);
-//        logger.info("固化日志采集起始时间戳 key:[{}] , lastTs[{}] ",environmentName+"_"+name,maxTs);
+        logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs / 1_000_000), ZoneId.systemDefault()));
         saveOrUpdate(logCollectTimeInfo);
+
     }
 }
