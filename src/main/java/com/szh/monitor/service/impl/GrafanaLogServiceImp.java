@@ -13,6 +13,7 @@ import org.springframework.util.Base64Utils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.sql.Time;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class GrafanaLogServiceImp {
     private final Map<String, GrafanaConfig.GrafanaInfo> grafanaInfoMap = new HashMap<>();
     private final SendDispatchService sendDispatchService;
     private final LogCollectTimeInfoService logCollectTimeInfoService;
+    private final Integer TIME = 60;
     // 每个监控项独立记住上次处理的时间戳
     private final Map<String, Long> lastTsMap = new HashMap<>();
 
@@ -50,17 +52,15 @@ public class GrafanaLogServiceImp {
             webClientMap.put(grafanaInfo.getEnvironmentName(),WebClient.builder()
                     .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
                     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .codecs(config -> config.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+                    .codecs(config -> config.defaultCodecs().maxInMemorySize(30 * 1024 * 1024 )) // 30MB
                     .build());
             grafanaInfoMap.put(grafanaInfo.getEnvironmentName(),grafanaInfo);
         }
         logger.info("webClient初始化完成 {}",webClientMap.keySet());
 
     }
-
-
-    @Scheduled(fixedRate = 30_000)
-    public void runMonitor() {
+    @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
+    public void supplement() {
         webClientMap.forEach((environmentName, webClient) -> {
             GrafanaConfig.GrafanaInfo grafanaInfo = grafanaInfoMap.get(environmentName);
             for (MonitorRules item : grafanaInfo.getMonitors()) {
@@ -84,17 +84,23 @@ public class GrafanaLogServiceImp {
 
 
     private void processMonitor(MonitorRules item,WebClient webClient,GrafanaConfig.GrafanaInfo grafanaInfo) {
-        long now = Instant.now().toEpochMilli() * 1_000_000;
-        long start = lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName()+"_"+item.getName(),now - 2 * 60 * 1_000_000_000L);
-        LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start / 1_000_000), ZoneId.systemDefault());
-        LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now / 1_000_000), ZoneId.systemDefault());
-        if(startTime.plusMinutes(2).isBefore(endTime)){//这一步是为了补扫描 监控程序重启或者停止扫描期间产生的日志
+        long now = LocalDateTime.now()
+                .atZone(ZoneId.systemDefault())  // 使用系统默认时区
+                .toInstant()
+                .toEpochMilli();
+        long start = lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName()+"_"+item.getName(),LocalDateTime.now().minusMinutes(TIME)
+                .atZone(ZoneId.systemDefault())  // 使用系统默认时区
+                .toInstant()
+                .toEpochMilli() );
+        LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start), ZoneId.systemDefault());
+        LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault());
+        if(startTime.plusMinutes(TIME).isBefore(endTime)){//这一步是为了补扫描 监控程序重启或者停止扫描期间产生的日志
             // 开始时间加2分钟如果大于结束时间  ，结束时间就用当前时间，反之 结束时间等于开始时间加2分钟
-            endTime = startTime.plusMinutes(2);
+            endTime = startTime.plusMinutes(TIME);
         }
 
-        logger.debug("{}-{} 查询时间区间 {} ~ {} 产生的日志 ",grafanaInfo.getEnvironmentName(),item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+//        logger.debug("{}-{} 查询时间区间 {} ~ {} 产生的日志 ",grafanaInfo.getEnvironmentName(),item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+//                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
         String baseUrl = grafanaInfo.getUrl();
         String dsId = grafanaInfo.getDatasourceId();
@@ -103,12 +109,16 @@ public class GrafanaLogServiceImp {
         String url = baseUrl + "/api/datasources/proxy/" + dsId + "/loki/api/v1/query_range";
 
 
+        LocalDateTime finalEndTime = endTime;
         webClient.get()
                 .uri(url + "?query={query}&start={start}&end={end}&limit={limit}",
-                        item.getQueryExpr(), start, now, 200)
+                        item.getQueryExpr(), start*1_000_000, finalEndTime
+                                .atZone(ZoneId.systemDefault())  // 使用系统默认时区
+                                .toInstant()
+                                .toEpochMilli()*1_000_000, 5000)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .flatMap(body -> handleResult(grafanaInfo.getEnvironmentName(),item, body))
+                .flatMap(body -> handleResult(grafanaInfo.getEnvironmentName(),item, body,finalEndTime,startTime))
                 .onErrorResume(e -> {
                     logger.error("{}-{} ❌ WebClient 调用 Loki 失败",grafanaInfo.getEnvironmentName(),item.getName(), e);
                     return Mono.empty();
@@ -116,7 +126,7 @@ public class GrafanaLogServiceImp {
                 .subscribe();
     }
 
-    private Mono<Void> handleResult(String environmentName,MonitorRules item, Map body) {
+    private Mono<Void> handleResult(String environmentName,MonitorRules item, Map body,LocalDateTime endTime,LocalDateTime startTime) {
         if (body == null) {
             logger.debug("{}该时间区间无日志记录",environmentName);
             return Mono.empty();
@@ -135,10 +145,22 @@ public class GrafanaLogServiceImp {
             logger.debug("{}该时间区间无日志记录",environmentName);
             return Mono.empty();
         }
-        logger.debug("{}获取到{}条日志,开始分析匹配关键词：{}",environmentName,result.size(),item.getKeywords());
+        boolean flag = startTime.plusMinutes(TIME).isBefore(endTime);
+        int count = 0;
+        for (Object obj : result) {
+            Map stream = (Map) obj;
+            List<List> values = (List<List>) stream.get("values");
+            if (values == null) continue;
+            count=count+values.size();
+        }
+        logger.debug("{}-{}获取到时间范围[{}~{}]共{}条日志,开始分析匹配关键词：{}",environmentName,item.getName(),
+                startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),count,item.getKeywords());
 
-        long lastTs = lastTsMap.getOrDefault(item.getName(), 0L);
-
+        long lastTs = lastTsMap.getOrDefault(environmentName+"_"+item.getName(), startTime
+                .atZone(ZoneId.systemDefault())  // 使用系统默认时区
+                .toInstant()
+                .toEpochMilli() );
 
         List<String> hitLogs = new ArrayList<>();
 
@@ -155,9 +177,9 @@ public class GrafanaLogServiceImp {
 // values: [ [timestamp, log], ... ]
             for (int i = 0; i < values.size();  i++) {
                 List entry = values.get(i);
-                long ts = Long.parseLong((String) entry.get(0));
+                long ts = Long.parseLong((String) entry.get(0))/1_000_000;
                 String log = (String) entry.get(1);
-                if (ts > maxTs) maxTs = ts;
+                if (ts > maxTs && !flag) maxTs = ts;
                 if (ts <= lastTs) {
                     continue;
                 }
@@ -188,7 +210,7 @@ public class GrafanaLogServiceImp {
         }
         sendDispatchService.sendSimpleMarkDownMsg(content);
         logger.info("📩 {} 已推送 {} 条日志，并更新 lastTs={},时间：{} 推送内容：{}",environmentName, hitLogs.size(), maxTs,
-                LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs/1_000_000), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),content);
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),content);
         return Mono.empty();
     }
 }

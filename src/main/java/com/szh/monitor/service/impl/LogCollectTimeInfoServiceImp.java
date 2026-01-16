@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfoMapper, LogCollectTimeInfo> implements LogCollectTimeInfoService {
@@ -41,7 +42,7 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
 
     @Override
     public void updateOrSave(String environmentName, String name, long maxTs) {
-        logger.debug("固化日志采集起始时间戳 key:[{}] , lastTs[{}] ",environmentName+"_"+name,maxTs);
+//        logger.debug("固化日志采集起始时间戳 key:[{}] , lastTs[{}] [{}]",environmentName+"_"+name,maxTs,LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,name);
         if(logCollectTimeInfo==null){
             logCollectTimeInfo = new LogCollectTimeInfo();
@@ -51,7 +52,7 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
 
         }
         logCollectTimeInfo.setLastTs(maxTs);
-        logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs / 1_000_000), ZoneId.systemDefault()));
+        logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()));
         saveOrUpdate(logCollectTimeInfo);
 
     }

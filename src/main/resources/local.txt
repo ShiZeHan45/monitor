@@ -1,0 +1,178 @@
+server:
+  port: 4000
+
+spring:
+  datasource:
+    jdbc-url: jdbc:sqlite:/soft/sqlite/monitor.db
+#    jdbc-url: jdbc:sqlite:D:\SZH\monitor.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.szh.monitor.model
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,info
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: actuator
+  server:
+    port: 18081
+
+logging:
+  level:
+    root: INFO
+#    com.szh.monitor.mapper: debug
+    com.szh.monitor.service.impl: debug
+  file:
+    name: app.log
+
+watcher:
+  notify-webhook:
+    wechat-webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=f3085410-ae83-4509-a71c-4b799c9631cc
+    log-wechat-webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=4c339bf6-62af-4f51-a308-dbff72062035
+#    log-wechat-webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=4c339bf6-62af-4f51-a308-dbff7206203
+#    wechat-webhook: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=f3085410-ae83-4509-a71c-4b799c9631c
+  sql:
+    sql-dir: classPath:monitor  # SQL文件存放目录
+#    sql-absolute-dir: D:\\SZH\\monitor  # SQL文件绝对路径
+    sql-absolute-dir: /soft/monitor  # SQL文件绝对路径
+    #  sql-dir: D:\\SZH\\monitor
+    check-limit: 2 # SQL文件每日执行多少次  节省访问生产资源
+    un-limit-check-files: [ "开阀检查-应开未开.sql","5分钟前存在待消费的管线机取水订单.sql" ] # 每日不设上限执行次数的SQL文件 节省访问生产资源
+    schedule-cron: "0 05 10-17 * * ?"  #  每日10-18点 10:05  11:05
+#    schedule-cron: "0 0/1 * * * ?"  # 每5分钟执行一次
+    schedule-retry-cron: "0 0/5 * * * ?"  # 执行失败重试定时器
+    datasource:
+      list:
+        primary:
+          environment-name: 5.0郑州生产
+          enabled: true
+          jdbc-url: jdbc:postgresql://10.65.4.25:1560/prod_saas_thinkwater?TimeZone=Asia/Shanghai&tcpKeepAlive=true
+          username: ax_read
+          password: Read@2025
+          driver-class-name: org.postgresql.Driver
+          hikari:
+            maximum-pool-size: 1       #最大连接数1
+            minimum-idle: 0            # 不指定空闲链接
+            max-lifetime: 120000        # 链接最大存活2分钟 一般构建链接后执行一下就应该释放掉了，不占用VPN资源
+            idle-timeout: 30000        # 空闲不超过30秒
+            connection-timeout: 60000  #链接60秒没响应超时
+            keepalive-time: 30000      # 30秒
+            connection-test-query: SELECT 1
+            validation-timeout: 10000
+        secondary:
+          environment-name: 2.0南昌生产
+          enabled: false
+          jdbc-url: jdbc:postgresql://10.65.4.29:30501/prod_saas_thinkwater?TimeZone=Asia/Shanghai&tcpKeepAlive=true
+          username: ax_read
+          password: Anso@2023
+          driver-class-name: org.postgresql.Driver
+          hikari:
+            maximum-pool-size: 1       #最大连接数1
+            minimum-idle: 0            # 不指定空闲链接
+            max-lifetime: 120000        # 链接最大存活2分钟 一般构建链接后执行一下就应该释放掉了，不占用VPN资源
+            idle-timeout: 30000        # 空闲不超过30秒
+            connection-timeout: 60000  #链接60秒没响应超时
+            keepalive-time: 30000      # 30秒
+            connection-test-query: SELECT 1
+            validation-timeout: 10000
+  log:
+    local: # 本地日志监听
+      enabled: false
+      error-log-path: /data/wwwlogs/boss-bcs/error/boss-bcs.error.log
+      #error-log-path: D:\\SZH\\Utils\\test.log
+      keywords: ERROR,Exception,Failed
+      context-lines: 20
+      dedup-window-minutes: 10
+      name: "5.0开发环境"
+    grafana:  # 远程日志监听
+      list:
+       - environment-name: "5.0郑州生产"
+         url: "http://10.65.4.25:3000"
+         datasource-id: "2"  # 刚才查到的 ID
+         username: "dev"   # 你的账号
+         password: "Anso@dev2025" # 你的密码
+         monitors: # 监听规则
+             - name: "营收服务日志监控"
+               query-expr: '{service="boss-bcs"}' # LogQL 基础标签
+               #      keywords: ["ERROR"]
+               keywords: [ " ERROR "]
+               exclusion-keywords: [ "获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败","数据合法性校验不通过 错误信息" ]
+               context-lines: 10
+               enabled: true
+       - environment-name: "5.0东莞生产"
+         url: "http://10.0.9.126:3000"
+         datasource-id: "2"  # 刚才查到的 ID
+         username: "shizehan"   # 你的账号
+         password: "Tax@123456" # 你的密码
+         monitors: # 监听规则
+           - name: "营收服务日志监控"
+             query-expr: '{service="boss-bcs"}' # LogQL 基础标签
+             #      keywords: ["ERROR"]
+             keywords: [ " ERROR "]
+             exclusion-keywords: [ "获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败" ]
+             context-lines: 10
+             enabled: true
+       - environment-name: "5.0南昌生产"
+         url: "http://10.65.4.44:3000"
+         datasource-id: "1"  # 刚才查到的 ID
+         start-time: "08:50"
+         end-time: "21:20"
+         username: "dev"   # 你的账号
+         password: "Anso@dev2025" # 你的密码
+         monitors: # 监听规则
+           - name: "营收服务日志监控"
+             query-expr: '{project="nc-ddw-5.0", service="boss-bcs"}' # LogQL 基础标签
+             #      keywords: ["ERROR"]
+             keywords: [ " ERROR " ]
+             exclusion-keywords: [ "获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败" ]
+             context-lines: 10
+             enabled: true
+       - environment-name: "5.0测试环境"
+         url: "http://10.0.9.149:3000"
+         datasource-id: "1"  # 刚才查到的 ID
+         username: "shizehan"   # 你的账号
+         password: "Tax@123456" # 你的密码
+         monitors: # 监听规则
+           - name: "营收服务日志监控"
+             query-expr: '{service="boss-bcs"}' # LogQL 基础标签
+             #      keywords: ["ERROR"]
+             keywords: [ " ERROR " ]
+             exclusion-keywords: [ "获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败" ]
+             context-lines: 10
+             enabled: false
+       - environment-name: "5.0开发环境"
+         url: "http://192.168.199.85:3000"
+         datasource-id: "1"  # 刚才查到的 ID
+         username: "admin"   # 你的账号
+         password: "admin" # 你的密码
+         monitors: # 监听规则
+             - name: "营收服务日志监控"
+               query-expr: '{job="boss-bcs"} |= "[boss-bcs:192.168.199.85:32092]"!= "level=info"' # LogQL 基础标签
+               #      keywords: ["ERROR"]
+               keywords: [ " ERROR " ]
+               exclusion-keywords: [ "获取短信模板id配置失败","无法获取客户code"]
+               context-lines: 1
+               enabled: false
