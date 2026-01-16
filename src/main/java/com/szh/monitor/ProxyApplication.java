@@ -1,5 +1,6 @@
 package com.szh.monitor;
 
+import com.szh.monitor.service.LogCollectTimeInfoService;
 import com.szh.monitor.service.impl.DispatchLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -16,6 +17,8 @@ public class ProxyApplication  implements CommandLineRunner {
     @Autowired
     @Lazy
     private DispatchLogService dispatchLogService;
+    @Autowired
+    private LogCollectTimeInfoService logCollectTimeInfoService;
 
     public static void main(String[] args) {
         SpringApplication.run(ProxyApplication.class, args);
@@ -28,6 +31,7 @@ public class ProxyApplication  implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         dispatchLogService.startWatching();
+        logCollectTimeInfoService.initLastTSMAP();
     }
 
 //    @Value("${spring.datasource.driver-class-name}")

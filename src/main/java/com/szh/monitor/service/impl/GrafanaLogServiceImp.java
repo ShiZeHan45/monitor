@@ -2,6 +2,7 @@ package com.szh.monitor.service.impl;
 
 import com.szh.monitor.config.GrafanaConfig;
 import com.szh.monitor.config.MonitorRules;
+import com.szh.monitor.service.LogCollectTimeInfoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -27,12 +28,21 @@ public class GrafanaLogServiceImp {
     private final Map<String, WebClient> webClientMap = new HashMap<>();
     private final Map<String, GrafanaConfig.GrafanaInfo> grafanaInfoMap = new HashMap<>();
     private final SendDispatchService sendDispatchService;
+    private final LogCollectTimeInfoService logCollectTimeInfoService;
     // 每个监控项独立记住上次处理的时间戳
     private final Map<String, Long> lastTsMap = new HashMap<>();
 
+    public Map<String, GrafanaConfig.GrafanaInfo> getGrafanaInfoMap(){
+        return grafanaInfoMap;
+    }
 
-    public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, SendDispatchService sendDispatchService) {
+    public void initLastTsMap(String key,Long lastTs){
+        lastTsMap.put(key,lastTs);
+    }
+
+    public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, SendDispatchService sendDispatchService,LogCollectTimeInfoService logCollectTimeInfoService) {
         this.sendDispatchService = sendDispatchService;
+        this.logCollectTimeInfoService = logCollectTimeInfoService;
         for (GrafanaConfig.GrafanaInfo grafanaInfo : grafanaConfig.getList()) {
             String basicAuth = Base64Utils.encodeToString(
                     (grafanaInfo.getUsername() + ":" + grafanaInfo.getPassword()).getBytes()
@@ -57,7 +67,8 @@ public class GrafanaLogServiceImp {
                 if (!item.isEnabled()) {
                     continue;
                 }
-                if(grafanaInfo.getStartTime()!=null&&grafanaInfo.getStartTime().isBefore(LocalTime.now())&&grafanaInfo.getEndTime().isAfter(LocalTime.now())){
+
+                if(grafanaInfo.getStartTime()!=null&&(LocalTime.now().isBefore(grafanaInfo.getStartTime())||LocalTime.now().isAfter(grafanaInfo.getEndTime()))){
                     continue;
                 }
                 try {
@@ -162,6 +173,7 @@ public class GrafanaLogServiceImp {
             }
         }
         lastTsMap.put(environmentName+"_"+item.getName(), maxTs);
+        logCollectTimeInfoService.updateOrSave(environmentName,item.getName(),maxTs);
 // 无命中
         if (hitLogs.isEmpty()) return Mono.empty();
 

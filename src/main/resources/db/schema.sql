@@ -17,3 +17,12 @@ CREATE TABLE IF NOT EXISTS msg_send_log(
                                            send_date TIMESTAMP , -- 内容推送日期
                                            send_status INTEGER -- 已发送 1发送 0未发送
 );
+
+CREATE TABLE IF NOT EXISTS log_collect_time_info(
+                                           id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                           environment_name TEXT, -- 环境名称
+                                           rule_name TEXT, -- 规则名称
+                                           create_time TIMESTAMP , -- 内容产生时间
+                                           last_ts BIGINT , -- 最新的采集时间戳
+                                           last_time TIMESTAMP -- 最新的采集时间
+);
