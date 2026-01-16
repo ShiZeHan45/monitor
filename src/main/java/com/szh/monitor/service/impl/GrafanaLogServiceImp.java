@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -53,7 +54,12 @@ public class GrafanaLogServiceImp {
         webClientMap.forEach((environmentName, webClient) -> {
             GrafanaConfig.GrafanaInfo grafanaInfo = grafanaInfoMap.get(environmentName);
             for (MonitorRules item : grafanaInfo.getMonitors()) {
-                if (!item.isEnabled()) continue;
+                if (!item.isEnabled()) {
+                    continue;
+                }
+                if(grafanaInfo.getStartTime()!=null&&grafanaInfo.getStartTime().isBefore(LocalTime.now())&&grafanaInfo.getEndTime().isAfter(LocalTime.now())){
+                    continue;
+                }
                 try {
                     processMonitor(item,webClient,grafanaInfo);
                 } catch (Exception e) {
@@ -68,9 +74,13 @@ public class GrafanaLogServiceImp {
 
     private void processMonitor(MonitorRules item,WebClient webClient,GrafanaConfig.GrafanaInfo grafanaInfo) {
         long now = Instant.now().toEpochMilli() * 1_000_000;
-        long start = lastTsMap.getOrDefault(item.getName(),now - 2 * 60 * 1_000_000_000L);
+        long start = lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName()+"_"+item.getName(),now - 2 * 60 * 1_000_000_000L);
         LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start / 1_000_000), ZoneId.systemDefault());
         LocalDateTime endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now / 1_000_000), ZoneId.systemDefault());
+        if(startTime.plusMinutes(2).isBefore(endTime)){//这一步是为了补扫描 监控程序重启或者停止扫描期间产生的日志
+            // 开始时间加2分钟如果大于结束时间  ，结束时间就用当前时间，反之 结束时间等于开始时间加2分钟
+            endTime = startTime.plusMinutes(2);
+        }
 
         logger.debug("{}-{} 查询时间区间 {} ~ {} 产生的日志 ",grafanaInfo.getEnvironmentName(),item.getName(),startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -89,7 +99,7 @@ public class GrafanaLogServiceImp {
                 .bodyToMono(Map.class)
                 .flatMap(body -> handleResult(grafanaInfo.getEnvironmentName(),item, body))
                 .onErrorResume(e -> {
-                    logger.error("❌ WebClient 调用 Loki 失败", e);
+                    logger.error("{}-{} ❌ WebClient 调用 Loki 失败",grafanaInfo.getEnvironmentName(),item.getName(), e);
                     return Mono.empty();
                 })
                 .subscribe();
@@ -121,7 +131,8 @@ public class GrafanaLogServiceImp {
 
         List<String> hitLogs = new ArrayList<>();
 
-
+// 更新 lastTs
+        long maxTs = lastTs;
         for (Object obj : result) {
             Map stream = (Map) obj;
             List<List> values = (List<List>) stream.get("values");
@@ -135,7 +146,7 @@ public class GrafanaLogServiceImp {
                 List entry = values.get(i);
                 long ts = Long.parseLong((String) entry.get(0));
                 String log = (String) entry.get(1);
-
+                if (ts > maxTs) maxTs = ts;
                 if (ts <= lastTs) {
                     continue;
                 }
@@ -150,25 +161,12 @@ public class GrafanaLogServiceImp {
                 }
             }
         }
-
-
+        lastTsMap.put(environmentName+"_"+item.getName(), maxTs);
 // 无命中
         if (hitLogs.isEmpty()) return Mono.empty();
 
 
-// 更新 lastTs
-        long maxTs = lastTs;
-        for (Object rObj : result) {
-            Map rMap = (Map) rObj;
-            List<List> vals = (List<List>) rMap.get("values");
-            if (vals == null) continue;
-            for (Object vObj : vals) {
-                List v = (List) vObj;
-                long t = Long.parseLong((String) v.get(0));
-                if (t > maxTs) maxTs = t;
-            }
-        }
-        lastTsMap.put(item.getName(), maxTs);
+
 
 // 聚合推送
         String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));

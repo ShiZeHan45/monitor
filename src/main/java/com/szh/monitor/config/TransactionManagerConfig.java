@@ -16,7 +16,7 @@ public class TransactionManagerConfig {
     @Bean(name = "primaryTransactionManager")
     @Primary
     public PlatformTransactionManager primaryTransactionManager(
-            @Qualifier("h2DataSource") DataSource dataSource) {
+            @Qualifier("sqliteDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
     }
 

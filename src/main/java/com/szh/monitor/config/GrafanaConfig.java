@@ -3,7 +3,10 @@ package com.szh.monitor.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
@@ -21,6 +24,11 @@ public class GrafanaConfig {
         private String username;
         private String password;
         private String webhook;
+        @DateTimeFormat(pattern = "HH:mm")
+        private LocalTime startTime;
+        @DateTimeFormat(pattern = "HH:mm")
+        private LocalTime endTime;
         private List<MonitorRules> monitors;
+
     }
 }
