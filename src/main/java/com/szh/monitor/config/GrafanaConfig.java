@@ -24,6 +24,7 @@ public class GrafanaConfig {
         private String username;
         private String password;
         private String webhook;
+        private List<Integer> week;
         @DateTimeFormat(pattern = "HH:mm")
         private LocalTime startTime;
         @DateTimeFormat(pattern = "HH:mm")

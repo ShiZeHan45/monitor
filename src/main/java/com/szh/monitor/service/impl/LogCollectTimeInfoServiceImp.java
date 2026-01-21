@@ -32,7 +32,8 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
             for (MonitorRules monitor : grafanaInfo.getMonitors()) {
                 LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,monitor.getName());
                 if(logCollectTimeInfo!=null){
-                    logger.info("从数据库中初始化日志采集起始时间戳 key:[{}] , lastTs[{}] ",environmentName+"_"+monitor.getName(),logCollectTimeInfo.getLastTs());
+                    logger.info("从数据库中初始化日志采集起始时间戳 key:[{}] , lastTs[{}] 时间[{}]",environmentName+"_"+monitor.getName(),logCollectTimeInfo.getLastTs(),LocalDateTime.ofInstant(Instant.ofEpochMilli(logCollectTimeInfo.getLastTs()),
+                            ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     grafanaLogServiceImp.initLastTsMap(environmentName+"_"+monitor.getName(),logCollectTimeInfo.getLastTs());
                 }
             }

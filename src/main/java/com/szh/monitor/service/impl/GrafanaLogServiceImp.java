@@ -15,10 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.sql.Time;
 import java.text.MessageFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,7 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class GrafanaLogServiceImp {
     Logger logger = LoggerFactory.getLogger(GrafanaLogServiceImp.class);
-    private final Map<String, WebClient> webClientMap = new HashMap<>();
+    private final TreeMap<String, WebClient> webClientMap = new TreeMap<>();
     private final Map<String, GrafanaConfig.GrafanaInfo> grafanaInfoMap = new HashMap<>();
     private final SendDispatchService sendDispatchService;
     private final LogCollectTimeInfoService logCollectTimeInfoService;
@@ -61,24 +58,27 @@ public class GrafanaLogServiceImp {
     }
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
-        webClientMap.forEach((environmentName, webClient) -> {
-            GrafanaConfig.GrafanaInfo grafanaInfo = grafanaInfoMap.get(environmentName);
+        for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {
+            GrafanaConfig.GrafanaInfo grafanaInfo = grafanaInfoMap.get(entry.getKey());
             for (MonitorRules item : grafanaInfo.getMonitors()) {
                 if (!item.isEnabled()) {
                     continue;
                 }
-
+                int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+                if(grafanaInfo.getWeek()!=null&&!grafanaInfo.getWeek().contains(dayOfWeek)){
+                    continue;
+                }
                 if(grafanaInfo.getStartTime()!=null&&(LocalTime.now().isBefore(grafanaInfo.getStartTime())||LocalTime.now().isAfter(grafanaInfo.getEndTime()))){
                     continue;
                 }
                 try {
-                    processMonitor(item,webClient,grafanaInfo);
+                    processMonitor(item,entry.getValue(),grafanaInfo);
                 } catch (Exception e) {
                     logger.error("Monitor {} error", item.getName(), e);
                 }
             }
-
-        });
+        }
+     logger.debug("---------------------------分隔符-------------------------------");
 
     }
 
@@ -153,9 +153,7 @@ public class GrafanaLogServiceImp {
             if (values == null) continue;
             count=count+values.size();
         }
-        logger.debug("{}-{}获取到时间范围[{}~{}]共{}条日志,开始分析匹配关键词：{}",environmentName,item.getName(),
-                startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),count,item.getKeywords());
+
 
         long lastTs = lastTsMap.getOrDefault(environmentName+"_"+item.getName(), startTime
                 .atZone(ZoneId.systemDefault())  // 使用系统默认时区
@@ -196,11 +194,17 @@ public class GrafanaLogServiceImp {
         }
         lastTsMap.put(environmentName+"_"+item.getName(), maxTs);
         logCollectTimeInfoService.updateOrSave(environmentName,item.getName(),maxTs);
+
+        logger.debug("环境：[{}]  微服务：[{}] 获取到[{}]条日志,\n时间范围[{}~{}],此范围内实际最新的一笔日志时间为：{} ，\n匹配关键词为：{}，匹配到{}条",
+                environmentName,item.getName(), count,
+                startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs),
+                        ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                item.getKeywords(),hitLogs.size());
+
 // 无命中
         if (hitLogs.isEmpty()) return Mono.empty();
-
-
-
 
 // 聚合推送
         String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",environmentName,hitLogs.stream().collect(Collectors.joining("")));
@@ -213,4 +217,5 @@ public class GrafanaLogServiceImp {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),content);
         return Mono.empty();
     }
+
 }
