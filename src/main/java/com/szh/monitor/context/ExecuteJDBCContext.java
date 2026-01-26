@@ -62,7 +62,12 @@ public class ExecuteJDBCContext {
                 //首次执行 匹配不上都为可执行
                 return true;
             }
+            boolean failAble = fileCountInfo.getFailedCount()!=null&&fileCountInfo.getFailedCount()>0;
             logger.debug("{} 该SQL文件执行次数{} 阈值为{}",sqlFileName,fileCountInfo.getCount(),SQLConfig.getCheckLimit());
+            if(failAble){
+                logger.debug("该文件执行失败次数{} 不执行次数阈值检查，直接放行",fileCountInfo.getFailedCount());
+                return true;
+            }
             return fileCountInfo.getCount()< SQLConfig.getCheckLimit();
         }
         return true;
