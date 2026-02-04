@@ -44,6 +44,8 @@ public class SqlExecutorService implements ExecutorService {
 
     @Autowired
     private SQLConfig SQLConfig;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private SendDispatchService sendDispatchService;
@@ -96,6 +98,7 @@ public class SqlExecutorService implements ExecutorService {
             try {
                 List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
                 if (!results.isEmpty()) {
+                    logger.debug("文件：{} 查询结果：{}",sqlFile.getName(),objectMapper.writeValueAsString(results));
                     sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, getTitle(), environmentName),(StringBuilder appendMsg)->{
                         appendMsg.append("文件: ").append(sqlFile.getName()).append("\n\n");
 
