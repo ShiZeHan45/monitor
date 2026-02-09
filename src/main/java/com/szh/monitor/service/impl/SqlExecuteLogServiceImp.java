@@ -30,6 +30,11 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
     public void saveOrUpdate(String environmentName, String name) {
         SqlExecuteLog sqlExecuteLog = getBaseMapper().findEnvironmentNameAndFileName(environmentName,name,getCurrYYYYMMDD());
         if(sqlExecuteLog!=null){
+            //如果执行成功 且存在失败次数，就清0并设置重置时间，以防失败重试一批文件时，又再次因为网络问题部分成功部分失败的情况
+            if(sqlExecuteLog.getFailedCount()>0){
+                sqlExecuteLog.setFailedCount(0);
+                sqlExecuteLog.setFailedCountResetTime(getCurrHHMMSS());
+            }
             sqlExecuteLog.setCount(sqlExecuteLog.getCount()+1);
         }else{
             sqlExecuteLog = new SqlExecuteLog();

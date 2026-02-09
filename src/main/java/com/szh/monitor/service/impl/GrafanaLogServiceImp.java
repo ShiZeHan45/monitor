@@ -49,7 +49,7 @@ public class GrafanaLogServiceImp {
             webClientMap.put(grafanaInfo.getEnvironmentName(),WebClient.builder()
                     .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
                     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .codecs(config -> config.defaultCodecs().maxInMemorySize(30 * 1024 * 1024 )) // 30MB
+                    .codecs(config -> config.defaultCodecs().maxInMemorySize(50 * 1024 * 1024 )) // 50MB
                     .build());
             grafanaInfoMap.put(grafanaInfo.getEnvironmentName(),grafanaInfo);
         }
@@ -187,8 +187,12 @@ public class GrafanaLogServiceImp {
                     List<String> context = values.subList(i, end).stream()
                             .map(v -> (String) v.get(1))
                             .collect(Collectors.toList());
-                    hitLogs.add(String.join("\n", context));
-                    break;
+                    // 再匹配一下 因为需要对总输出的结果进行关键词匹配忽略
+                    if(item.getExclusionKeywords().stream().noneMatch(String.join("\n", context)::contains)){
+                        hitLogs.add(String.join("\n", context));
+                        break;
+                    }
+
                 }
             }
         }

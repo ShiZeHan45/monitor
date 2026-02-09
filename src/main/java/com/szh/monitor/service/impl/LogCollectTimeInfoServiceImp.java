@@ -30,6 +30,9 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
     public void initLastTSMAP() {
         grafanaLogServiceImp.getGrafanaInfoMap().forEach((environmentName,grafanaInfo)->{
             for (MonitorRules monitor : grafanaInfo.getMonitors()) {
+                if(!monitor.isEnabled()){
+                    logger.info("{} 配置关闭，无需初始化日志采集开始时间",environmentName+"_"+monitor.getName());
+                }
                 LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,monitor.getName());
                 if(logCollectTimeInfo!=null){
                     logger.info("从数据库中初始化日志采集起始时间戳 key:[{}] , lastTs[{}] 时间[{}]",environmentName+"_"+monitor.getName(),logCollectTimeInfo.getLastTs(),LocalDateTime.ofInstant(Instant.ofEpochMilli(logCollectTimeInfo.getLastTs()),

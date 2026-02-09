@@ -122,6 +122,7 @@ public class ExecuteJDBCContext {
                 sqlExecuteLog.setEnvironmentName(environmentName);
                 sqlExecuteLog.setSqlFileName(failedFile);
                 sqlExecuteLog.setFailedCount(1);
+                sqlExecuteLog.setCount(0);
                 sqlExecuteLog.setExecuteDate(SqlExecuteLogServiceImp.getCurrYYYYMMDD());
                 sqlExecuteLogs.add(sqlExecuteLog);
             }
