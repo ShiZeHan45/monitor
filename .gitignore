@@ -45,3 +45,6 @@ build/
 *.sql
 
 MetricsProxyController.java
+
+local.txt
+prod.txt
