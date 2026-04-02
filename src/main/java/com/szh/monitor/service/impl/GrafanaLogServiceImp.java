@@ -229,5 +229,5 @@ public class GrafanaLogServiceImp {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), content);
         return Mono.empty();
     }
-    
+
 }
