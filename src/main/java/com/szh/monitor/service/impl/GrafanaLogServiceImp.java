@@ -217,13 +217,13 @@ public class GrafanaLogServiceImp {
 
                 // 🔥 分页终止条件：本次返回数量 < limit，说明该分片已无更多日志
                 if (batchCount < DEFAULT_LIMIT) {
-                    logger.debug("分片[{}~{}]处理完成，共获取 {} 条日志",
+                    logger.debug("环境：[{}]  微服务：[{}]  分片[{}~{}]处理完成，共获取 {} 条日志",grafanaInfo.getEnvironmentName(),item.getName(),
                             currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                             currentEndLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                             sliceTotal);
                     break;
                 } else {
-                    logger.debug("从[{}~{}]拉取数据，共{}条",LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
+                    logger.debug("环境：[{}]  微服务：[{}]  从[{}~{}]拉取数据，共{}条",grafanaInfo.getEnvironmentName(),item.getName(),LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
                             LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault()),batchCount);
 //                    // 🔥 下一次从最后一条日志的时间戳+1毫秒开始拉取
 //                    logger.debug("分片[{}~{}]本次拉取满{}条，继续从 {} 拉取",
