@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -32,6 +33,7 @@ public class MultiDataSourceConfig {
         private String username;
         private String password;
         private String driverClassName;
+        private List<String> executeSql;
         private Map<String, Object> hikari = new HashMap<>();  // 保留全量 Hikari 配置
     }
 

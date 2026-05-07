@@ -6,6 +6,7 @@ import com.szh.monitor.service.SqlExecuteLogService;
 import com.szh.monitor.service.impl.SqlExecuteLogServiceImp;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
+import org.apache.ibatis.util.MapUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,13 @@ public class ExecuteJDBCContext {
 //        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
         List<SqlExecuteLog> sqlExecuteLogs = sqlExecuteLogService.findEnvironmentName(environmentName);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+        //如果目标执行SQL在跳过清单里面，则返回false
+        if(!CollectionUtils.isEmpty(SQLConfig.getExecuteSkipSqlList())){
+            List<String> skipSqlFileList = SQLConfig.getExecuteSkipSqlList().get("environmentName");
+            if(!CollectionUtils.isEmpty(skipSqlFileList)&&skipSqlFileList.stream().anyMatch(x->x.equals(sqlFileName))){
+                return false;
+            }
+        }
         if(!CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())){
             //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
             if(SQLConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){
