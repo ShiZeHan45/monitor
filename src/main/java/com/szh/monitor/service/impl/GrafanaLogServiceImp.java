@@ -131,12 +131,10 @@ public class GrafanaLogServiceImp {
 //                })
 //                .subscribe();
         // 🔥 核心：按TIME分钟分片 + 正向增量分页
-        long currentStart = globalStart;
-        while (currentStart < globalEnd) {
-            LocalDateTime currentStartLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(currentStart), ZoneId.systemDefault());
+            LocalDateTime currentStartLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
             LocalDateTime currentEndLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault());
 
-            long sliceStart = currentStart;
+            long sliceStart = globalStart;
             int sliceTotal = 0;
             while (true) {
 
@@ -217,14 +215,16 @@ public class GrafanaLogServiceImp {
 
                 // 🔥 分页终止条件：本次返回数量 < limit，说明该分片已无更多日志
                 if (batchCount < DEFAULT_LIMIT) {
-                    logger.debug("环境：[{}]  微服务：[{}]  分片[{}~{}]处理完成，共获取 {} 条日志",grafanaInfo.getEnvironmentName(),item.getName(),
+                    logger.debug("环境：[{}] 微服务：[{}] 时间区间[{}~{}]处理完成，共获取 {} 条日志",grafanaInfo.getEnvironmentName(),item.getName(),
                             currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                             currentEndLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                             sliceTotal);
                     break;
                 } else {
-                    logger.debug("环境：[{}]  微服务：[{}]  从[{}~{}]拉取数据，共{}条",grafanaInfo.getEnvironmentName(),item.getName(),LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
-                            LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault()),batchCount);
+                    logger.debug("环境：[{}] 微服务：[{}] 从[{}~{}]拉取数据满[{}]条，继续从[{}]开始拉取",grafanaInfo.getEnvironmentName(),
+                            item.getName(),LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
+                            LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault()),batchCount,
+                            LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 //                    // 🔥 下一次从最后一条日志的时间戳+1毫秒开始拉取
 //                    logger.debug("分片[{}~{}]本次拉取满{}条，继续从 {} 拉取",
 //                            currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
@@ -236,14 +236,6 @@ public class GrafanaLogServiceImp {
                 }
 
             }
-
-            currentStart = globalEnd;
-
-        }
-        logger.info("环境：[{}]  微服务：[{}] 时间区间[{}~{}]处理完成",
-                grafanaInfo.getEnvironmentName(), item.getName(),
-                globalStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                globalEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
     }
 
