@@ -89,18 +89,18 @@ public class GrafanaLogServiceImp {
                 .atZone(ZoneId.systemDefault())  // 使用系统默认时区
                 .toInstant()
                 .toEpochMilli();
-        long globalStart  = lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), LocalDateTime.now().minusMinutes(TIME)
+        long globalStart = lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), LocalDateTime.now().minusMinutes(TIME)
                 .atZone(ZoneId.systemDefault())  // 使用系统默认时区
                 .toInstant()
                 .toEpochMilli());
 
-        LocalDateTime globalStartTime  = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
-        LocalDateTime globalEndTime  = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault());
+        LocalDateTime globalStartTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
+        LocalDateTime globalEndTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault());
         if (globalStartTime.plusMinutes(TIME).isBefore(globalEndTime)) {//这一步是为了补扫描 监控程序重启或者停止扫描期间产生的日志
             // 开始时间加TIME分钟如果大于结束时间  ，结束时间就用当前时间，反之 结束时间等于开始时间加TIME分钟
             globalEndTime = globalStartTime.plusMinutes(TIME);
         }
-        logger.debug("环境：[{}]  微服务：[{}] 开始获取时间区间[{}~{}]内产生的日志进行分析", grafanaInfo.getEnvironmentName(), item.getName(),
+        logger.debug("环境：[{}] 微服务：[{}] 开始获取时间区间[{}~{}]内产生的日志进行分析", grafanaInfo.getEnvironmentName(), item.getName(),
                 globalStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 globalEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
@@ -131,100 +131,101 @@ public class GrafanaLogServiceImp {
 //                })
 //                .subscribe();
         // 🔥 核心：按TIME分钟分片 + 正向增量分页
-            LocalDateTime currentStartLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
-            LocalDateTime currentEndLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault());
+        LocalDateTime currentStartLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
+        LocalDateTime currentEndLdt = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault());
 
-            long sliceStart = globalStart;
-            int sliceTotal = 0;
-            while (true) {
+        long sliceStart = globalStart;
+        int sliceTotal = 0;
+        while (true) {
 
-                //时间分片读取 TIME分钟
-                Map body =  webClient.get()
-                        .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
-                                item.getQueryExpr(), sliceStart  * 1_000_000, globalEnd* 1_000_000, DEFAULT_LIMIT)
-                        .retrieve()
-                        .bodyToMono(Map.class)
-                        .onErrorResume(e -> {
-                            logger.error("{}-{} ❌ WebClient 调用 Loki 失败", grafanaInfo.getEnvironmentName(), item.getName(), e);
-                            return Mono.empty();
-                        })
-                        .block();
+            //时间分片读取 TIME分钟
+            Map body = webClient.get()
+                    .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
+                            item.getQueryExpr(), sliceStart * 1_000_000, globalEnd * 1_000_000, DEFAULT_LIMIT)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .onErrorResume(e -> {
+                        logger.error("{}-{} ❌ WebClient 调用 Loki 失败", grafanaInfo.getEnvironmentName(), item.getName(), e);
+                        return Mono.empty();
+                    })
+                    .block();
 
-                int batchCount = 0;
-                long batchMaxTs = sliceStart;
-                List<String> hitLogs = new ArrayList<>();
+            int batchCount = 0;
+            long batchMaxTs = sliceStart;
+            List<String> hitLogs = new ArrayList<>();
 
-                if (body != null && !body.isEmpty()) {
-                    Map data = (Map) body.get("data");
-                    if (data != null) {
-                        List<Map<String, Object>> streams = (List<Map<String, Object>>) data.get("result");
-                        if (streams != null) {
-                            for (Map<String, Object> stream : streams) {
-                                List<List<Object>> values = (List<List<Object>>) stream.get("values");
-                                if (values == null || values.isEmpty()) continue;
+            if (body != null && !body.isEmpty()) {
+                Map data = (Map) body.get("data");
+                if (data != null) {
+                    List<Map<String, Object>> streams = (List<Map<String, Object>>) data.get("result");
+                    if (streams != null) {
+                        for (Map<String, Object> stream : streams) {
+                            List<List<Object>> values = (List<List<Object>>) stream.get("values");
+                            if (values == null || values.isEmpty()) continue;
 
-                                // direction=forward时，日志已经是按时间升序排列，无需再排序
-                                batchCount += values.size();
+                            // direction=forward时，日志已经是按时间升序排列，无需再排序
+                            batchCount += values.size();
 
-                                for (List<Object> entry : values) {
-                                    long ts = Long.parseLong((String) entry.get(0)) / 1_000_000;
-                                    String log = (String) entry.get(1);
-                                    if (ts > batchMaxTs) batchMaxTs = ts;
+                            for (List<Object> entry : values) {
+                                long ts = Long.parseLong((String) entry.get(0)) / 1_000_000;
+                                String log = (String) entry.get(1);
+                                if (ts > batchMaxTs) batchMaxTs = ts;
 
-                                    if (ts <= lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), globalStart)) {
-                                        continue;
-                                    }
+                                if (ts <= lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), globalStart)) {
+                                    continue;
+                                }
 
-                                    if (item.getKeywords().stream().anyMatch(log::contains)) {
-                                        int endIdx = Math.min(values.indexOf(entry) + item.getContextLines(), values.size());
-                                        List<String> context = values.subList(values.indexOf(entry), endIdx).stream()
-                                                .map(v -> (String) v.get(1))
-                                                .collect(Collectors.toList());
-                                        String waitPushContext = String.join("\n", context);
+                                if (item.getKeywords().stream().anyMatch(log::contains)) {
+                                    int endIdx = Math.min(values.indexOf(entry) + item.getContextLines(), values.size());
+                                    List<String> context = values.subList(values.indexOf(entry), endIdx).stream()
+                                            .map(v -> (String) v.get(1))
+                                            .collect(Collectors.toList());
+                                    String waitPushContext = String.join("\n", context);
 
-                                        if (item.getExclusionKeywords().stream().noneMatch(waitPushContext::contains)) {
-                                            hitLogs.add(waitPushContext);
-                                            break;
-                                        }
+                                    if (item.getExclusionKeywords().stream().noneMatch(waitPushContext::contains)) {
+                                        hitLogs.add(waitPushContext);
+                                        break;
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                sliceTotal += batchCount;
+            sliceTotal += batchCount;
 
-                // 更新全局lastTs
-                if (batchMaxTs > lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), globalStart)) {
-                    lastTsMap.put(grafanaInfo.getEnvironmentName() + "_" + item.getName(), batchMaxTs);
-                    logCollectTimeInfoService.updateOrSave(grafanaInfo.getEnvironmentName(), item.getName(), batchMaxTs);
+            // 更新全局lastTs
+            if (batchMaxTs > lastTsMap.getOrDefault(grafanaInfo.getEnvironmentName() + "_" + item.getName(), globalStart)) {
+                lastTsMap.put(grafanaInfo.getEnvironmentName() + "_" + item.getName(), batchMaxTs);
+                logCollectTimeInfoService.updateOrSave(grafanaInfo.getEnvironmentName(), item.getName(), batchMaxTs);
+            }
+
+            // 推送异常日志
+            if (!hitLogs.isEmpty()) {
+                String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",
+                        grafanaInfo.getEnvironmentName(),
+                        hitLogs.stream().collect(Collectors.joining("\n---\n")));
+                if (content.length() > 1500) {
+                    content = content.substring(0, 1500) + "\n...（内容过长已截断）";
                 }
+                sendDispatchService.sendSimpleMarkDownMsg(content);
+                logger.info("📩 {} 已推送 {} 条日志，并更新 lastTs={},时间：{} 推送内容：{}", grafanaInfo.getEnvironmentName(), hitLogs.size(), batchMaxTs,
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), content);
+            }
 
-                // 推送异常日志
-                if (!hitLogs.isEmpty()) {
-                    String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",
-                            grafanaInfo.getEnvironmentName(),
-                            hitLogs.stream().collect(Collectors.joining("\n---\n")));
-                    if (content.length() > 1500) {
-                        content = content.substring(0, 1500) + "\n...（内容过长已截断）";
-                    }
-                    sendDispatchService.sendSimpleMarkDownMsg(content);
-                    logger.info("📩 {} 已推送 {} 条异常日志", grafanaInfo.getEnvironmentName(), hitLogs.size());
-                }
-
-                // 🔥 分页终止条件：本次返回数量 < limit，说明该分片已无更多日志
-                if (batchCount < DEFAULT_LIMIT) {
-                    logger.debug("环境：[{}] 微服务：[{}] 时间区间[{}~{}]处理完成，共获取 {} 条日志",grafanaInfo.getEnvironmentName(),item.getName(),
-                            currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            currentEndLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            sliceTotal);
-                    break;
-                } else {
-                    logger.debug("环境：[{}] 微服务：[{}] 从[{}~{}]拉取数据满[{}]条，继续从[{}]开始拉取",grafanaInfo.getEnvironmentName(),
-                            item.getName(),LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
-                            LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault()),batchCount,
-                            LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            // 🔥 分页终止条件：本次返回数量 < limit，说明该分片已无更多日志
+            if (batchCount < DEFAULT_LIMIT) {
+                logger.debug("环境：[{}] 微服务：[{}] 时间区间[{}~{}]处理完成，共获取 {} 条日志", grafanaInfo.getEnvironmentName(), item.getName(),
+                        currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        currentEndLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        sliceTotal);
+                break;
+            } else {
+                logger.debug("环境：[{}] 微服务：[{}] 从[{}~{}]拉取数据满[{}]条，继续从[{}]开始拉取", grafanaInfo.getEnvironmentName(),
+                        item.getName(), LocalDateTime.ofInstant(Instant.ofEpochMilli(sliceStart), ZoneId.systemDefault()),
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(globalEnd), ZoneId.systemDefault()), batchCount,
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 //                    // 🔥 下一次从最后一条日志的时间戳+1毫秒开始拉取
 //                    logger.debug("分片[{}~{}]本次拉取满{}条，继续从 {} 拉取",
 //                            currentStartLdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
@@ -232,10 +233,10 @@ public class GrafanaLogServiceImp {
 //                            DEFAULT_LIMIT,
 //                            LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault())
 //                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    sliceStart = batchMaxTs + 1;
-                }
-
+                sliceStart = batchMaxTs + 1;
             }
+
+        }
 
     }
 
