@@ -65,8 +65,10 @@ public class SqlExecutorService implements ExecutorService {
         if (!directory.exists() || !directory.isDirectory()) {
             throw new RuntimeException("SQL目录不存在");
         }
+        List<String> skipSqlFileList = executeJDBCContext.getSkipSqlList(environmentName);
+
         //拉取文件夹下的SQL文件
-        File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql"));
+        File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql")&&!skipSqlFileList.contains(name));
         if (sqlFiles == null) return;
         if (!CollectionUtils.isEmpty(failSQLFiles)) {
             sqlFiles = Arrays.stream(sqlFiles)
@@ -76,6 +78,7 @@ public class SqlExecutorService implements ExecutorService {
         //获取SQL连接
         JdbcTemplate jdbcTemplate = SpringContextUtil.getBean(jdbcTemplateName, JdbcTemplate.class);
         logger.info("当前环境：{} 开始执行SQL文件：{}", environmentName, Arrays.stream(sqlFiles).map(File::getName).collect(Collectors.joining(",")));
+
         //全局异常标识，只要其中一个文件执行出错，则标记为true
         boolean exception = false;
         //记录执行成功的SQL文件和执行失败的SQL文件

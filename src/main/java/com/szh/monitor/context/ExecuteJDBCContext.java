@@ -36,6 +36,23 @@ public class ExecuteJDBCContext {
     //各环境无需再次执行的SQL文件
     private Map<String, List<FileCountInfo>> executeFileCountInfo = new HashMap<>();
 
+    private Map<String,List<String>> executeSkipSqlMap= new HashMap<>();
+
+    public Map<String, List<String>> getExecuteSkipSqlMap() {
+        return executeSkipSqlMap;
+    }
+    public List<String> getSkipSqlList(String environmentName) {
+        return executeSkipSqlMap.get(environmentName);
+    }
+
+    public void addExecuteSkipSqlList(String environmentName,List<String> skipSqlList) {
+        if(CollectionUtils.isEmpty(skipSqlList)){
+            skipSqlList = new ArrayList<>();
+        }
+        executeSkipSqlMap.put(environmentName,skipSqlList);
+        logger.info("{}-初始化跳过SQL文件{}",environmentName,skipSqlList);
+    }
+
     public ExecuteJDBCContext() {
     }
 
@@ -50,13 +67,7 @@ public class ExecuteJDBCContext {
 //        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
         List<SqlExecuteLog> sqlExecuteLogs = sqlExecuteLogService.findEnvironmentName(environmentName);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        //如果目标执行SQL在跳过清单里面，则返回false
-        if(!CollectionUtils.isEmpty(SQLConfig.getExecuteSkipSqlList())){
-            List<String> skipSqlFileList = SQLConfig.getExecuteSkipSqlList().get(environmentName);
-            if(!CollectionUtils.isEmpty(skipSqlFileList)&&skipSqlFileList.stream().anyMatch(x->x.equals(sqlFileName))){
-                return false;
-            }
-        }
+
         if(!CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())){
             //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
             if(SQLConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){

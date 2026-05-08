@@ -28,6 +28,7 @@ public class MultiDataSourceConfig {
     @Data
     public static class DataSourceProperties {
         private String environmentName;
+        private List<String> executeSkipSqlList;
         private boolean enabled;
         private String jdbcUrl;
         private String username;
@@ -67,6 +68,8 @@ public class MultiDataSourceConfig {
 
             // ---------- 注册到自定义上下文 ----------
             executeJDBCContext.addJdbcTemplate(dsName, beanName);
+
+            executeJDBCContext.addExecuteSkipSqlList(dsName,props.getExecuteSkipSqlList());
         });
 
         return dataSourceMap;

@@ -17,5 +17,4 @@ public class SQLConfig {
     private String sqlAbsoluteDir;
     private int checkLimit;
     private List<String> unLimitCheckFiles;
-    private Map<String,List<String>> executeSkipSqlList;
 }
