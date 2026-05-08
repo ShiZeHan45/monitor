@@ -52,7 +52,7 @@ public class ExecuteJDBCContext {
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
         //如果目标执行SQL在跳过清单里面，则返回false
         if(!CollectionUtils.isEmpty(SQLConfig.getExecuteSkipSqlList())){
-            List<String> skipSqlFileList = SQLConfig.getExecuteSkipSqlList().get("environmentName");
+            List<String> skipSqlFileList = SQLConfig.getExecuteSkipSqlList().get(environmentName);
             if(!CollectionUtils.isEmpty(skipSqlFileList)&&skipSqlFileList.stream().anyMatch(x->x.equals(sqlFileName))){
                 return false;
             }
