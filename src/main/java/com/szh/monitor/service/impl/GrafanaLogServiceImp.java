@@ -3,20 +3,26 @@ package com.szh.monitor.service.impl;
 import com.szh.monitor.config.GrafanaConfig;
 import com.szh.monitor.config.MonitorRules;
 import com.szh.monitor.service.LogCollectTimeInfoService;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 import java.text.MessageFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +46,18 @@ public class GrafanaLogServiceImp {
     }
 
     public GrafanaLogServiceImp(GrafanaConfig grafanaConfig, SendDispatchService sendDispatchService, LogCollectTimeInfoService logCollectTimeInfoService) {
+        // 1. 配置底层 Netty HttpClient
+        HttpClient httpClient = HttpClient.create()
+                // 连接超时时间 (例如 120 秒)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120000)
+                // 响应超时时间 (例如 120 秒)
+                .responseTimeout(Duration.ofSeconds(120))
+                // 读写超时处理器 (例如 120 秒)
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(120, TimeUnit.SECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(120, TimeUnit.SECONDS))
+                );
+
         this.sendDispatchService = sendDispatchService;
         this.logCollectTimeInfoService = logCollectTimeInfoService;
         for (GrafanaConfig.GrafanaInfo grafanaInfo : grafanaConfig.getList()) {
@@ -50,6 +68,7 @@ public class GrafanaLogServiceImp {
                     .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
                     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .codecs(config -> config.defaultCodecs().maxInMemorySize(50 * 1024 * 1024)) // 50MB
+                    .clientConnector(new ReactorClientHttpConnector(httpClient))
                     .build());
             grafanaInfoMap.put(grafanaInfo.getEnvironmentName(), grafanaInfo);
         }
