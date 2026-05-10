@@ -33,7 +33,7 @@ public class GrafanaLogServiceImp {
     private final SendDispatchService sendDispatchService;
     private final LogCollectTimeInfoService logCollectTimeInfoService;
     private final Integer TIME = 30;
-    private final Integer DEFAULT_LIMIT = 200;
+    private final Integer DEFAULT_LIMIT = 500;
     // 每个监控项独立记住上次处理的时间戳
     private final Map<String, Long> lastTsMap = new HashMap<>();
 
