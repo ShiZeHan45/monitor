@@ -35,3 +35,6 @@ CREATE TABLE IF NOT EXISTS sql_execute_rule (
                                                execute_start_time TEXT, -- 从每天的什么时间开始执行 HH:MM:SS
                                                execute_frequency INTEGER -- 执行频率 n分钟一次
 );
+-- 新增：环境+SQL文件 唯一索引（核心）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_env_sql_file
+    ON sql_execute_rule(environment_name, sql_file_name);
