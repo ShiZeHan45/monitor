@@ -70,6 +70,13 @@ public class ExecuteJDBCContext {
 
         SqlExecuteRule sqlExecuteRule = getExecuteSqlRule(environmentName,sqlFileName);
         if(sqlExecuteRule!=null){
+            String executeStartTime = sqlExecuteRule.getExecuteStartTime();
+            String[] start = executeStartTime.split(":");
+            LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
+            if(LocalTime.now().isBefore(startTime)){
+                //未到达开始执行时间
+                return false;
+            }
             SqlExecuteLog fileCountInfo = sqlExecuteLogs.stream().filter(x -> x.getExecuteDate().equals(currDate) && x.getSqlFileName().equals(sqlFileName)).findFirst().orElse(null);
             if(fileCountInfo==null){
                 //首次执行 匹配不上都为可执行
@@ -80,14 +87,12 @@ public class ExecuteJDBCContext {
                 logger.debug("该文件执行失败次数{} 不执行次数阈值检查，直接放行",fileCountInfo.getFailedCount());
                 return true;
             }
-            String executeStartTime = sqlExecuteRule.getExecuteStartTime();
             String executeEndTime = sqlExecuteRule.getExecuteEndTime();
             executeEndTime = executeEndTime==null?"20:00:00":executeEndTime;
-            String[] start = executeStartTime.split(":");
             String[] end = executeEndTime.split(":");
-            LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
             LocalTime endTime = LocalTime.of(Integer.parseInt(end[0]), Integer.parseInt(end[1]), Integer.parseInt(end[2]));
-            if(LocalTime.now().isBefore(startTime)||LocalTime.now().isAfter(endTime)||LocalTime.now().equals(endTime)){
+            if(LocalTime.now().isAfter(endTime)||LocalTime.now().equals(endTime)){
+                //超过结束时间
                 return false;
             }
             int plusMinutes = fileCountInfo.getCount() * sqlExecuteRule.getExecuteFrequency();
