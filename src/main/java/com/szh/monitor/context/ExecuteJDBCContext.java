@@ -51,7 +51,7 @@ public class ExecuteJDBCContext {
             sqlExecuteRules = new ArrayList<>();
         }
         sqlExecuteRuleMap.put(environmentName,sqlExecuteRules);
-        logger.info("{}-初始化SQL执行规则 {}",environmentName,sqlExecuteRules);
+        logger.info("{}-加载SQL执行规则 {}",environmentName,sqlExecuteRules);
     }
 
     public ExecuteJDBCContext() {

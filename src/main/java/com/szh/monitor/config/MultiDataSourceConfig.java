@@ -22,7 +22,6 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties(prefix = "watcher.sql.datasource")
 @Data
-@DependsOn("sqliteDataSourceInitializer")
 public class MultiDataSourceConfig {
 
     private Map<String, DataSourceProperties> list = new HashMap<>();
@@ -44,9 +43,6 @@ public class MultiDataSourceConfig {
 
     @Autowired
     private GenericApplicationContext applicationContext;
-
-    @Autowired
-    private SqlExecuteRuleService sqlExecuteRuleService;
 
     @Bean("dynamicDataSources")
     public Map<String, DataSource> dynamicDataSources() {
@@ -72,8 +68,6 @@ public class MultiDataSourceConfig {
 
             // ---------- 注册到自定义上下文 ----------
             executeJDBCContext.addJdbcTemplate(dsName, beanName);
-
-            executeJDBCContext.addSqlExecuteRule(dsName,sqlExecuteRuleService.findByEnvironmentName(dsName));
         });
 
         return dataSourceMap;
