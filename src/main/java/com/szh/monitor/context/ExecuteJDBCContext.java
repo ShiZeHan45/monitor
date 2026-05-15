@@ -93,6 +93,8 @@ public class ExecuteJDBCContext {
                     sqlExecuteRule.getExecuteFrequency(),nextTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             if(LocalTime.now().isAfter(nextTime)||LocalTime.now().equals(nextTime)){
                 return fileCountInfo.getCount()< sqlExecuteRule.getExecuteLimit();
+            }else{
+                return false;
             }
         }
         return true;
