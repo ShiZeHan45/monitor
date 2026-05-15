@@ -81,9 +81,12 @@ public class ExecuteJDBCContext {
                 return true;
             }
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
-            String[] time = executeStartTime.split(":");
-            LocalTime startTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]), Integer.parseInt(time[2]));
-            if(LocalTime.now().isBefore(startTime)){
+            String executeEndTime = sqlExecuteRule.getExecuteEndTime();
+            String[] start = executeStartTime.split(":");
+            String[] end = executeEndTime.split(":");
+            LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
+            LocalTime endTime = LocalTime.of(Integer.parseInt(end[0]), Integer.parseInt(end[1]), Integer.parseInt(end[2]));
+            if(LocalTime.now().isBefore(startTime)||LocalTime.now().isAfter(endTime)||LocalTime.now().equals(endTime)){
                 return false;
             }
             int plusMinutes = fileCountInfo.getCount() * sqlExecuteRule.getExecuteFrequency();

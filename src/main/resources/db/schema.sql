@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS sql_execute_rule (
                                                sql_file_name TEXT, -- SQL文件名称
                                                execute_limit INTEGER, -- 执行上限次数
                                                execute_start_time TEXT, -- 从每天的什么时间开始执行 HH:MM:SS
+                                               execute_end_time TEXT, -- 每天什么时候停止执行 HH:MM:SS
                                                execute_frequency INTEGER -- 执行频率 n分钟一次
 );
 -- 新增：环境+SQL文件 唯一索引（核心）

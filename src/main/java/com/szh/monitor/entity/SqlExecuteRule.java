@@ -19,5 +19,7 @@ public class SqlExecuteRule {
 
     private String executeStartTime;
 
+    private String executeEndTime;
+
     private Integer executeFrequency;
 }
