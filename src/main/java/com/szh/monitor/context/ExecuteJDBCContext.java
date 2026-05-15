@@ -80,11 +80,15 @@ public class ExecuteJDBCContext {
                 logger.debug("该文件执行失败次数{} 不执行次数阈值检查，直接放行",fileCountInfo.getFailedCount());
                 return true;
             }
-            logger.debug("{} 该SQL文件执行次数{} 执行次数阈值为{} 开始执行时间{}",sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),sqlExecuteRule.getExecuteStartTime());
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
             String[] time = executeStartTime.split(":");
             LocalTime startTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]), Integer.parseInt(time[2]));
-            if(LocalTime.now().isAfter(startTime)||LocalTime.now().equals(startTime)){
+            int plusMinutes = fileCountInfo.getCount() * sqlExecuteRule.getExecuteFrequency();
+            LocalTime nextTime = startTime.plusMinutes(plusMinutes);
+            logger.debug("当前环境：{}  该SQL文件：{} 已执行次数：{} 执行次数阈值为：{} 开始执行时间 每日：{} 执行频率：{}分钟执行一次 下次执行时间:{}",
+                    environmentName,sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),sqlExecuteRule.getExecuteStartTime(),
+                    sqlExecuteRule.getExecuteFrequency(),nextTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            if(LocalTime.now().isAfter(nextTime)||LocalTime.now().equals(nextTime)){
                 return fileCountInfo.getCount()< sqlExecuteRule.getExecuteLimit();
             }
         }
@@ -107,7 +111,7 @@ public class ExecuteJDBCContext {
             FileCountInfo fileCountInfo = fileCountInfos.stream().filter(x -> x.getDate().equals(currDate)
                     && x.getFileName().equals(sqlFileName)).findFirst().orElse(new FileCountInfo(currDate, sqlFileName, 0,fileCountInfos));
             fileCountInfo.setCount(fileCountInfo.getCount() + 1);
-            logger.debug("{}  该SQL文件累计执行成功了{}次",sqlFileName,fileCountInfo.getCount());
+//            logger.debug("{}  该SQL文件累计执行成功了{}次",sqlFileName,fileCountInfo.getCount());
             //移除掉历史数据
             fileCountInfos.removeIf(x->x.getDate()<currDate);
             executeFileCountInfo.put(environmentName,fileCountInfos);
