@@ -95,8 +95,8 @@ public class ExecuteJDBCContext {
             if(nextTime.isBefore(startTime)){
                 nextTime = LocalTime.of(23,00,00);
             }
-            logger.debug("当前环境：{}  该SQL文件：{} 已执行次数：{} 执行次数阈值为：{} 开始执行时间 每日：{} 执行频率：{}分钟执行一次 下次执行时间:{}",
-                    environmentName,sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),sqlExecuteRule.getExecuteStartTime(),
+            logger.debug("当前环境：{}  该SQL文件：{} 已执行次数：{} 执行次数阈值为：{} 执行时间范围 每日：[{} ~ {}] 执行频率：{}分钟执行一次 下次执行时间:{}",
+                    environmentName,sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),executeStartTime,executeEndTime,
                     sqlExecuteRule.getExecuteFrequency(),nextTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             if(LocalTime.now().isAfter(nextTime)||LocalTime.now().equals(nextTime)){
                 return fileCountInfo.getCount()< sqlExecuteRule.getExecuteLimit();
