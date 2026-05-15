@@ -29,7 +29,7 @@ public class ExecutorScheduler {
     }
 
     @Async("executorSQL")
-    @Scheduled(fixedRate=1_000)
+    @Scheduled(fixedRate=240_000)
     public void executor() {
         Set<String> environmentNameList = executeJDBCContext.getJBDCTemplate().keySet();
         for (String environmentName : environmentNameList) {
