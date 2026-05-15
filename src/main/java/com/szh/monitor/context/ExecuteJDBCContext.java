@@ -82,6 +82,7 @@ public class ExecuteJDBCContext {
             }
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
             String executeEndTime = sqlExecuteRule.getExecuteEndTime();
+            executeEndTime = executeEndTime==null?"20:00:00":executeEndTime;
             String[] start = executeStartTime.split(":");
             String[] end = executeEndTime.split(":");
             LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
