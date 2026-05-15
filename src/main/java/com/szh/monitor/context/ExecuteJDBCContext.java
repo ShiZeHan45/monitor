@@ -2,11 +2,11 @@ package com.szh.monitor.context;
 
 import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.entity.SqlExecuteLog;
+import com.szh.monitor.entity.SqlExecuteRule;
 import com.szh.monitor.service.SqlExecuteLogService;
 import com.szh.monitor.service.impl.SqlExecuteLogServiceImp;
 import com.szh.monitor.service.impl.SqlExecutorService;
 import lombok.Data;
-import org.apache.ibatis.util.MapUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,21 +37,21 @@ public class ExecuteJDBCContext {
     //各环境无需再次执行的SQL文件
     private Map<String, List<FileCountInfo>> executeFileCountInfo = new HashMap<>();
 
-    private Map<String,List<String>> executeSkipSqlMap= new HashMap<>();
+    private Map<String,List<SqlExecuteRule>> sqlExecuteRuleMap= new HashMap<>();
 
-    public Map<String, List<String>> getExecuteSkipSqlMap() {
-        return executeSkipSqlMap;
+    public Map<String, List<SqlExecuteRule>> getSqlExecuteRuleMap() {
+        return sqlExecuteRuleMap;
     }
-    public List<String> getSkipSqlList(String environmentName) {
-        return executeSkipSqlMap.get(environmentName);
+    public List<SqlExecuteRule> getSqlExecuteRuleList(String environmentName) {
+        return sqlExecuteRuleMap.get(environmentName);
     }
 
-    public void addExecuteSkipSqlList(String environmentName,List<String> skipSqlList) {
-        if(CollectionUtils.isEmpty(skipSqlList)){
-            skipSqlList = new ArrayList<>();
+    public void addSqlExecuteRule(String environmentName,List<SqlExecuteRule> sqlExecuteRules) {
+        if(CollectionUtils.isEmpty(sqlExecuteRules)){
+            sqlExecuteRules = new ArrayList<>();
         }
-        executeSkipSqlMap.put(environmentName,skipSqlList);
-        logger.info("{}-初始化跳过SQL文件{}",environmentName,skipSqlList);
+        sqlExecuteRuleMap.put(environmentName,sqlExecuteRules);
+        logger.info("{}-初始化SQL执行规则 {}",environmentName,sqlExecuteRules);
     }
 
     public ExecuteJDBCContext() {
@@ -64,32 +65,34 @@ public class ExecuteJDBCContext {
      * @return
      */
     public boolean executeAble(String environmentName, String sqlFileName){
-//        List<FileCountInfo> fileCountInfos = executeFileCountInfo.getOrDefault(environmentName, null);
         List<SqlExecuteLog> sqlExecuteLogs = sqlExecuteLogService.findEnvironmentName(environmentName);
         int currDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
 
-        if(!CollectionUtils.isEmpty(SQLConfig.getUnLimitCheckFiles())){
-            //如果匹配上了，就直接响应可以执行，否则还要再过一道拦截
-            if(SQLConfig.getUnLimitCheckFiles().stream().anyMatch(x -> x.equals(sqlFileName))){
-                logger.debug("{} 该SQL文件执行次数无上限",sqlFileName);
-                return true;
-            }
-        }
-        if (StringUtils.hasText(sqlFileName)&&!CollectionUtils.isEmpty(sqlExecuteLogs)) {
+        SqlExecuteRule sqlExecuteRule = getExecuteSqlRule(environmentName,sqlFileName);
+        if(sqlExecuteRule!=null){
             SqlExecuteLog fileCountInfo = sqlExecuteLogs.stream().filter(x -> x.getExecuteDate().equals(currDate) && x.getSqlFileName().equals(sqlFileName)).findFirst().orElse(null);
             if(fileCountInfo==null){
                 //首次执行 匹配不上都为可执行
                 return true;
             }
             boolean failAble = fileCountInfo.getFailedCount()!=null&&fileCountInfo.getFailedCount()>0;
-            logger.debug("{} 该SQL文件执行次数{} 阈值为{}",sqlFileName,fileCountInfo.getCount(),SQLConfig.getCheckLimit());
             if(failAble){
                 logger.debug("该文件执行失败次数{} 不执行次数阈值检查，直接放行",fileCountInfo.getFailedCount());
                 return true;
             }
-            return fileCountInfo.getCount()< SQLConfig.getCheckLimit();
+            logger.debug("{} 该SQL文件执行次数{} 执行次数阈值为{} 开始执行时间{}",sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),sqlExecuteRule.getExecuteStartTime());
+            String executeStartTime = sqlExecuteRule.getExecuteStartTime();
+            String[] time = executeStartTime.split(":");
+            LocalTime startTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]), Integer.parseInt(time[2]));
+            if(LocalTime.now().isAfter(startTime)||LocalTime.now().equals(startTime)){
+                return fileCountInfo.getCount()< sqlExecuteRule.getExecuteLimit();
+            }
         }
         return true;
+    }
+
+    private SqlExecuteRule getExecuteSqlRule(String environmentName, String sqlFileName) {
+        return sqlExecuteRuleMap.get(environmentName).stream().filter(x->x.getSqlFileName().equals(sqlFileName)).findAny().orElse(null);
     }
 
     /**
@@ -198,6 +201,10 @@ public class ExecuteJDBCContext {
             return null;
         }
         return failedInfos.stream().map(SqlExecuteLog::getSqlFileName).collect(Collectors.toList());
+    }
+
+    public List<String> getExecuteSqlList(String environmentName) {
+        return sqlExecuteRuleMap.get(environmentName).stream().map(SqlExecuteRule::getSqlFileName).collect(Collectors.toList());
     }
 
     @Data

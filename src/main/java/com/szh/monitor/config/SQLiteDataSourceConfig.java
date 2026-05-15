@@ -10,7 +10,10 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.init.DataSourceInitializer;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
 
@@ -38,6 +41,22 @@ public class SQLiteDataSourceConfig {
         return bean.getObject();
     }
 
+    @Bean("sqliteDataSourceInitializer")
+    public DataSourceInitializer dataSourceInitializer(@Qualifier("sqliteDataSource") DataSource dataSource) {
+        DataSourceInitializer initializer = new DataSourceInitializer();
+        initializer.setDataSource(dataSource);
+
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        // 执行建表脚本
+        populator.addScript(new ClassPathResource("db/schema.sql"));
+        // 执行数据初始化脚本
+        populator.addScript(new ClassPathResource("db/datainit.sql"));
+        // 忽略脚本执行错误（比如表已经存在）
+        populator.setContinueOnError(true);
+
+        initializer.setDatabasePopulator(populator);
+        return initializer;
+    }
     @Bean(name = "sqliteSqlSessionTemplate")
     public SqlSessionTemplate sqlSessionTemplate(@Qualifier("sqliteSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         return new SqlSessionTemplate(sqlSessionFactory);

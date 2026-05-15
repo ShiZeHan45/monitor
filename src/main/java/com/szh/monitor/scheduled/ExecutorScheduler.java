@@ -2,10 +2,10 @@ package com.szh.monitor.scheduled;
 
 import com.szh.monitor.service.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -21,7 +21,8 @@ public class ExecutorScheduler {
         this.executorServices = executorServices;
     }
 
-    @Scheduled(cron = "${watcher.sql.schedule-cron}")
+    @Async("executorSQL")
+    @Scheduled(fixedRate=1_000)
     public void executor() {
         executorServices.forEach(ExecutorService::execute);
     }

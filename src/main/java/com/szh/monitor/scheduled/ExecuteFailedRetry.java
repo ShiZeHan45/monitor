@@ -2,10 +2,10 @@ package com.szh.monitor.scheduled;
 
 import com.szh.monitor.service.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -15,8 +15,8 @@ import java.util.List;
 public class ExecuteFailedRetry {
     @Autowired
     private List<ExecutorService> executorServices;
-
-    @Scheduled(cron = "${watcher.sql.schedule-retry-cron}")
+    @Async("retrySQL")
+    @Scheduled(fixedRate=300_000)
     public void retry(){
         executorServices.forEach(ExecutorService::executeRetry);
     }

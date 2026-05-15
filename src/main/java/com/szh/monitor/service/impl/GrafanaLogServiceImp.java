@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
@@ -76,6 +77,7 @@ public class GrafanaLogServiceImp {
 
     }
 
+    @Async("grafanaLog")
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
         for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {

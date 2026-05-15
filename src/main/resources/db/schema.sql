@@ -26,3 +26,12 @@ CREATE TABLE IF NOT EXISTS log_collect_time_info(
                                            last_ts BIGINT , -- 最新的采集时间戳
                                            last_time TIMESTAMP -- 最新的采集时间
 );
+
+CREATE TABLE IF NOT EXISTS sql_execute_rule (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT, -- 环境名称
+                                               sql_file_name TEXT, -- SQL文件名称
+                                               execute_limit INTEGER, -- 执行上限次数
+                                               execute_start_time TEXT, -- 从每天的什么时间开始执行 HH:MM:SS
+                                               execute_frequency INTEGER -- 执行频率 n分钟一次
+);

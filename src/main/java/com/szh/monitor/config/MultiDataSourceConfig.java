@@ -1,14 +1,15 @@
 package com.szh.monitor.config;
 
+import com.szh.monitor.context.ExecuteJDBCContext;
+import com.szh.monitor.service.SqlExecuteRuleService;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import com.szh.monitor.context.ExecuteJDBCContext;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties(prefix = "watcher.sql.datasource")
 @Data
+@DependsOn("sqliteDataSourceInitializer")
 public class MultiDataSourceConfig {
 
     private Map<String, DataSourceProperties> list = new HashMap<>();
@@ -28,7 +30,6 @@ public class MultiDataSourceConfig {
     @Data
     public static class DataSourceProperties {
         private String environmentName;
-        private List<String> executeSkipSqlList;
         private boolean enabled;
         private String jdbcUrl;
         private String username;
@@ -43,6 +44,9 @@ public class MultiDataSourceConfig {
 
     @Autowired
     private GenericApplicationContext applicationContext;
+
+    @Autowired
+    private SqlExecuteRuleService sqlExecuteRuleService;
 
     @Bean("dynamicDataSources")
     public Map<String, DataSource> dynamicDataSources() {
@@ -69,7 +73,7 @@ public class MultiDataSourceConfig {
             // ---------- 注册到自定义上下文 ----------
             executeJDBCContext.addJdbcTemplate(dsName, beanName);
 
-            executeJDBCContext.addExecuteSkipSqlList(dsName,props.getExecuteSkipSqlList());
+            executeJDBCContext.addSqlExecuteRule(dsName,sqlExecuteRuleService.findByEnvironmentName(dsName));
         });
 
         return dataSourceMap;

@@ -65,10 +65,10 @@ public class SqlExecutorService implements ExecutorService {
         if (!directory.exists() || !directory.isDirectory()) {
             throw new RuntimeException("SQL目录不存在");
         }
-        List<String> skipSqlFileList = executeJDBCContext.getSkipSqlList(environmentName);
+        List<String> executeSqlList = executeJDBCContext.getExecuteSqlList(environmentName);
 
         //拉取文件夹下的SQL文件
-        File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql")&&!skipSqlFileList.contains(name));
+        File[] sqlFiles = directory.listFiles((dir, name) -> name.endsWith(".sql")&&executeSqlList.contains(name));
         if (sqlFiles == null) return;
         if (!CollectionUtils.isEmpty(failSQLFiles)) {
             sqlFiles = Arrays.stream(sqlFiles)
