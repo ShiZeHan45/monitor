@@ -83,6 +83,9 @@ public class ExecuteJDBCContext {
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
             String[] time = executeStartTime.split(":");
             LocalTime startTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]), Integer.parseInt(time[2]));
+            if(LocalTime.now().isBefore(startTime)){
+                return false;
+            }
             int plusMinutes = fileCountInfo.getCount() * sqlExecuteRule.getExecuteFrequency();
             LocalTime nextTime = startTime.plusMinutes(plusMinutes);
             if(nextTime.isBefore(startTime)){
