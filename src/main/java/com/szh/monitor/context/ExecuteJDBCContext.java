@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -70,10 +71,20 @@ public class ExecuteJDBCContext {
 
         SqlExecuteRule sqlExecuteRule = getExecuteSqlRule(environmentName,sqlFileName);
         if(sqlExecuteRule!=null){
+            LocalDateTime currDateTime = LocalDateTime.now();
+            LocalDate now = LocalDate.now();
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
             String[] start = executeStartTime.split(":");
             LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
-            if(LocalTime.now().isBefore(startTime)){
+            String executeEndTime = sqlExecuteRule.getExecuteEndTime();
+            executeEndTime = executeEndTime==null?"20:00:00":executeEndTime;
+            String[] end = executeEndTime.split(":");
+            LocalTime endTime = LocalTime.of(Integer.parseInt(end[0]), Integer.parseInt(end[1]), Integer.parseInt(end[2]));
+
+            LocalDateTime startDateTime = now.atTime(startTime);
+            LocalDateTime endDateTime = now.atTime(endTime);
+
+            if(currDateTime.isBefore(startDateTime)){
                 //未到达开始执行时间
                 return false;
             }
@@ -87,20 +98,15 @@ public class ExecuteJDBCContext {
                 logger.debug("该文件执行失败次数{} 不执行次数阈值检查，直接放行",fileCountInfo.getFailedCount());
                 return true;
             }
-            String executeEndTime = sqlExecuteRule.getExecuteEndTime();
-            executeEndTime = executeEndTime==null?"20:00:00":executeEndTime;
-            String[] end = executeEndTime.split(":");
-            LocalTime endTime = LocalTime.of(Integer.parseInt(end[0]), Integer.parseInt(end[1]), Integer.parseInt(end[2]));
-            if(LocalTime.now().isAfter(endTime)||LocalTime.now().equals(endTime)){
+
+            if(currDateTime.isAfter(endDateTime)||currDateTime.equals(endDateTime)){
                 //超过结束时间
                 return false;
             }
             int plusMinutes = fileCountInfo.getCount() * sqlExecuteRule.getExecuteFrequency();
-            LocalTime nextTime = startTime.plusMinutes(plusMinutes);
-            if(nextTime.isBefore(startTime)){
-                nextTime = LocalTime.of(23,00,00);
-            }
-            if(LocalTime.now().isAfter(nextTime)||LocalTime.now().equals(nextTime)){
+            LocalDateTime nextTime = startDateTime.plusMinutes(plusMinutes);
+
+            if(currDateTime.isAfter(nextTime)||currDateTime.equals(nextTime)){
                 if(fileCountInfo.getCount()< sqlExecuteRule.getExecuteLimit()){
                     logger.debug("当前环境：{}  该SQL文件：{} 已执行次数：{} 执行次数阈值为：{} 执行时间范围 每日：[{} ~ {}] 执行频率：{}分钟执行一次 下次执行时间:{}",
                             environmentName,sqlFileName,fileCountInfo.getCount(),sqlExecuteRule.getExecuteLimit(),executeStartTime,executeEndTime,
