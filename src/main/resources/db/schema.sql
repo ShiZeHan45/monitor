@@ -47,3 +47,22 @@ CREATE TABLE IF NOT EXISTS remote_log_source (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS sql_execute_rule (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    environment_name VARCHAR(100) NOT NULL,
+    sql_file_name VARCHAR(200) NOT NULL,
+    execute_limit INTEGER DEFAULT 1,
+    execute_start_time VARCHAR(20),
+    execute_end_time VARCHAR(20),
+    execute_frequency INTEGER DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS log_collect_time_info (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    environment_name VARCHAR(100) NOT NULL,
+    rule_name VARCHAR(200),
+    last_ts BIGINT,
+    last_time TIMESTAMP,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -416,6 +416,8 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 修复bug | 修复operation-logs.html样式问题，统一样式框架；新增MyBatisPlusConfig配置类 |
 | 2026-05-27 | 修复bug | 修复导航菜单缺失问题，所有页面菜单保持一致 |
 | 2026-05-27 | 修复bug | 创建数据库初始化脚本schema.sql，解决API 500错误 |
+| 2026-05-27 | 数据初始化 | 创建datainit.sql，按YML配置初始化SQL数据源和远程日志采集源数据 |
+| 2026-05-27 | 修复bug | 完善schema.sql，补充sql_execute_rule和log_collect_time_info表；更新datainit.sql添加环境名称初始化数据 |
 
 ---
 
