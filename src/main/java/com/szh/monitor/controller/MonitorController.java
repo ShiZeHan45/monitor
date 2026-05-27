@@ -76,8 +76,10 @@ public class MonitorController {
             String env = log.getEnvironmentName();
             sqlStats.computeIfAbsent(env, k -> new HashMap<>());
             Map<String, Object> envStats = sqlStats.get(env);
-            envStats.merge("totalCount", log.getCount() != null ? log.getCount() : 0, Integer::sum);
-            envStats.merge("failedCount", log.getFailedCount() != null ? log.getFailedCount() : 0, Integer::sum);
+            int count = log.getCount() != null ? log.getCount() : 0;
+            int failed = log.getFailedCount() != null ? log.getFailedCount() : 0;
+            envStats.merge("totalCount", count, (a, b) -> (Integer) a + (Integer) b);
+            envStats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
         result.put("pushTotal", todayLogs.size());
@@ -101,8 +103,10 @@ public class MonitorController {
             envMap.computeIfAbsent(env, k -> new HashMap<>());
             Map<String, Object> stats = envMap.get(env);
             stats.put("environmentName", env);
-            stats.merge("executeCount", log.getCount() != null ? log.getCount() : 0, Integer::sum);
-            stats.merge("failedCount", log.getFailedCount() != null ? log.getFailedCount() : 0, Integer::sum);
+            int count = log.getCount() != null ? log.getCount() : 0;
+            int failed = log.getFailedCount() != null ? log.getFailedCount() : 0;
+            stats.merge("executeCount", count, (a, b) -> (Integer) a + (Integer) b);
+            stats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
         return ResponseEntity.ok(new ArrayList<>(envMap.values()));

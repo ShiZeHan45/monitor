@@ -286,6 +286,21 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 
 ---
 
+### 五、Maven编译检查流程配置
+
+**用户指令：**
+> 你每次开发完后端程序，都要mvn 编译一下是否存在异常，没异常再推git
+
+**完成内容：**
+- 配置开发流程：每次后端代码修改完成后，先执行 `mvn compile` 检查编译是否通过
+- 修复MonitorController中的类型转换错误：
+  - `Map<String, Object>` 的 `merge` 方法不能直接使用 `Integer::sum` 方法引用
+  - 改为显式类型转换的lambda表达式：`(a, b) -> (Integer) a + (Integer) b`
+
+**修改文件：** [MonitorController.java](file:///z:/monitor/src/main/java/com/szh/monitor/controller/MonitorController.java)
+
+---
+
 ## 📝 记录更新日志
 
 | 日期 | 操作类型 | 内容摘要 |
@@ -294,6 +309,7 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 功能开发 | 完成前端操作页面全部功能（首页统计、推送记录、SQL规则管理、文件上传） |
 | 2026-05-27 | 文档+配置 | 新增开发记录文档，配置Git自动化提交流程 |
 | 2026-05-27 | 修复bug | 修复WebConfig编译错误，将WebMvcConfigurer改为WebFlux的WebFilter方式 |
+| 2026-05-27 | 修复bug | 修复MonitorController中Map.merge方法的类型转换错误，编译成功 |
 
 ---
 
