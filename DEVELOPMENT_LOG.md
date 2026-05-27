@@ -301,6 +301,42 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 
 ---
 
+### 六、SQL文件维护功能增强
+
+**用户指令：**
+> 现在需要你在SQL文件上传这个菜单将名字改为 SQL文件维护 然后已上传的文件支持编辑
+
+**完成内容：**
+
+#### 1. 菜单名称修改
+- 将所有页面的「SQL文件上传」菜单名称改为「SQL文件维护」
+- 图标从 `fa-upload` 改为 `fa-folder-open`
+- 更新页面标题和页面标题
+
+#### 2. 新增SQL文件编辑功能
+
+**后端API新增：**
+
+| API路径 | 方法 | 功能说明 |
+|---------|------|----------|
+| `/api/sql-files/{filename}/content` | GET | 获取SQL文件内容 |
+| `/api/sql-files/{filename}/content` | PUT | 更新SQL文件内容 |
+
+**前端功能：**
+- 文件列表新增编辑按钮
+- 点击编辑弹出模态框，显示文件名和内容
+- 支持修改SQL文件内容并保存
+- 保存成功后刷新文件列表
+
+**修改文件：**
+- [MonitorController.java](file:///z:/monitor/src/main/java/com/szh/monitor/controller/MonitorController.java) - 新增读取和更新文件内容的API
+- [sql-upload.html](file:///z:/monitor/src/main/resources/static/sql-upload.html) - 新增编辑功能和模态框
+- [index.html](file:///z:/monitor/src/main/resources/static/index.html) - 更新菜单名称
+- [push-records.html](file:///z:/monitor/src/main/resources/static/push-records.html) - 更新菜单名称
+- [sql-rules.html](file:///z:/monitor/src/main/resources/static/sql-rules.html) - 更新菜单名称
+
+---
+
 ## 📝 记录更新日志
 
 | 日期 | 操作类型 | 内容摘要 |
@@ -310,6 +346,7 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 文档+配置 | 新增开发记录文档，配置Git自动化提交流程 |
 | 2026-05-27 | 修复bug | 修复WebConfig编译错误，将WebMvcConfigurer改为WebFlux的WebFilter方式 |
 | 2026-05-27 | 修复bug | 修复MonitorController中Map.merge方法的类型转换错误，编译成功 |
+| 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
 
 ---
 

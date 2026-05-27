@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL文件上传 - 监控系统</title>
+    <title>SQL文件维护 - 监控系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
 </head>
@@ -27,7 +27,7 @@
                         <i class="fa fa-list-alt mr-3"></i>SQL规则管理
                     </a>
                     <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
-                        <i class="fa fa-upload mr-3"></i>SQL文件上传
+                        <i class="fa fa-folder-open mr-3"></i>SQL文件维护
                     </a>
                 </div>
             </nav>
@@ -35,8 +35,8 @@
 
         <div class="ml-64 p-8 flex-1">
             <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">SQL文件管理</h2>
-                <p class="text-gray-500 mt-1">上传新的SQL检测脚本文件</p>
+                <h2 class="text-2xl font-bold text-gray-800">SQL文件维护</h2>
+                <p class="text-gray-500 mt-1">上传、编辑和管理SQL检测脚本文件</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,6 +82,35 @@
         </div>
     </div>
 
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800" id="editModalTitle">编辑SQL文件</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">文件名</label>
+                    <span id="editFilename" class="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-700"></span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">文件内容</label>
+                    <textarea id="editContent" class="w-full h-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    取消
+                </button>
+                <button onclick="saveFileContent()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         async function loadFiles() {
             try {
@@ -101,9 +130,14 @@
                                 <i class="fa fa-file-code-o text-blue-500 mr-3"></i>
                                 <span class="text-sm text-gray-700">${file}</span>
                             </div>
-                            <button onclick="deleteFile('${file}')" class="text-red-500 hover:text-red-700" title="删除文件">
-                                <i class="fa fa-trash"></i>
-                            </button>
+                            <div class="flex items-center space-x-3">
+                                <button onclick="editFile('${file}')" class="text-blue-500 hover:text-blue-700" title="编辑文件">
+                                    <i class="fa fa-pencil"></i>
+                                </button>
+                                <button onclick="deleteFile('${file}')" class="text-red-500 hover:text-red-700" title="删除文件">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -219,6 +253,66 @@
             } catch (error) {
                 console.error('删除失败:', error);
                 alert('删除失败');
+            }
+        }
+
+        let currentEditingFile = '';
+
+        async function editFile(filename) {
+            currentEditingFile = filename;
+            document.getElementById('editFilename').textContent = filename;
+            
+            try {
+                const response = await fetch(`/api/sql-files/${filename}/content`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('editContent').value = result.content;
+                    document.getElementById('editModal').classList.remove('hidden');
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('读取文件失败:', error);
+                alert('读取文件失败');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editContent').value = '';
+            currentEditingFile = '';
+        }
+
+        async function saveFileContent() {
+            const content = document.getElementById('editContent').value;
+            
+            if (!content.trim()) {
+                alert('内容不能为空');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/sql-files/${currentEditingFile}/content`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('保存成功');
+                    closeEditModal();
+                    loadFiles();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败');
             }
         }
 

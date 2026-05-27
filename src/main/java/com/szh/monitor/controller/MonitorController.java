@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -288,6 +289,105 @@ public class MonitorController {
         } else {
             result.put("success", false);
             result.put("message", "删除失败");
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    @GetMapping("/sql-files/{filename}/content")
+    public ResponseEntity<Map<String, Object>> getSqlFileContent(@PathVariable String filename) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (!filename.endsWith(".sql")) {
+            result.put("success", false);
+            result.put("message", "只支持SQL文件");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        File directory = null;
+        try {
+            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
+                directory = new File(sqlConfig.getSqlAbsoluteDir());
+            } else {
+                directory = sqlConfig.getSqlDir().getFile();
+            }
+        } catch (IOException e) {
+            logger.error("获取SQL目录失败", e);
+            result.put("success", false);
+            result.put("message", "获取SQL目录失败");
+            return ResponseEntity.internalServerError().body(result);
+        }
+
+        File file = new File(directory, filename);
+        if (!file.exists()) {
+            result.put("success", false);
+            result.put("message", "文件不存在");
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            result.put("success", true);
+            result.put("content", content);
+            result.put("filename", filename);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            logger.error("读取文件失败", e);
+            result.put("success", false);
+            result.put("message", "读取文件失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    @PutMapping("/sql-files/{filename}/content")
+    public ResponseEntity<Map<String, Object>> updateSqlFileContent(
+            @PathVariable String filename,
+            @RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (!filename.endsWith(".sql")) {
+            result.put("success", false);
+            result.put("message", "只支持SQL文件");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        String content = request.get("content");
+        if (content == null || content.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "内容不能为空");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        File directory = null;
+        try {
+            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
+                directory = new File(sqlConfig.getSqlAbsoluteDir());
+            } else {
+                directory = sqlConfig.getSqlDir().getFile();
+            }
+        } catch (IOException e) {
+            logger.error("获取SQL目录失败", e);
+            result.put("success", false);
+            result.put("message", "获取SQL目录失败");
+            return ResponseEntity.internalServerError().body(result);
+        }
+
+        File file = new File(directory, filename);
+        if (!file.exists()) {
+            result.put("success", false);
+            result.put("message", "文件不存在");
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
+            result.put("success", true);
+            result.put("message", "更新成功");
+            result.put("filename", filename);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            logger.error("写入文件失败", e);
+            result.put("success", false);
+            result.put("message", "写入文件失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(result);
         }
     }
