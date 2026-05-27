@@ -4,12 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.config.SQLConfig;
-import com.szh.monitor.entity.MsgSendLog;
-import com.szh.monitor.entity.SqlExecuteLog;
-import com.szh.monitor.entity.SqlExecuteRule;
-import com.szh.monitor.mapper.MsgSendLogMapper;
-import com.szh.monitor.mapper.SqlExecuteLogMapper;
-import com.szh.monitor.mapper.SqlExecuteRuleMapper;
+import com.szh.monitor.entity.*;
+import com.szh.monitor.mapper.*;
+import com.szh.monitor.service.OperationLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -390,5 +387,297 @@ public class MonitorController {
             result.put("message", "写入文件失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(result);
         }
+    }
+
+    @Autowired
+    private OperationLogService operationLogService;
+
+    @Autowired
+    private LogCollectTimeInfoMapper logCollectTimeInfoMapper;
+
+    @Autowired
+    private SqlDataSourceMapper sqlDataSourceMapper;
+
+    @Autowired
+    private RemoteLogSourceMapper remoteLogSourceMapper;
+
+    @GetMapping("/operation-logs")
+    public ResponseEntity<IPage<OperationLog>> getOperationLogs(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String operationModule,
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String environmentName) {
+        
+        Page<OperationLog> pageRequest = new Page<>(page, size);
+        IPage<OperationLog> result = operationLogService.getLogs(pageRequest, operationModule, operationType, environmentName);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/operation-logs/track")
+    public ResponseEntity<Void> trackVisit(
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress,
+            @RequestParam(required = false) String pageName) {
+        
+        operationLogService.saveLog("访问", "页面访问", "访问页面: " + pageName, null, ipAddress, userAgent, null);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/environments")
+    public ResponseEntity<List<String>> getEnvironments() {
+        List<LogCollectTimeInfo> infos = logCollectTimeInfoMapper.selectList(null);
+        List<String> environments = infos.stream()
+                .map(LogCollectTimeInfo::getEnvironmentName)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(environments);
+    }
+
+    @GetMapping("/sql-data-sources")
+    public ResponseEntity<IPage<SqlDataSource>> getSqlDataSources(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String environmentName) {
+        
+        Page<SqlDataSource> pageRequest = new Page<>(page, size);
+        LambdaQueryWrapper<SqlDataSource> query = new LambdaQueryWrapper<>();
+        if (environmentName != null && !environmentName.isEmpty()) {
+            query.eq(SqlDataSource::getEnvironmentName, environmentName);
+        }
+        query.orderByDesc(SqlDataSource::getCreateTime);
+        IPage<SqlDataSource> result = sqlDataSourceMapper.selectPage(pageRequest, query);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/sql-data-sources/{id}")
+    public ResponseEntity<SqlDataSource> getSqlDataSource(@PathVariable Long id) {
+        SqlDataSource dataSource = sqlDataSourceMapper.selectById(id);
+        if (dataSource == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(dataSource);
+    }
+
+    @PostMapping("/sql-data-sources")
+    public ResponseEntity<Map<String, Object>> createSqlDataSource(@RequestBody SqlDataSource dataSource,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        LambdaQueryWrapper<SqlDataSource> query = new LambdaQueryWrapper<>();
+        query.eq(SqlDataSource::getEnvironmentName, dataSource.getEnvironmentName());
+        if (sqlDataSourceMapper.selectCount(query) > 0) {
+            result.put("success", false);
+            result.put("message", "该环境已存在数据源配置");
+            return ResponseEntity.badRequest().body(result);
+        }
+        
+        dataSource.setId(null);
+        dataSource.setCreateTime(LocalDateTime.now());
+        dataSource.setUpdateTime(LocalDateTime.now());
+        sqlDataSourceMapper.insert(dataSource);
+        
+        operationLogService.saveLog("新增", "SQL数据源", "新增SQL数据源: " + dataSource.getEnvironmentName(), 
+                dataSource.getId().toString(), ipAddress, userAgent, dataSource.getEnvironmentName());
+        
+        result.put("success", true);
+        result.put("message", "新增成功");
+        result.put("data", dataSource);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/sql-data-sources/{id}")
+    public ResponseEntity<Map<String, Object>> updateSqlDataSource(@PathVariable Long id, 
+            @RequestBody SqlDataSource dataSource,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        SqlDataSource existing = sqlDataSourceMapper.selectById(id);
+        if (existing == null) {
+            result.put("success", false);
+            result.put("message", "数据源不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        String oldEnv = existing.getEnvironmentName();
+        dataSource.setId(id);
+        dataSource.setCreateTime(existing.getCreateTime());
+        dataSource.setUpdateTime(LocalDateTime.now());
+        sqlDataSourceMapper.updateById(dataSource);
+        
+        operationLogService.saveLog("编辑", "SQL数据源", "修改SQL数据源: " + oldEnv + " -> " + dataSource.getEnvironmentName(), 
+                id.toString(), ipAddress, userAgent, dataSource.getEnvironmentName());
+        
+        result.put("success", true);
+        result.put("message", "更新成功");
+        result.put("data", dataSource);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/sql-data-sources/{id}")
+    public ResponseEntity<Map<String, Object>> deleteSqlDataSource(@PathVariable Long id,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        SqlDataSource existing = sqlDataSourceMapper.selectById(id);
+        if (existing == null) {
+            result.put("success", false);
+            result.put("message", "数据源不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        String envName = existing.getEnvironmentName();
+        sqlDataSourceMapper.deleteById(id);
+        
+        operationLogService.saveLog("删除", "SQL数据源", "删除SQL数据源: " + envName, 
+                id.toString(), ipAddress, userAgent, envName);
+        
+        result.put("success", true);
+        result.put("message", "删除成功");
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/remote-log-sources")
+    public ResponseEntity<IPage<RemoteLogSource>> getRemoteLogSources(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String environmentName) {
+        
+        Page<RemoteLogSource> pageRequest = new Page<>(page, size);
+        LambdaQueryWrapper<RemoteLogSource> query = new LambdaQueryWrapper<>();
+        if (environmentName != null && !environmentName.isEmpty()) {
+            query.eq(RemoteLogSource::getEnvironmentName, environmentName);
+        }
+        query.orderByDesc(RemoteLogSource::getCreateTime);
+        IPage<RemoteLogSource> result = remoteLogSourceMapper.selectPage(pageRequest, query);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/remote-log-sources/{id}")
+    public ResponseEntity<RemoteLogSource> getRemoteLogSource(@PathVariable Long id) {
+        RemoteLogSource source = remoteLogSourceMapper.selectById(id);
+        if (source == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(source);
+    }
+
+    @PostMapping("/remote-log-sources")
+    public ResponseEntity<Map<String, Object>> createRemoteLogSource(@RequestBody RemoteLogSource source,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        LambdaQueryWrapper<RemoteLogSource> query = new LambdaQueryWrapper<>();
+        query.eq(RemoteLogSource::getEnvironmentName, source.getEnvironmentName());
+        if (remoteLogSourceMapper.selectCount(query) > 0) {
+            result.put("success", false);
+            result.put("message", "该环境已存在日志采集源配置");
+            return ResponseEntity.badRequest().body(result);
+        }
+        
+        source.setId(null);
+        source.setCreateTime(LocalDateTime.now());
+        source.setUpdateTime(LocalDateTime.now());
+        remoteLogSourceMapper.insert(source);
+        
+        operationLogService.saveLog("新增", "远程日志采集源", "新增远程日志采集源: " + source.getEnvironmentName(), 
+                source.getId().toString(), ipAddress, userAgent, source.getEnvironmentName());
+        
+        result.put("success", true);
+        result.put("message", "新增成功");
+        result.put("data", source);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/remote-log-sources/{id}")
+    public ResponseEntity<Map<String, Object>> updateRemoteLogSource(@PathVariable Long id, 
+            @RequestBody RemoteLogSource source,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        RemoteLogSource existing = remoteLogSourceMapper.selectById(id);
+        if (existing == null) {
+            result.put("success", false);
+            result.put("message", "采集源不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        String oldEnv = existing.getEnvironmentName();
+        source.setId(id);
+        source.setCreateTime(existing.getCreateTime());
+        source.setUpdateTime(LocalDateTime.now());
+        remoteLogSourceMapper.updateById(source);
+        
+        operationLogService.saveLog("编辑", "远程日志采集源", "修改远程日志采集源: " + oldEnv + " -> " + source.getEnvironmentName(), 
+                id.toString(), ipAddress, userAgent, source.getEnvironmentName());
+        
+        result.put("success", true);
+        result.put("message", "更新成功");
+        result.put("data", source);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/remote-log-sources/{id}")
+    public ResponseEntity<Map<String, Object>> deleteRemoteLogSource(@PathVariable Long id,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestParam(required = false) String ipAddress) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        RemoteLogSource existing = remoteLogSourceMapper.selectById(id);
+        if (existing == null) {
+            result.put("success", false);
+            result.put("message", "采集源不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        String envName = existing.getEnvironmentName();
+        remoteLogSourceMapper.deleteById(id);
+        
+        operationLogService.saveLog("删除", "远程日志采集源", "删除远程日志采集源: " + envName, 
+                id.toString(), ipAddress, userAgent, envName);
+        
+        result.put("success", true);
+        result.put("message", "删除成功");
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/sql-rules/check-unique")
+    public ResponseEntity<Map<String, Object>> checkRuleUnique(
+            @RequestParam String environmentName,
+            @RequestParam String sqlFileName,
+            @RequestParam(required = false) Long excludeId) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        LambdaQueryWrapper<SqlExecuteRule> query = new LambdaQueryWrapper<>();
+        query.eq(SqlExecuteRule::getEnvironmentName, environmentName)
+             .eq(SqlExecuteRule::getSqlFileName, sqlFileName);
+        
+        if (excludeId != null) {
+            query.ne(SqlExecuteRule::getId, excludeId);
+        }
+        
+        long count = sqlExecuteRuleMapper.selectCount(query);
+        result.put("unique", count == 0);
+        result.put("message", count == 0 ? "可以使用" : "环境名称+SQL文件名已存在");
+        
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public String toString() {
+        return "MonitorController{}";
     }
 }

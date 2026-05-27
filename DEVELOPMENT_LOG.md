@@ -337,6 +337,69 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 
 ---
 
+### 七、需求调整与功能新增
+
+**用户指令：**
+> 需求调整：
+> 1. 首页统计 - 今日推送记录不要了，4个卡片做成可以点击查看推送记录详情
+> 2. SQL规则管理 - 增加环境名称筛选，编辑时不可编辑环境名称，新增时环境名称从log_collect_time_info表读取，SQL文件名从SQL文件夹获取，环境名称+SQL文件名唯一，执行限制改为执行次数限制（正整数）
+> 
+> 功能新增：
+> 1. 操作记录 - 用户访问页面记录浏览器信息、IP信息，数据增删改形成操作记录备查审计
+> 2. SQL数据源维护 - 新增、编辑、查询数据源，将YML配置改成页面配置，落库到sqlite
+> 3. 远程日志采集源维护 - 新增、编辑、查询采集源，将YML配置改成页面配置，落库到sqlite
+
+**完成内容：**
+
+#### 1. 首页调整
+- 移除今日推送记录预览区域
+- 4个统计卡片改为可点击，点击后跳转推送记录页面并筛选对应类型
+
+#### 2. SQL规则管理增强
+- 增加环境名称下拉筛选
+- 环境名称改为下拉选择（从log_collect_time_info表读取）
+- SQL文件名改为下拉选择（从SQL文件夹读取）
+- 编辑时环境名称不可编辑
+- 新增时检查环境名称+SQL文件名唯一性
+- 执行限制改为执行次数限制，仅允许正整数
+
+#### 3. 操作记录模块
+- 创建 `OperationLog` 实体类和表
+- 创建 `OperationLogMapper` 和 `OperationLogService`
+- 记录用户访问页面（浏览器信息、IP信息）
+- 记录数据增删改操作
+- 新增操作记录页面，支持按模块、类型筛选
+
+#### 4. SQL数据源维护模块
+- 创建 `SqlDataSource` 实体类和表
+- 支持新增、编辑、删除数据源配置
+- 环境名称从log_collect_time_info表读取（下拉选择）
+- 配置项：JDBC URL、用户名、密码、驱动类、连接池参数
+
+#### 5. 远程日志采集源维护模块
+- 创建 `RemoteLogSource` 实体类和表
+- 支持新增、编辑、删除采集源配置
+- 配置项：Grafana URL、数据源ID、用户名、密码、Webhook、监控时间范围、监控规则
+
+**新增文件：**
+- [OperationLog.java](file:///z:/monitor/src/main/java/com/szh/monitor/entity/OperationLog.java)
+- [SqlDataSource.java](file:///z:/monitor/src/main/java/com/szh/monitor/entity/SqlDataSource.java)
+- [RemoteLogSource.java](file:///z:/monitor/src/main/java/com/szh/monitor/entity/RemoteLogSource.java)
+- [OperationLogMapper.java](file:///z:/monitor/src/main/java/com/szh/monitor/mapper/OperationLogMapper.java)
+- [SqlDataSourceMapper.java](file:///z:/monitor/src/main/java/com/szh/monitor/mapper/SqlDataSourceMapper.java)
+- [OperationLogService.java](file:///z:/monitor/src/main/java/com/szh/monitor/service/OperationLogService.java)
+- [OperationLogServiceImp.java](file:///z:/monitor/src/main/java/com/szh/monitor/service/impl/OperationLogServiceImp.java)
+- [operation-logs.html](file:///z:/monitor/src/main/resources/static/operation-logs.html)
+- [sql-data-sources.html](file:///z:/monitor/src/main/resources/static/sql-data-sources.html)
+- [remote-log-sources.html](file:///z:/monitor/src/main/resources/static/remote-log-sources.html)
+
+**修改文件：**
+- [MonitorController.java](file:///z:/monitor/src/main/java/com/szh/monitor/controller/MonitorController.java) - 新增大量API端点
+- [index.html](file:///z:/monitor/src/main/resources/static/index.html) - 移除推送记录预览，卡片可点击，新增菜单
+- [sql-rules.html](file:///z:/monitor/src/main/resources/static/sql-rules.html) - 环境筛选、下拉选择、唯一性校验
+
+---
+
 ## 📝 记录更新日志
 
 | 日期 | 操作类型 | 内容摘要 |
@@ -347,6 +410,8 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 修复bug | 修复WebConfig编译错误，将WebMvcConfigurer改为WebFlux的WebFilter方式 |
 | 2026-05-27 | 修复bug | 修复MonitorController中Map.merge方法的类型转换错误，编译成功 |
 | 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
+| 2026-05-27 | 需求调整 | 首页统计卡片可点击，SQL规则管理优化（环境筛选、下拉选择、唯一校验） |
+| 2026-05-27 | 功能新增 | 新增操作记录、SQL数据源维护、远程日志采集源维护三个模块 |
 
 ---
 
