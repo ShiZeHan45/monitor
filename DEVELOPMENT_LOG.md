@@ -269,6 +269,23 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 
 ---
 
+### 四、WebConfig编译错误修复
+
+**用户指令：**
+> 你所创建的WebConfig，WebMvcConfigurer报错 [ERROR] /tmp/monitor-build/src/main/java/com/szh/monitor/config/WebConfig.java:[8,57] 程序包org.springframework.web.servlet.config.annotation不存在
+
+**问题原因：**
+- 项目使用WebFlux框架，而非Spring MVC
+- `WebMvcConfigurer` 是Spring MVC的接口，在WebFlux环境中不可用
+
+**修复方案：**
+- 将 `WebMvcConfigurer` 改为 WebFlux 的 `WebFilter` 方式实现CORS配置
+- 使用 `CorsUtils` 和响应式编程模型
+
+**修改文件：** [WebConfig.java](file:///z:/monitor/src/main/java/com/szh/monitor/config/WebConfig.java)
+
+---
+
 ## 📝 记录更新日志
 
 | 日期 | 操作类型 | 内容摘要 |
@@ -276,6 +293,7 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 项目分析 | 完成项目代码全面分析，输出架构设计和功能说明 |
 | 2026-05-27 | 功能开发 | 完成前端操作页面全部功能（首页统计、推送记录、SQL规则管理、文件上传） |
 | 2026-05-27 | 文档+配置 | 新增开发记录文档，配置Git自动化提交流程 |
+| 2026-05-27 | 修复bug | 修复WebConfig编译错误，将WebMvcConfigurer改为WebFlux的WebFilter方式 |
 
 ---
 

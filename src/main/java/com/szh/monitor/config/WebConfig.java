@@ -2,32 +2,40 @@ package com.szh.monitor.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.cors.reactive.CorsUtils;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
+public class WebConfig {
+
+    private static final String ALLOWED_HEADERS = "*";
+    private static final String ALLOWED_METHODS = "*";
+    private static final String ALLOWED_ORIGIN_PATTERN = "*";
+    private static final String MAX_AGE = "3600";
 
     @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
-        
-        return new CorsFilter(source);
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/");
+    public WebFilter corsFilter() {
+        return (ServerWebExchange ctx, WebFilterChain chain) -> {
+            ServerHttpRequest request = ctx.getRequest();
+            if (CorsUtils.isCorsRequest(request)) {
+                ServerHttpResponse response = ctx.getResponse();
+                HttpHeaders headers = response.getHeaders();
+                headers.add("Access-Control-Allow-Origin", "*");
+                headers.add("Access-Control-Allow-Methods", ALLOWED_METHODS);
+                headers.add("Access-Control-Max-Age", MAX_AGE);
+                headers.add("Access-Control-Allow-Headers", ALLOWED_HEADERS);
+                if (request.getMethod().name().equals("OPTIONS")) {
+                    response.setComplete();
+                    return Mono.empty();
+                }
+            }
+            return chain.filter(ctx);
+        };
     }
 }
