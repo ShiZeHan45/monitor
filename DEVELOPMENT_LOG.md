@@ -413,6 +413,9 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 需求调整 | 首页统计卡片可点击，SQL规则管理优化（环境筛选、下拉选择、唯一校验） |
 | 2026-05-27 | 功能新增 | 新增操作记录、SQL数据源维护、远程日志采集源维护三个模块 |
 | 2026-05-27 | 修复bug | 修复sql-data-sources.html样式问题，统一Tailwind CSS和Font Awesome版本 |
+| 2026-05-27 | 修复bug | 修复operation-logs.html样式问题，统一样式框架；新增MyBatisPlusConfig配置类 |
+| 2026-05-27 | 修复bug | 修复导航菜单缺失问题，所有页面菜单保持一致 |
+| 2026-05-27 | 修复bug | 创建数据库初始化脚本schema.sql，解决API 500错误 |
 
 ---
 
