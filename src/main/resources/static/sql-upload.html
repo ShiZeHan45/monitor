@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL文件上传 - 监控系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-blue-900 text-white fixed left-0 top-0 min-h-screen">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-upload mr-3"></i>SQL文件上传
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">SQL文件管理</h2>
+                <p class="text-gray-500 mt-1">上传新的SQL检测脚本文件</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <i class="fa fa-upload mr-2"></i>上传SQL文件
+                    </h3>
+                    
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer" id="dropZone">
+                        <i class="fa fa-file-text-o text-5xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-2">点击或拖拽SQL文件到此处上传</p>
+                        <p class="text-sm text-gray-400">支持 .sql 文件格式</p>
+                        <input type="file" id="fileInput" accept=".sql" class="hidden">
+                    </div>
+
+                    <div id="uploadProgress" class="mt-4 hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span id="uploadFileName" class="text-sm text-gray-600"></span>
+                            <span id="uploadPercent" class="text-sm text-gray-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all"></div>
+                        </div>
+                    </div>
+
+                    <div id="uploadResult" class="mt-4 p-3 rounded-lg hidden">
+                        <p class="text-sm flex items-center" id="resultText"></p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <i class="fa fa-folder-open mr-2"></i>已上传文件列表
+                    </h3>
+                    
+                    <div class="space-y-3" id="fileList">
+                        <div class="flex items-center justify-center text-gray-500 py-8">
+                            <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/sql-files');
+                const files = await response.json();
+                
+                const container = document.getElementById('fileList');
+                if (!files || files.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8">暂无SQL文件</div>';
+                    return;
+                }
+                
+                container.innerHTML = files.map(file => {
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fa fa-file-code-o text-blue-500 mr-3"></i>
+                                <span class="text-sm text-gray-700">${file}</span>
+                            </div>
+                            <button onclick="deleteFile('${file}')" class="text-red-500 hover:text-red-700" title="删除文件">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取文件列表失败:', error);
+                document.getElementById('fileList').innerHTML = '<div class="text-center text-gray-500 py-8">加载失败</div>';
+            }
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            if (!file.name.endsWith('.sql')) {
+                showResult('error', '请选择SQL文件');
+                return;
+            }
+
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('uploadResult').classList.add('hidden');
+            document.getElementById('uploadFileName').textContent = file.name;
+            document.getElementById('uploadPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/sql-files/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('uploadPercent').textContent = '100%';
+                document.getElementById('progressBar').style.width = '100%';
+                
+                setTimeout(() => {
+                    if (result.success) {
+                        showResult('success', `上传成功: ${result.filename}`);
+                        loadFiles();
+                    } else {
+                        showResult('error', result.message);
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('上传失败:', error);
+                showResult('error', '上传失败: ' + error.message);
+            }
+        }
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('uploadResult');
+            const resultText = document.getElementById('resultText');
+            
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = `mt-4 p-3 rounded-lg ${type === 'success' ? 'bg-green-100' : 'bg-red-100'}`;
+            resultText.className = `text-sm flex items-center ${type === 'success' ? 'text-green-700' : 'text-red-700'}`;
+            resultText.innerHTML = type === 'success' 
+                ? `<i class="fa fa-check-circle mr-2"></i>${message}` 
+                : `<i class="fa fa-times-circle mr-2"></i>${message}`;
+            
+            setTimeout(() => {
+                resultDiv.classList.add('hidden');
+            }, 3000);
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除文件 ${filename} 吗？`)) return;
+            
+            try {
+                const response = await fetch(`/api/sql-files/${filename}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('删除成功');
+                    loadFiles();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败');
+            }
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推送记录 - 监控系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-blue-900 text-white fixed left-0 top-0 min-h-screen">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-upload mr-3"></i>SQL文件上传
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">推送记录</h2>
+                <p class="text-gray-500 mt-1">查看每日各环境的推送记录详情</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <input type="date" id="filterDate" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button onclick="loadRecords()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fa fa-search mr-2"></i>查询
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">消息类型</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">内容</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发送状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsBody">
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex items-center justify-between mt-6">
+                    <div class="text-sm text-gray-500">
+                        共 <span id="totalRecords">0</span> 条记录
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevPage" onclick="changePage(currentPage - 1)" disabled class="px-3 py-1 bg-gray-100 text-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo" class="text-sm text-gray-600">第 1 页</span>
+                        <button id="nextPage" onclick="changePage(currentPage + 1)" class="px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800">推送详情</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">消息类型</label>
+                        <span id="detailType" class="px-2 py-1 bg-gray-100 rounded text-sm"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">发送Webhook</label>
+                        <span id="detailWebhook" class="text-sm text-gray-600 break-all"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
+                        <span id="detailCreateTime" class="text-sm text-gray-600"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">发送时间</label>
+                        <span id="detailSendTime" class="text-sm text-gray-600"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">发送状态</label>
+                        <span id="detailStatus" class="px-2 py-1 rounded text-sm"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">内容</label>
+                        <pre id="detailContent" class="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 overflow-x-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function loadRecords(page = 1) {
+            const date = document.getElementById('filterDate').value;
+            const url = `/api/push-records?page=${page}&size=10${date ? `&date=${date}` : ''}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('recordsBody');
+                if (!data.records || data.records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
+                    document.getElementById('totalRecords').textContent = '0';
+                    document.getElementById('pageInfo').textContent = '第 1 页';
+                    document.getElementById('prevPage').disabled = true;
+                    document.getElementById('nextPage').disabled = true;
+                    return;
+                }
+                
+                currentPage = data.current;
+                totalPages = data.pages;
+                
+                tbody.innerHTML = data.records.map(record => {
+                    const type = record.msgType === 'ERROR' ? '异常' : record.msgType || '通知';
+                    const typeClass = record.msgType === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+                    const content = record.content?.length > 50 ? record.content.substring(0, 50) + '...' : record.content;
+                    
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full ${typeClass}">${type}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm text-gray-700 max-w-xs truncate">${content || '无内容'}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatTime(record.createTime)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${record.sendStatus ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${record.sendStatus ? '已发送' : '待发送'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="showDetail(${JSON.stringify(record).replace(/"/g, '&quot;')})" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fa fa-eye mr-1"></i>查看详情
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                document.getElementById('totalRecords').textContent = data.total;
+                document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage >= totalPages;
+            } catch (error) {
+                console.error('获取推送记录失败:', error);
+                document.getElementById('recordsBody').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
+            }
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) return;
+            loadRecords(page);
+        }
+
+        function showDetail(record) {
+            document.getElementById('detailType').textContent = record.msgType === 'ERROR' ? '异常' : record.msgType || '通知';
+            document.getElementById('detailType').className = `px-2 py-1 bg-gray-100 rounded text-sm ${record.msgType === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`;
+            document.getElementById('detailWebhook').textContent = record.sendWebhook || '-';
+            document.getElementById('detailCreateTime').textContent = formatTime(record.createTime);
+            document.getElementById('detailSendTime').textContent = formatTime(record.sendDate) || '-';
+            document.getElementById('detailStatus').textContent = record.sendStatus ? '已发送' : '待发送';
+            document.getElementById('detailStatus').className = `px-2 py-1 rounded text-sm ${record.sendStatus ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`;
+            document.getElementById('detailContent').textContent = record.content || '无内容';
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            const date = new Date(timeStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        loadRecords();
+    </script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监控系统管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+        }
+        .nav-item.active {
+            background-color: #1e40af;
+        }
+        .stat-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="sidebar w-64 bg-blue-900 text-white fixed left-0 top-0">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="nav-item block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-upload mr-3"></i>SQL文件上传
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">今日统计概览</h2>
+                <p class="text-gray-500 mt-1" id="currentDate"></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">今日推送总数</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="pushTotal">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-bell text-blue-500 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">SQL异常推送</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="sqlPush">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-database text-green-500 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">日志异常推送</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="logPush">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-file-text-o text-orange-500 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">其他推送</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="otherPush">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-bullhorn text-purple-500 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fa fa-bar-chart mr-2"></i>各环境SQL执行情况
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">环境名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">执行次数</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">失败次数</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成功率</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sqlStatsBody">
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fa fa-history mr-2"></i>今日推送记录（最近10条）
+                </h3>
+                <div class="space-y-4" id="recentPushes">
+                    <div class="flex items-center justify-center text-gray-500 py-8">
+                        <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('currentDate').textContent = '日期：' + new Date().toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/stats/today');
+                const data = await response.json();
+                
+                document.getElementById('pushTotal').textContent = data.pushTotal || 0;
+                document.getElementById('sqlPush').textContent = data.pushStats?.sql || 0;
+                document.getElementById('logPush').textContent = data.pushStats?.log || 0;
+                document.getElementById('otherPush').textContent = data.pushStats?.other || 0;
+            } catch (error) {
+                console.error('获取统计数据失败:', error);
+            }
+        }
+
+        async function fetchSqlStats() {
+            try {
+                const response = await fetch('/api/stats/environment');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('sqlStatsBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(item => {
+                    const total = item.executeCount || 0;
+                    const failed = item.failedCount || 0;
+                    const successRate = total > 0 ? ((total - failed) / total * 100).toFixed(1) : 100;
+                    const status = failed === 0 ? '正常' : '异常';
+                    const statusClass = failed === 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                    
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 rounded-full ${failed === 0 ? 'bg-green-500' : 'bg-red-500'} mr-3"></div>
+                                    <span class="text-sm font-medium text-gray-900">${item.environmentName}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${total}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${failed > 0 ? 'text-red-600 font-medium' : 'text-gray-500'}">${failed}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-1 mr-4 bg-gray-200 rounded-full h-2">
+                                        <div class="h-2 rounded-full ${successRate >= 90 ? 'bg-green-500' : successRate >= 70 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${successRate}%"></div>
+                                    </div>
+                                    <span class="text-sm text-gray-600">${successRate}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${status}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取SQL统计数据失败:', error);
+                document.getElementById('sqlStatsBody').innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
+            }
+        }
+
+        async function fetchRecentPushes() {
+            try {
+                const response = await fetch('/api/push-records?page=1&size=10');
+                const data = await response.json();
+                
+                const container = document.getElementById('recentPushes');
+                if (!data.records || data.records.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8">暂无推送记录</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.records.map(record => {
+                    const type = record.msgType === 'ERROR' ? '异常' : '通知';
+                    const typeClass = record.msgType === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+                    const content = record.content?.length > 100 ? record.content.substring(0, 100) + '...' : record.content;
+                    
+                    return `
+                        <div class="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded-full ${typeClass} mr-2">${type}</span>
+                                        <span class="text-sm text-gray-500">${formatTime(record.createTime)}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${content || '无内容'}</p>
+                                </div>
+                                <div class="ml-4">
+                                    <span class="px-2 py-1 text-xs rounded-full ${record.sendStatus ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                        ${record.sendStatus ? '已发送' : '待发送'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取推送记录失败:', error);
+                document.getElementById('recentPushes').innerHTML = '<div class="text-center text-gray-500 py-8">加载失败</div>';
+            }
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            const date = new Date(timeStr);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        fetchStats();
+        fetchSqlStats();
+        fetchRecentPushes();
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL规则管理 - 监控系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-blue-900 text-white fixed left-0 top-0 min-h-screen">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-upload mr-3"></i>SQL文件上传
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">SQL规则管理</h2>
+                <p class="text-gray-500 mt-1">管理SQL检查规则，支持添加、编辑、删除操作</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800">规则列表</h3>
+                    <button onclick="showAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i class="fa fa-plus mr-2"></i>添加规则
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">环境名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SQL文件名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">执行限制</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">执行时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">执行频率(分钟)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rulesBody">
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">添加规则</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="ruleForm">
+                    <input type="hidden" id="ruleId">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">环境名称 *</label>
+                            <input type="text" id="environmentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">SQL文件名 *</label>
+                            <input type="text" id="sqlFileName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">执行限制次数</label>
+                            <input type="number" id="executeLimit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="0">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">执行开始时间</label>
+                                <input type="time" id="executeStartTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">执行结束时间</label>
+                                <input type="time" id="executeEndTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">执行频率(分钟)</label>
+                            <input type="number" id="executeFrequency" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            取消
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadRules() {
+            try {
+                const response = await fetch('/api/sql-rules');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('rulesBody');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">暂无规则</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.map(rule => {
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${rule.id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${rule.environmentName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${rule.sqlFileName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${rule.executeLimit || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                ${rule.executeStartTime || '-'} - ${rule.executeEndTime || '-'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${rule.executeFrequency || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="showEditModal(${JSON.stringify(rule).replace(/"/g, '&quot;')})" class="text-blue-600 hover:text-blue-800 text-sm mr-3">
+                                    <i class="fa fa-pencil mr-1"></i>编辑
+                                </button>
+                                <button onclick="deleteRule(${rule.id})" class="text-red-600 hover:text-red-800 text-sm">
+                                    <i class="fa fa-trash mr-1"></i>删除
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取规则失败:', error);
+                document.getElementById('rulesBody').innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
+            }
+        }
+
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = '添加规则';
+            document.getElementById('ruleId').value = '';
+            document.getElementById('environmentName').value = '';
+            document.getElementById('sqlFileName').value = '';
+            document.getElementById('executeLimit').value = '';
+            document.getElementById('executeStartTime').value = '';
+            document.getElementById('executeEndTime').value = '';
+            document.getElementById('executeFrequency').value = '';
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function showEditModal(rule) {
+            document.getElementById('modalTitle').textContent = '编辑规则';
+            document.getElementById('ruleId').value = rule.id;
+            document.getElementById('environmentName').value = rule.environmentName;
+            document.getElementById('sqlFileName').value = rule.sqlFileName;
+            document.getElementById('executeLimit').value = rule.executeLimit || '';
+            document.getElementById('executeStartTime').value = rule.executeStartTime || '';
+            document.getElementById('executeEndTime').value = rule.executeEndTime || '';
+            document.getElementById('executeFrequency').value = rule.executeFrequency || '';
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        document.getElementById('ruleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const rule = {
+                environmentName: document.getElementById('environmentName').value,
+                sqlFileName: document.getElementById('sqlFileName').value,
+                executeLimit: document.getElementById('executeLimit').value ? parseInt(document.getElementById('executeLimit').value) : null,
+                executeStartTime: document.getElementById('executeStartTime').value || null,
+                executeEndTime: document.getElementById('executeEndTime').value || null,
+                executeFrequency: document.getElementById('executeFrequency').value ? parseInt(document.getElementById('executeFrequency').value) : null
+            };
+            
+            const id = document.getElementById('ruleId').value;
+            
+            try {
+                let response;
+                if (id) {
+                    response = await fetch(`/api/sql-rules/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rule)
+                    });
+                } else {
+                    response = await fetch('/api/sql-rules', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(rule)
+                    });
+                }
+                
+                if (response.ok) {
+                    closeModal();
+                    loadRules();
+                    alert(id ? '更新成功' : '添加成功');
+                } else {
+                    alert('操作失败');
+                }
+            } catch (error) {
+                console.error('保存规则失败:', error);
+                alert('保存失败');
+            }
+        });
+
+        async function deleteRule(id) {
+            if (!confirm('确定要删除这条规则吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/sql-rules/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadRules();
+                    alert('删除成功');
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                console.error('删除规则失败:', error);
+                alert('删除失败');
+            }
+        }
+
+        loadRules();
+    </script>
+</body>
+</html>
