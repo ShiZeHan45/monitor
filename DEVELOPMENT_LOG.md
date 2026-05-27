@@ -412,6 +412,7 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
 | 2026-05-27 | 需求调整 | 首页统计卡片可点击，SQL规则管理优化（环境筛选、下拉选择、唯一校验） |
 | 2026-05-27 | 功能新增 | 新增操作记录、SQL数据源维护、远程日志采集源维护三个模块 |
+| 2026-05-27 | 修复bug | 修复sql-data-sources.html样式问题，统一Tailwind CSS和Font Awesome版本 |
 
 ---
 
