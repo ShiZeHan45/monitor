@@ -169,13 +169,18 @@ public class MonitorController {
     public ResponseEntity<IPage<MsgSendLog>> getPushRecords(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String environment) {
 
         Page<MsgSendLog> pageRequest = new Page<>(page, size);
         LambdaQueryWrapper<MsgSendLog> query = new LambdaQueryWrapper<>();
 
         if (date != null && !date.isEmpty()) {
             query.like(MsgSendLog::getCreateTime, date);
+        }
+
+        if (environment != null && !environment.isEmpty()) {
+            query.eq(MsgSendLog::getEnvironmentName, environment);
         }
 
         query.orderByDesc(MsgSendLog::getCreateTime);
