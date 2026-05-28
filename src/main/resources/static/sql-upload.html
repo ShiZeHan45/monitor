@@ -224,13 +224,7 @@
             }
         }
 
-        let currentDebugController = null;
-
         async function executeDebug() {
-            if (currentDebugController) {
-                currentDebugController.abort();
-            }
-            
             const environment = document.getElementById('debugDataSource').value;
             const sql = document.getElementById('debugSql').value;
             
@@ -246,23 +240,22 @@
 
             const debugResult = document.getElementById('debugResult');
             const debugMessage = document.getElementById('debugMessage');
+            const debugTableContainer = document.getElementById('debugTableContainer');
             const debugTableHead = document.getElementById('debugTableHead');
             const debugTableBody = document.getElementById('debugTableBody');
 
             debugResult.classList.remove('hidden');
             debugMessage.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>执行中...';
             debugMessage.className = 'mb-4 p-3 rounded-lg text-sm bg-blue-50 text-blue-700';
+            debugTableContainer.classList.add('hidden');
 
-            currentDebugController = new AbortController();
-            
             try {
                 const response = await fetch('/api/sql-debug/execute', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ environment: environment, sql: sql }),
-                    signal: currentDebugController.signal
+                    body: JSON.stringify({ environment: environment, sql: sql })
                 });
                 
                 const result = await response.json();
@@ -270,6 +263,8 @@
                 if (result.success) {
                     debugMessage.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${result.message}`;
                     debugMessage.className = 'mb-4 p-3 rounded-lg text-sm bg-green-50 text-green-700';
+                    
+                    debugTableContainer.classList.remove('hidden');
                     
                     if (result.rows && result.rows.length > 0) {
                         debugTableHead.innerHTML = '<tr>' + result.columns.map(col => 
@@ -288,20 +283,15 @@
                         debugTableBody.innerHTML = '<tr><td class="px-4 py-8 text-center text-gray-500">查询成功，但无返回数据</td></tr>';
                     }
                 } else {
-                    debugMessage.innerHTML = `<i class="fa fa-times-circle mr-2"></i>${result.message}`;
+                    debugMessage.innerHTML = `<i class="fa fa-times-circle mr-2"></i>${result.message}<br><br><span class="font-mono text-sm">${result.error || ''}</span>`;
                     debugMessage.className = 'mb-4 p-3 rounded-lg text-sm bg-red-50 text-red-700';
-                    debugTableHead.innerHTML = '';
-                    debugTableBody.innerHTML = `<tr><td class="px-4 py-8 text-center text-red-600 font-mono text-sm whitespace-pre-wrap">${result.error}</td></tr>`;
+                    debugTableContainer.classList.add('hidden');
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    return;
-                }
                 console.error('执行SQL失败:', error);
                 debugMessage.innerHTML = '<i class="fa fa-times-circle mr-2"></i>执行失败: ' + error.message;
                 debugMessage.className = 'mb-4 p-3 rounded-lg text-sm bg-red-50 text-red-700';
-            } finally {
-                currentDebugController = null;
+                debugTableContainer.classList.add('hidden');
             }
         }
 
