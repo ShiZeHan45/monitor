@@ -45,7 +45,7 @@ public class SendWechatService implements SendService {
         }
         sendMessage.append(msgForm.getEnvironmentName()).append("-").append(msgForm.getTitle()).append("\n");
         msg.accept(sendMessage);
-        sendNewMsgAndStore(sendMessage.toString(),"text",baseConfig.getWechatWebhook());
+        sendNewMsgAndStore(sendMessage.toString(),"text",baseConfig.getWechatWebhook(),msgForm.getEnvironmentName());
     }
 
     @Scheduled(cron = "0 30 9 * * ?")
@@ -72,12 +72,13 @@ public class SendWechatService implements SendService {
         }
     }
 
-    private void sendNewMsgAndStore(String msg,String msgType,String webHook) {
+    private void sendNewMsgAndStore(String msg,String msgType,String webHook, String environmentName) {
         MsgSendLog msgSendLog = new MsgSendLog();
         msgSendLog.setCreateTime(LocalDateTime.now());
         msgSendLog.setMsgType(msgType);
         msgSendLog.setContent(msg);
         msgSendLog.setSendWebhook(webHook);
+        msgSendLog.setEnvironmentName(environmentName);
         sendMsgAndStore(msg, msgType, webHook, msgSendLog);
     }
 
@@ -113,7 +114,7 @@ public class SendWechatService implements SendService {
 
     @Override
     public void sendSimpleMarkDownMsgByLog(String content) {
-        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook());
+        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook(),null);
     }
 
 

@@ -1,68 +1,41 @@
-CREATE TABLE IF NOT EXISTS operation_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    operation_type VARCHAR(50) NOT NULL,
-    operation_module VARCHAR(100) NOT NULL,
-    operation_content TEXT,
-    target_id VARCHAR(100),
-    ip_address VARCHAR(50),
-    browser_info VARCHAR(200),
-    user_agent TEXT,
-    environment_name VARCHAR(100),
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS sql_execute_log (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT, -- 环境名称
+                                               sql_file_name TEXT, -- SQL文件名称
+                                               execute_date INTEGER, -- 执行日期
+                                               failed_count INTEGER, -- 失败次数
+                                               failed_count_reset_time INTEGER, -- 失败次数重置时间
+                                               count INTEGER -- 执行次数
 );
 
-CREATE TABLE IF NOT EXISTS sql_data_source (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    environment_name VARCHAR(100) NOT NULL UNIQUE,
-    jdbc_url TEXT NOT NULL,
-    username VARCHAR(100) NOT NULL,
-    password VARCHAR(200) NOT NULL,
-    driver_class_name VARCHAR(200),
-    enabled BOOLEAN DEFAULT 1,
-    maximum_pool_size INTEGER DEFAULT 20,
-    minimum_idle INTEGER DEFAULT 5,
-    max_lifetime INTEGER DEFAULT 1800000,
-    idle_timeout INTEGER DEFAULT 600000,
-    connection_timeout INTEGER DEFAULT 30000,
-    keepalive_time INTEGER DEFAULT 0,
-    connection_test_query VARCHAR(100),
-    validation_timeout INTEGER DEFAULT 5000,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS msg_send_log(
+                                           id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                           content TEXT, -- 推送内容
+                                           send_webhook TEXT, -- 推送地址
+                                           msg_type TEXT, -- 消息类型
+                                           create_time TIMESTAMP , -- 内容产生时间
+                                           send_date TIMESTAMP , -- 内容推送日期
+                                           send_status INTEGER -- 已发送 1发送 0未发送
 );
 
-CREATE TABLE IF NOT EXISTS remote_log_source (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    environment_name VARCHAR(100) NOT NULL UNIQUE,
-    url TEXT NOT NULL,
-    datasource_id VARCHAR(100),
-    username VARCHAR(100),
-    password VARCHAR(200),
-    webhook TEXT,
-    week VARCHAR(50),
-    start_time TIME,
-    end_time TIME,
-    monitors TEXT,
-    enabled BOOLEAN DEFAULT 1,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS log_collect_time_info(
+                                           id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                           environment_name TEXT, -- 环境名称
+                                           rule_name TEXT, -- 规则名称
+                                           create_time TIMESTAMP , -- 内容产生时间
+                                           last_ts BIGINT , -- 最新的采集时间戳
+                                           last_time TIMESTAMP -- 最新的采集时间
 );
 
 CREATE TABLE IF NOT EXISTS sql_execute_rule (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    environment_name VARCHAR(100) NOT NULL,
-    sql_file_name VARCHAR(200) NOT NULL,
-    execute_limit INTEGER DEFAULT 1,
-    execute_start_time VARCHAR(20),
-    execute_end_time VARCHAR(20),
-    execute_frequency INTEGER DEFAULT 1
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT, -- 环境名称
+                                               sql_file_name TEXT, -- SQL文件名称
+                                               execute_limit INTEGER, -- 执行上限次数
+                                               execute_start_time TEXT, -- 从每天的什么时间开始执行 HH:MM:SS
+                                               execute_end_time TEXT, -- 每天什么时候停止执行 HH:MM:SS
+                                               execute_frequency INTEGER -- 执行频率 n分钟一次
 );
-
-CREATE TABLE IF NOT EXISTS log_collect_time_info (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    environment_name VARCHAR(100) NOT NULL,
-    rule_name VARCHAR(200),
-    last_ts BIGINT,
-    last_time TIMESTAMP,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- 新增：环境+SQL文件 唯一索引（核心）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_env_sql_file
+    ON sql_execute_rule(environment_name, sql_file_name);

@@ -44,15 +44,6 @@
                     <a href="/sql-upload.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
                         <i class="fa fa-folder-open mr-3"></i>SQL文件维护
                     </a>
-                    <a href="/operation-logs.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
-                        <i class="fa fa-file-text mr-3"></i>操作记录
-                    </a>
-                    <a href="/sql-data-sources.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
-                        <i class="fa fa-database mr-3"></i>SQL数据源维护
-                    </a>
-                    <a href="/remote-log-sources.html" class="nav-item block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
-                        <i class="fa fa-cloud mr-3"></i>日志采集源维护
-                    </a>
                 </div>
             </nav>
         </div>
@@ -64,7 +55,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="stat-card cursor-pointer bg-white rounded-xl p-6 border-l-4 border-blue-500 hover:shadow-lg transition-shadow" onclick="goToPushRecords('')">
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-blue-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">今日推送总数</p>
@@ -74,13 +65,9 @@
                             <i class="fa fa-bell text-blue-500 text-2xl"></i>
                         </div>
                     </div>
-                    <p class="text-blue-500 text-sm mt-3 flex items-center">
-                        <span>查看详情</span>
-                        <i class="fa fa-arrow-right ml-1"></i>
-                    </p>
                 </div>
 
-                <div class="stat-card cursor-pointer bg-white rounded-xl p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow" onclick="goToPushRecords('SQL异常')">
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">SQL异常推送</p>
@@ -90,13 +77,9 @@
                             <i class="fa fa-database text-green-500 text-2xl"></i>
                         </div>
                     </div>
-                    <p class="text-blue-500 text-sm mt-3 flex items-center">
-                        <span>查看详情</span>
-                        <i class="fa fa-arrow-right ml-1"></i>
-                    </p>
                 </div>
 
-                <div class="stat-card cursor-pointer bg-white rounded-xl p-6 border-l-4 border-orange-500 hover:shadow-lg transition-shadow" onclick="goToPushRecords('日志异常')">
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-orange-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">日志异常推送</p>
@@ -106,13 +89,9 @@
                             <i class="fa fa-file-text-o text-orange-500 text-2xl"></i>
                         </div>
                     </div>
-                    <p class="text-blue-500 text-sm mt-3 flex items-center">
-                        <span>查看详情</span>
-                        <i class="fa fa-arrow-right ml-1"></i>
-                    </p>
                 </div>
 
-                <div class="stat-card cursor-pointer bg-white rounded-xl p-6 border-l-4 border-purple-500 hover:shadow-lg transition-shadow" onclick="goToPushRecords('其他')">
+                <div class="stat-card bg-white rounded-xl p-6 border-l-4 border-purple-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">其他推送</p>
@@ -122,10 +101,6 @@
                             <i class="fa fa-bullhorn text-purple-500 text-2xl"></i>
                         </div>
                     </div>
-                    <p class="text-blue-500 text-sm mt-3 flex items-center">
-                        <span>查看详情</span>
-                        <i class="fa fa-arrow-right ml-1"></i>
-                    </p>
                 </div>
             </div>
 
@@ -155,6 +130,16 @@
                 </div>
             </div>
 
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fa fa-history mr-2"></i>今日推送记录（最近10条）
+                </h3>
+                <div class="space-y-4" id="recentPushes">
+                    <div class="flex items-center justify-center text-gray-500 py-8">
+                        <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -228,16 +213,62 @@
             }
         }
 
-        function goToPushRecords(msgType) {
-            if (msgType) {
-                window.location.href = `/push-records.html?msgType=${encodeURIComponent(msgType)}`;
-            } else {
-                window.location.href = '/push-records.html';
+        async function fetchRecentPushes() {
+            try {
+                const response = await fetch('/api/push-records?page=1&size=10');
+                const data = await response.json();
+                
+                const container = document.getElementById('recentPushes');
+                if (!data.records || data.records.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8">暂无推送记录</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.records.map(record => {
+                    const type = record.msgType === 'ERROR' ? '异常' : '通知';
+                    const typeClass = record.msgType === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+                    const content = record.content?.length > 100 ? record.content.substring(0, 100) + '...' : record.content;
+                    
+                    return `
+                        <div class="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded-full ${typeClass} mr-2">${type}</span>
+                                        <span class="text-sm text-gray-500">${formatTime(record.createTime)}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${content || '无内容'}</p>
+                                </div>
+                                <div class="ml-4">
+                                    <span class="px-2 py-1 text-xs rounded-full ${record.sendStatus ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                        ${record.sendStatus ? '已发送' : '待发送'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取推送记录失败:', error);
+                document.getElementById('recentPushes').innerHTML = '<div class="text-center text-gray-500 py-8">加载失败</div>';
             }
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            const date = new Date(timeStr);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
         }
 
         fetchStats();
         fetchSqlStats();
+        fetchRecentPushes();
     </script>
 </body>
 </html>

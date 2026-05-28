@@ -15,6 +15,8 @@ public class MsgSendLog {
 
     private String content;
 
+    private String environmentName;
+
     private String sendWebhook;
 
     private String msgType;

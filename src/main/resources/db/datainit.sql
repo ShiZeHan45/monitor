@@ -1,25 +1,3 @@
-INSERT OR IGNORE INTO sql_data_source (environment_name, jdbc_url, username, password, driver_class_name, enabled, maximum_pool_size, minimum_idle, max_lifetime, idle_timeout, connection_timeout, keepalive_time, connection_test_query, validation_timeout, create_time, update_time) VALUES
-('郑州生产', 'jdbc:postgresql://10.65.4.25:1560/prod_saas_thinkwater?TimeZone=Asia/Shanghai&tcpKeepAlive=true', 'ax_read', 'Read@2025', 'org.postgresql.Driver', 1, 1, 0, 120000, 30000, 60000, 30000, 'SELECT 1', 10000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('南昌生产', 'jdbc:postgresql://10.65.4.44:15000/prod_saas_thinkwater?TimeZone=Asia/Shanghai&tcpKeepAlive=true', 'ax_read', 'Anso@2026', 'org.postgresql.Driver', 1, 1, 0, 120000, 30000, 60000, 30000, 'SELECT 1', 10000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('莲上-南澳自来水生产', 'jdbc:mysql://10.0.0.168:8399/waterhub_bill?useUnicode=true&characterEncoding=utf8&characterSetResults=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai', 'dx_reader', 'Dx_reader=123', 'com.mysql.cj.jdbc.Driver', 1, 1, 0, 120000, 30000, 60000, 30000, 'SELECT 1', 10000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-INSERT OR IGNORE INTO remote_log_source (environment_name, url, datasource_id, username, password, week, start_time, end_time, monitors, enabled, create_time, update_time) VALUES
-('郑州生产', 'http://10.65.4.25:3000', '2', 'dev', 'Anso@dev2025', '1,2,3,4,5,6,7', NULL, NULL, '[{"name":"BOSS-BCS","queryExpr":"{service=\"boss-bcs\"}","keywords":[" ERROR "],"exclusionKeywords":["获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败","正累计不能为空","委外机构已完成对账，不允许重新对账","PrePayServiceImpl.java:428","022504198","052300318","172.16.219.154:80","使用默认配置 【ACTIVITY,CONTRACT,RECHARGE_DISCOUNT】","当前存在未回填的临时结账任务","getLoginAppUser(SocketAuthListener.java:76)","您的订单已结束，请前往订单列表查看","157 Authorization error","自定义金额","大于账户可用余额"],"contextLines":10,"enabled":true}]', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('东莞生产', 'http://10.0.9.126:3000', '2', 'shizehan', 'Tax@123456', '1,2,3,4,5,6,7', NULL, NULL, '[{"name":"BOSS-BCS","queryExpr":"{service=\"boss-bcs\"}","keywords":[" ERROR "],"exclusionKeywords":["获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败","正累计不能为空","委外机构已完成对账，不允许重新对账","PrePayServiceImpl.java:428","022504198","052300318","172.16.219.154:80","使用默认配置 【ACTIVITY,CONTRACT,RECHARGE_DISCOUNT】","当前存在未回填的临时结账任务","getLoginAppUser(SocketAuthListener.java:76)","您的订单已结束，请前往订单列表查看","157 Authorization error","自定义金额","大于账户可用余额"],"contextLines":10,"enabled":true}]', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('南昌生产', 'http://10.65.4.44:3000', '1', 'dev', 'Anso@dev2025', '1,2,3,4,5,6,7', '09:00', '21:20', '[{"name":"BOSS-BCS","queryExpr":"{project=\"nc-ddw-5.0\", service=\"boss-bcs\"}","keywords":[" ERROR "],"exclusionKeywords":["获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败","正累计不能为空","委外机构已完成对账，不允许重新对账","PrePayServiceImpl.java:428","022504198","052300318","172.16.219.154:80","使用默认配置 【ACTIVITY,CONTRACT,RECHARGE_DISCOUNT】","当前存在未回填的临时结账任务","getLoginAppUser(SocketAuthListener.java:76)","您的订单已结束，请前往订单列表查看","157 Authorization error","自定义金额","大于账户可用余额"],"contextLines":10,"enabled":true}]', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('测试环境', 'http://10.0.9.149:3000', '1', 'shizehan', 'Tax@123456', '1,2,3,4,5,6,7', NULL, NULL, '[{"name":"BOSS-BCS","queryExpr":"{service=\"boss-bcs\"}","keywords":[" ERROR "],"exclusionKeywords":["获取短信模板id配置失败","无法获取客户code","device序列化转换字典异常","操作人员名称转换失败"],"contextLines":10,"enabled":false}]', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('开发环境', 'http://192.168.199.85:3000', '1', 'admin', 'admin', '1,2,3,4,5,6,7', NULL, NULL, '[{"name":"BOSS-BCS","queryExpr":"{job=\"boss-bcs\"} |= \"[boss-bcs:192.168.199.85:32092]\"!= \"level=info\"","keywords":[" ERROR "],"exclusionKeywords":["获取短信模板id配置失败","无法获取客户code"],"contextLines":1,"enabled":false}]', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-INSERT OR IGNORE INTO log_collect_time_info (environment_name, rule_name, last_ts, last_time, create_time) VALUES
-('郑州生产', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('南昌生产', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('莲上-南澳自来水生产', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('东莞生产', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('测试环境', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('开发环境', 'DEFAULT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-
-
 
 -- 批量插入初始化数据
 INSERT OR IGNORE INTO sql_execute_rule (
