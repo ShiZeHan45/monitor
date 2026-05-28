@@ -118,6 +118,53 @@ public class MonitorController {
         return ResponseEntity.ok(new ArrayList<>(envMap.values()));
     }
 
+    @GetMapping("/stats/push-by-env")
+    public ResponseEntity<List<Map<String, Object>>> getPushStatsByEnvironment() {
+        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(new LambdaQueryWrapper<MsgSendLog>()
+                .like(MsgSendLog::getCreateTime, LocalDate.now().toString()));
+
+        Map<String, Map<String, Object>> envMap = new LinkedHashMap<>();
+
+        List<String> allEnvs = todayLogs.stream()
+                .map(MsgSendLog::getEnvironmentName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        for (String env : allEnvs) {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("environmentName", env);
+            stats.put("sqlPushCount", 0L);
+            stats.put("logPushCount", 0L);
+            envMap.put(env, stats);
+        }
+
+        for (MsgSendLog log : todayLogs) {
+            String env = log.getEnvironmentName();
+            if (env == null) continue;
+
+            Map<String, Object> stats = envMap.get(env);
+            if (stats == null) {
+                stats = new HashMap<>();
+                stats.put("environmentName", env);
+                stats.put("sqlPushCount", 0L);
+                stats.put("logPushCount", 0L);
+                envMap.put(env, stats);
+            }
+
+            String content = log.getContent() != null ? log.getContent().toLowerCase() : "";
+            if (content.contains("sql")) {
+                stats.merge("sqlPushCount", 1L, (a, b) -> (Long) a + (Long) b);
+            }
+            if (content.contains("日志")) {
+                stats.merge("logPushCount", 1L, (a, b) -> (Long) a + (Long) b);
+            }
+        }
+
+        return ResponseEntity.ok(new ArrayList<>(envMap.values()));
+    }
+
     @GetMapping("/push-records")
     public ResponseEntity<IPage<MsgSendLog>> getPushRecords(
             @RequestParam(defaultValue = "1") int page,
