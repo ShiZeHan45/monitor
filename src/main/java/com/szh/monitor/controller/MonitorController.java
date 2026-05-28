@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.config.SQLConfig;
+import com.szh.monitor.context.ExecuteJDBCContext;
+import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.entity.LogCollectTimeInfo;
 import com.szh.monitor.entity.MsgSendLog;
 import com.szh.monitor.entity.SqlExecuteLog;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -48,6 +51,9 @@ public class MonitorController {
 
     @Autowired
     private LogCollectTimeInfoMapper logCollectTimeInfoMapper;
+
+    @Autowired
+    private ExecuteJDBCContext executeJDBCContext;
 
     @Autowired
     private SQLConfig sqlConfig;
@@ -480,6 +486,61 @@ public class MonitorController {
             result.put("success", false);
             result.put("message", "写入文件失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    @GetMapping("/datasources")
+    public ResponseEntity<List<String>> getDataSources() {
+        Map<String, String> jdbcTemplates = executeJDBCContext.getJBDCTemplate();
+        List<String> dataSources = new ArrayList<>(jdbcTemplates.keySet());
+        Collections.sort(dataSources);
+        return ResponseEntity.ok(dataSources);
+    }
+
+    @PostMapping("/sql-debug/execute")
+    public ResponseEntity<Map<String, Object>> executeSqlDebug(@RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+
+        String environmentName = request.get("environment");
+        String sql = request.get("sql");
+
+        if (environmentName == null || environmentName.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("error", "请选择数据源");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        if (sql == null || sql.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("error", "SQL语句不能为空");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        Map<String, String> jdbcTemplates = executeJDBCContext.getJBDCTemplate();
+        String jdbcTemplateName = jdbcTemplates.get(environmentName);
+
+        if (jdbcTemplateName == null) {
+            result.put("success", false);
+            result.put("error", "数据源不存在: " + environmentName);
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        try {
+            JdbcTemplate jdbcTemplate = SpringContextUtil.getBean(jdbcTemplateName, JdbcTemplate.class);
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
+
+            result.put("success", true);
+            result.put("columns", results.isEmpty() ? Collections.emptyList() : new ArrayList<>(results.get(0).keySet()));
+            result.put("rows", results);
+            result.put("rowCount", results.size());
+            result.put("message", "查询成功，返回 " + results.size() + " 条记录");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("执行SQL调试失败: environment={}, sql={}", environmentName, sql, e);
+            result.put("success", false);
+            result.put("error", e.getMessage());
+            result.put("message", "SQL执行失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
         }
     }
 }
