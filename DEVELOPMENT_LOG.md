@@ -411,84 +411,13 @@ fetch('/api/sql-files/upload', { method: 'POST', body: formData });
 | 2026-05-27 | 修复bug | 修复MonitorController中Map.merge方法的类型转换错误，编译成功 |
 | 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
 | 2026-05-27 | 需求调整 | 首页统计卡片可点击，SQL规则管理优化（环境筛选、下拉选择、唯一校验） |
-| 2026-05-27 | 功能新增 | 新增操作记录、SQL数据源维护、远程日志采集源维护三个模块 | 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
+| 2026-05-27 | 功能新增 | 新增操作记录、SQL数据源维护、远程日志采集源维护三个模块 |
 | 2026-05-27 | 修复bug | 修复sql-data-sources.html样式问题，统一Tailwind CSS和Font Awesome版本 |
 | 2026-05-27 | 修复bug | 修复operation-logs.html样式问题，统一样式框架；新增MyBatisPlusConfig配置类 |
 | 2026-05-27 | 修复bug | 修复导航菜单缺失问题，所有页面菜单保持一致 |
 | 2026-05-27 | 修复bug | 创建数据库初始化脚本schema.sql，解决API 500错误 |
 | 2026-05-27 | 数据初始化 | 创建datainit.sql，按YML配置初始化SQL数据源和远程日志采集源数据 |
 | 2026-05-27 | 修复bug | 完善schema.sql，补充sql_execute_rule和log_collect_time_info表；更新datainit.sql添加环境名称初始化数据 |
-
-### 七、SSH Key配置与自动部署流程
-
-**用户指令：**
-> 我需要你在push代码后 
-> 1.使用MVN install打包成actuator.jar包 
-> 2.传输到我本地的欧拉系统 192.168.199.85 的 /soft/actuator 文件夹下 
-> 3.发送systemctl stop actuator.service以及systemctl start actuator.service 
-> 4.检查actuator服务是否启动成功
-
-**完成内容：**
-
-#### 1. SSH Key免登录配置
-
-**本地Windows配置：**
-- 生成SSH密钥对：`ssh-keygen -t rsa -b 4096 -C "monitor-deploy"`
-- 密钥保存在：`C:\Users\用户名\.ssh\id_rsa`（私钥）和 `id_rsa.pub`（公钥）
-
-**远程服务器配置：**
-- 将公钥内容添加到：`~/.ssh/authorized_keys`
-- 设置权限：`chmod 600 ~/.ssh/authorized_keys`
-
-#### 2. 自动化部署流程
-
-每次代码修改并提交后，自动执行以下流程：
-
-**步骤1：Maven打包**
-```bash
-mvn clean install -DskipTests -q
-```
-- 生成文件：`target/actuator.jar`
-- 约50MB大小
-
-**步骤2：传输文件**
-```bash
-scp -o StrictHostKeyChecking=no target/actuator.jar root@192.168.199.85:/soft/actuator/
-```
-
-**步骤3：重启服务**
-```bash
-ssh root@192.168.199.85 "systemctl stop actuator.service && systemctl start actuator.service"
-```
-
-**步骤4：检查服务状态**
-```bash
-ssh root@192.168.199.85 "systemctl status actuator.service"
-```
-
-#### 3. 部署目标信息
-
-| 配置项 | 值 |
-|--------|-----|
-| 服务器IP | 192.168.199.85 |
-| 用户名 | root |
-| 部署路径 | /soft/actuator/ |
-| 服务名称 | actuator.service |
-| 启动端口 | 18081 |
-| JVM参数 | -Xms256m -Xmx512m |
-
-#### 4. 首次部署记录
-
-**部署时间：** 2026-05-28 10:44:51
-**部署结果：** ✅ 成功
-- 文件传输：49MB，约11秒
-- 服务状态：active (running)
-- 启动命令：`/usr/lib/jvm/java-1.8.0-openjdk/bin/java -Xms256m -Xmx512m -jar /soft/actuator/actuator.jar --server.port=18081`
-
----
-
-| 2026-05-27 | 功能增强 | 将SQL文件上传改为SQL文件维护，新增文件编辑功能 |
-| 2026-05-28 | 配置+部署 | 配置SSH Key免登录，搭建自动化部署流程，完成首次部署 |
 
 ---
 
