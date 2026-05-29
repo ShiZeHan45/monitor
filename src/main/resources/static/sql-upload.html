@@ -353,17 +353,22 @@
                     body: formData
                 });
                 
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                
                 const result = await response.json();
                 
                 document.getElementById('uploadPercent').textContent = '100%';
                 document.getElementById('progressBar').style.width = '100%';
                 
                 setTimeout(() => {
-                    if (result.success) {
-                        showResult('success', `上传成功: ${result.filename}`);
+                    if (result && result.success) {
+                        const filename = result.filename || '未知文件';
+                        showResult('success', `上传成功: ${filename}`);
                         loadFiles();
                     } else {
-                        showResult('error', result.message);
+                        showResult('error', result ? result.message : '上传失败，服务器返回异常');
                     }
                 }, 500);
             } catch (error) {
