@@ -46,5 +46,15 @@ public class SQLiteDataSourceConfig {
         return new SqlSessionTemplate(sqlSessionFactory);
     }
 
+    @Bean
+    public DataSourceInitializer dataSourceInitializer(@Qualifier("sqliteDataSource") DataSource dataSource) {
+        DataSourceInitializer initializer = new DataSourceInitializer();
+        initializer.setDataSource(dataSource);
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(new ClassPathResource("db/schema.sql"));
+        initializer.setDatabasePopulator(populator);
+        return initializer;
+    }
+
 }
 
