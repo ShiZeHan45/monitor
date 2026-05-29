@@ -213,7 +213,14 @@
     </div>
 
     <script>
-        let selectedDataSource = null;
+        let selectedDataSourceId = null;
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
         async function loadDataSources() {
             try {
@@ -226,18 +233,23 @@
                     return;
                 }
                 
-                container.innerHTML = dataSources.map(ds => `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${selectedDataSource?.id === ds.id ? 'ring-2 ring-blue-500' : ''}" onclick="selectDataSource(${JSON.stringify(ds).replace(/"/g, '&quot;')})">
+                container.innerHTML = dataSources.map(ds => {
+                    const isSelected = selectedDataSourceId === ds.id;
+                    return `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${isSelected ? 'ring-2 ring-blue-500' : ''}" onclick="selectDataSource(${ds.id})">
                         <div class="flex items-center">
                             <i class="fa fa-server text-blue-500 mr-3"></i>
                             <div>
-                                <div class="text-sm font-medium text-gray-800">${ds.environmentName}</div>
-                                <div class="text-xs text-gray-500">${ds.url}</div>
+                                <div class="text-sm font-medium text-gray-800">${escapeHtml(ds.environmentName)}</div>
+                                <div class="text-xs text-gray-500">${escapeHtml(ds.url)}</div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="px-2 py-0.5 text-xs rounded-full ${ds.enabled === 1 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">${ds.enabled === 1 ? '启用' : '禁用'}</span>
-                            <button onclick="editDataSource(${JSON.stringify(ds).replace(/"/g, '&quot;')}); event.stopPropagation()" class="text-blue-500 hover:text-blue-700" title="编辑">
+                            <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+                                <input type="checkbox" class="sr-only peer" ${ds.enabled === 1 ? 'checked' : ''} onchange="toggleDataSourceEnabled(${ds.id}, this.checked)">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <button onclick="editDataSource(${ds.id}); event.stopPropagation()" class="text-blue-500 hover:text-blue-700" title="编辑">
                                 <i class="fa fa-pencil"></i>
                             </button>
                             <button onclick="deleteDataSource(${ds.id}); event.stopPropagation()" class="text-red-500 hover:text-red-700" title="删除">
@@ -245,7 +257,7 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (error) {
                 console.error('获取数据源列表失败:', error);
                 document.getElementById('dataSourceList').innerHTML = '<div class="text-center text-gray-500 py-8">加载失败</div>';
@@ -275,13 +287,16 @@
                         <div class="flex items-center">
                             <i class="fa fa-filter text-green-500 mr-3"></i>
                             <div>
-                                <div class="text-sm font-medium text-gray-800">${rule.name}</div>
-                                <div class="text-xs text-gray-500 truncate max-w-xs">${rule.queryExpr}</div>
+                                <div class="text-sm font-medium text-gray-800">${escapeHtml(rule.name)}</div>
+                                <div class="text-xs text-gray-500 truncate max-w-xs">${escapeHtml(rule.queryExpr)}</div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="px-2 py-0.5 text-xs rounded-full ${rule.enabled === 1 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">${rule.enabled === 1 ? '启用' : '禁用'}</span>
-                            <button onclick="editRule(${JSON.stringify(rule).replace(/"/g, '&quot;')})" class="text-blue-500 hover:text-blue-700" title="编辑">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" ${rule.enabled === 1 ? 'checked' : ''} onchange="toggleRuleEnabled(${rule.id}, this.checked)">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <button onclick="editRule(${rule.id})" class="text-blue-500 hover:text-blue-700" title="编辑">
                                 <i class="fa fa-pencil"></i>
                             </button>
                             <button onclick="deleteRule(${rule.id})" class="text-red-500 hover:text-red-700" title="删除">
@@ -297,10 +312,136 @@
             }
         }
 
-        function selectDataSource(ds) {
-            selectedDataSource = ds;
+        function selectDataSource(id) {
+            selectedDataSourceId = id;
             loadDataSources();
-            loadRules(ds.id);
+            loadRules(id);
+        }
+
+        async function toggleDataSourceEnabled(id, enabled) {
+            try {
+                const response = await fetch(`/api/grafana/datasources/${id}`)
+                const ds = await response.json();
+                ds.enabled = enabled ? 1 : 0;
+                
+                const updateResponse = await fetch(`/api/grafana/datasources/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ds)
+                });
+                const result = await updateResponse.json();
+                
+                if (result.success) {
+                    await refreshConfig();
+                    loadDataSources();
+                    if (selectedDataSourceId === id) {
+                        loadRules(id);
+                    }
+                } else {
+                    alert(result.message);
+                    loadDataSources();
+                }
+            } catch (error) {
+                console.error('切换状态失败:', error);
+                alert('切换状态失败');
+                loadDataSources();
+            }
+        }
+
+        async function toggleRuleEnabled(id, enabled) {
+            try {
+                const response = await fetch(`/api/grafana/rules/${id}`)
+                const rule = await response.json();
+                rule.enabled = enabled ? 1 : 0;
+                
+                const updateResponse = await fetch(`/api/grafana/rules/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(rule)
+                });
+                const result = await updateResponse.json();
+                
+                if (result.success) {
+                    await refreshConfig();
+                    loadRules(selectedDataSourceId);
+                } else {
+                    alert(result.message);
+                    loadRules(selectedDataSourceId);
+                }
+            } catch (error) {
+                console.error('切换状态失败:', error);
+                alert('切换状态失败');
+                loadRules(selectedDataSourceId);
+            }
+        }
+
+        async function editDataSource(id) {
+            try {
+                const response = await fetch(`/api/grafana/datasources/${id}`);
+                const ds = await response.json();
+                if (!ds.id) {
+                    alert('获取数据源信息失败');
+                    return;
+                }
+                
+                document.getElementById('dataSourceModalTitle').textContent = '编辑数据源';
+                document.getElementById('dsId').value = ds.id;
+                document.getElementById('dsEnvironmentName').value = ds.environmentName || '';
+                document.getElementById('dsUrl').value = ds.url || '';
+                document.getElementById('dsDatasourceId').value = ds.datasourceId || '';
+                document.getElementById('dsUsername').value = ds.username || '';
+                document.getElementById('dsPassword').value = ds.password || '';
+                document.getElementById('dsWebhook').value = ds.webhook || '';
+                document.getElementById('dsStartTime').value = ds.startTime || '';
+                document.getElementById('dsEndTime').value = ds.endTime || '';
+                try {
+                    const weekArray = JSON.parse(ds.week);
+                    document.getElementById('dsWeek').value = Array.isArray(weekArray) ? weekArray.join(',') : '1,2,3,4,5,6,7';
+                } catch (e) {
+                    document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
+                }
+                document.getElementById('dsEnabled').value = ds.enabled;
+                document.getElementById('dataSourceModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('获取数据源信息失败:', error);
+                alert('获取数据源信息失败');
+            }
+        }
+
+        async function editRule(id) {
+            try {
+                const response = await fetch(`/api/grafana/rules/${id}`);
+                const rule = await response.json();
+                if (!rule.id) {
+                    alert('获取规则信息失败');
+                    return;
+                }
+                
+                document.getElementById('ruleModalTitle').textContent = '编辑监控规则';
+                document.getElementById('ruleId').value = rule.id;
+                document.getElementById('ruleDataSourceId').value = rule.dataSourceId;
+                document.getElementById('ruleName').value = rule.name || '';
+                document.getElementById('ruleQueryExpr').value = rule.queryExpr || '';
+                try {
+                    const keywords = JSON.parse(rule.keywords);
+                    document.getElementById('ruleKeywords').value = Array.isArray(keywords) ? keywords.join('\n') : '';
+                } catch (e) {
+                    document.getElementById('ruleKeywords').value = '';
+                }
+                try {
+                    const exclusionKeywords = JSON.parse(rule.exclusionKeywords);
+                    document.getElementById('ruleExclusionKeywords').value = Array.isArray(exclusionKeywords) ? exclusionKeywords.join('\n') : '';
+                } catch (e) {
+                    document.getElementById('ruleExclusionKeywords').value = '';
+                }
+                document.getElementById('ruleContextLines').value = rule.contextLines || 5;
+                document.getElementById('ruleWebhook').value = rule.webhook || '';
+                document.getElementById('ruleEnabled').value = rule.enabled;
+                document.getElementById('ruleModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('获取规则信息失败:', error);
+                alert('获取规则信息失败');
+            }
         }
 
         function showAddDataSourceModal() {
@@ -316,22 +457,6 @@
             document.getElementById('dsEndTime').value = '';
             document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
             document.getElementById('dsEnabled').value = '1';
-            document.getElementById('dataSourceModal').classList.remove('hidden');
-        }
-
-        function editDataSource(ds) {
-            document.getElementById('dataSourceModalTitle').textContent = '编辑数据源';
-            document.getElementById('dsId').value = ds.id;
-            document.getElementById('dsEnvironmentName').value = ds.environmentName;
-            document.getElementById('dsUrl').value = ds.url;
-            document.getElementById('dsDatasourceId').value = ds.datasourceId;
-            document.getElementById('dsUsername').value = ds.username;
-            document.getElementById('dsPassword').value = ds.password;
-            document.getElementById('dsWebhook').value = ds.webhook || '';
-            document.getElementById('dsStartTime').value = ds.startTime || '';
-            document.getElementById('dsEndTime').value = ds.endTime || '';
-            document.getElementById('dsWeek').value = ds.week ? JSON.parse(ds.week).join(',') : '1,2,3,4,5,6,7';
-            document.getElementById('dsEnabled').value = ds.enabled;
             document.getElementById('dataSourceModal').classList.remove('hidden');
         }
 
@@ -370,8 +495,8 @@
                     alert(result.message);
                     closeDataSourceModal();
                     loadDataSources();
-                    if (selectedDataSource && (id ? parseInt(id) === selectedDataSource.id : false)) {
-                        loadRules(selectedDataSource.id);
+                    if (id && parseInt(id) === selectedDataSourceId) {
+                        loadRules(selectedDataSourceId);
                     }
                 } else {
                     alert(result.message);
@@ -393,8 +518,8 @@
                 
                 if (result.success) {
                     alert(result.message);
-                    if (selectedDataSource && selectedDataSource.id === id) {
-                        selectedDataSource = null;
+                    if (selectedDataSourceId === id) {
+                        selectedDataSourceId = null;
                         loadRules(null);
                     }
                     loadDataSources();
@@ -408,14 +533,14 @@
         }
 
         function showAddRuleModal() {
-            if (!selectedDataSource) {
+            if (!selectedDataSourceId) {
                 alert('请先选择数据源');
                 return;
             }
             
             document.getElementById('ruleModalTitle').textContent = '新增监控规则';
             document.getElementById('ruleId').value = '';
-            document.getElementById('ruleDataSourceId').value = selectedDataSource.id;
+            document.getElementById('ruleDataSourceId').value = selectedDataSourceId;
             document.getElementById('ruleName').value = '';
             document.getElementById('ruleQueryExpr').value = '';
             document.getElementById('ruleKeywords').value = '';
@@ -423,20 +548,6 @@
             document.getElementById('ruleContextLines').value = '5';
             document.getElementById('ruleWebhook').value = '';
             document.getElementById('ruleEnabled').value = '1';
-            document.getElementById('ruleModal').classList.remove('hidden');
-        }
-
-        function editRule(rule) {
-            document.getElementById('ruleModalTitle').textContent = '编辑监控规则';
-            document.getElementById('ruleId').value = rule.id;
-            document.getElementById('ruleDataSourceId').value = rule.dataSourceId;
-            document.getElementById('ruleName').value = rule.name;
-            document.getElementById('ruleQueryExpr').value = rule.queryExpr;
-            document.getElementById('ruleKeywords').value = rule.keywords ? JSON.parse(rule.keywords).join('\n') : '';
-            document.getElementById('ruleExclusionKeywords').value = rule.exclusionKeywords ? JSON.parse(rule.exclusionKeywords).join('\n') : '';
-            document.getElementById('ruleContextLines').value = rule.contextLines || '5';
-            document.getElementById('ruleWebhook').value = rule.webhook || '';
-            document.getElementById('ruleEnabled').value = rule.enabled;
             document.getElementById('ruleModal').classList.remove('hidden');
         }
 
@@ -472,7 +583,7 @@
                 if (result.success) {
                     alert(result.message);
                     closeRuleModal();
-                    loadRules(selectedDataSource.id);
+                    loadRules(selectedDataSourceId);
                 } else {
                     alert(result.message);
                 }
@@ -493,7 +604,7 @@
                 
                 if (result.success) {
                     alert(result.message);
-                    loadRules(selectedDataSource.id);
+                    loadRules(selectedDataSourceId);
                 } else {
                     alert(result.message);
                 }
