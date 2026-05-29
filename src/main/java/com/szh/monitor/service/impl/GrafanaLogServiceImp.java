@@ -72,7 +72,11 @@ public class GrafanaLogServiceImp {
 
     @PostConstruct
     public void init() {
-        refreshConfig();
+        try {
+            refreshConfig();
+        } catch (Exception e) {
+            logger.warn("初始化配置失败，可能是数据库表尚未创建: {}", e.getMessage());
+        }
     }
 
     public void refreshConfig() {
