@@ -1,0 +1,750 @@
+2026-05-27 16:32:45.239  INFO 140608 --- [main] com.szh.monitor.ProxyApplication         : Starting ProxyApplication using Java 1.8.0_401 on DX0065AX707-1 with PID 140608 (Z:\monitor\target\classes started by 82111 in Z:\monitor)
+2026-05-27 16:32:45.248  INFO 140608 --- [main] com.szh.monitor.ProxyApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-05-27 16:32:52.943  WARN 140608 --- [main] c.b.m.e.s.MybatisSqlSessionFactoryBean   : Property 'mapperLocations' was specified but matching resources are not found.
+2026-05-27 16:32:55.987  INFO 140608 --- [main] c.s.m.service.impl.GrafanaLogServiceImp  : webClient初始化完成 [东莞生产, 南昌生产, 开发环境, 测试环境, 郑州生产]
+2026-05-27 16:32:55.999  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-27 16:32:59.132  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-27 16:32:59.144  INFO 140608 --- [main] c.s.m.service.impl.SqlExecutorService    : 南昌生产-jdbcTemplate 已载入
+2026-05-27 16:32:59.149  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-05-27 16:32:59.687  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-05-27 16:32:59.690  INFO 140608 --- [main] c.s.m.service.impl.SqlExecutorService    : 莲上-南澳自来水生产-jdbcTemplate 已载入
+2026-05-27 16:32:59.690  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-05-27 16:33:00.602  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-05-27 16:33:00.608  INFO 140608 --- [main] c.s.m.service.impl.SqlExecutorService    : 郑州生产-jdbcTemplate 已载入
+2026-05-27 16:33:02.198  INFO 140608 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-05-27 16:33:03.534 ERROR 140608 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Exception during pool initialization.
+
+java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+	at org.sqlite.SQLiteConnection.open(SQLiteConnection.java:261) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.SQLiteConnection.<init>(SQLiteConnection.java:67) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.<init>(JDBC3Connection.java:28) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.<init>(JDBC4Connection.java:19) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.JDBC.createConnection(JDBC.java:106) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.JDBC.connect(JDBC.java:79) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:121) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:364) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:206) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:476) [HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) [HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115) [HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) [HikariCP-4.0.3.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) [spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) [spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) [spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute(DatabasePopulatorUtils.java:52) [spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.boot.jdbc.init.DataSourceScriptDatabaseInitializer.runScripts(DataSourceScriptDatabaseInitializer.java:90) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.runScripts(AbstractScriptDatabaseInitializer.java:145) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applyScripts(AbstractScriptDatabaseInitializer.java:107) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applySchemaScripts(AbstractScriptDatabaseInitializer.java:97) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.initializeDatabase(AbstractScriptDatabaseInitializer.java:75) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.afterPropertiesSet(AbstractScriptDatabaseInitializer.java:65) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1863) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1800) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:620) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:322) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) [spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:955) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:929) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:591) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext.refresh(ReactiveWebServerApplicationContext.java:66) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:732) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:409) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1300) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1289) ~[spring-boot-2.7.18.jar:2.7.18]
+	at com.szh.monitor.ProxyApplication.main(ProxyApplication.java:24) ~[classes/:na]
+
+2026-05-27 16:33:03.550  WARN 140608 --- [main] onfigReactiveWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.UncategorizedScriptException: Failed to execute database script; nested exception is org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+2026-05-27 16:33:03.607  INFO 140608 --- [main] ConditionEvaluationReportLoggingListener : 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2026-05-27 16:33:03.739 ERROR 140608 --- [main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.UncategorizedScriptException: Failed to execute database script; nested exception is org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:620) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:322) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:955) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:929) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:591) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext.refresh(ReactiveWebServerApplicationContext.java:66) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:732) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:409) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1300) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1289) [spring-boot-2.7.18.jar:2.7.18]
+	at com.szh.monitor.ProxyApplication.main(ProxyApplication.java:24) [classes/:na]
+Caused by: org.springframework.jdbc.datasource.init.UncategorizedScriptException: Failed to execute database script; nested exception is org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+	at org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute(DatabasePopulatorUtils.java:67) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.boot.jdbc.init.DataSourceScriptDatabaseInitializer.runScripts(DataSourceScriptDatabaseInitializer.java:90) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.runScripts(AbstractScriptDatabaseInitializer.java:145) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applyScripts(AbstractScriptDatabaseInitializer.java:107) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applySchemaScripts(AbstractScriptDatabaseInitializer.java:97) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.initializeDatabase(AbstractScriptDatabaseInitializer.java:75) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.afterPropertiesSet(AbstractScriptDatabaseInitializer.java:65) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1863) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1800) ~[spring-beans-5.3.31.jar:5.3.31]
+	... 18 common frames omitted
+Caused by: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection; nested exception is java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:84) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute(DatabasePopulatorUtils.java:52) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	... 26 common frames omitted
+Caused by: java.sql.SQLException: path to '/soft/sqlite/monitor.db': 'Z:\soft' does not exist
+	at org.sqlite.SQLiteConnection.open(SQLiteConnection.java:261) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.SQLiteConnection.<init>(SQLiteConnection.java:67) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.<init>(JDBC3Connection.java:28) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.<init>(JDBC4Connection.java:19) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.JDBC.createConnection(JDBC.java:106) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.JDBC.connect(JDBC.java:79) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:121) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:364) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:206) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:476) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-4.0.3.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	... 27 common frames omitted
+
+2026-05-27 17:01:03.116  INFO 159976 --- [main] com.szh.monitor.ProxyApplication         : Starting ProxyApplication using Java 1.8.0_401 on DX0065AX707-1 with PID 159976 (Z:\monitor\target\classes started by 82111 in Z:\monitor)
+2026-05-27 17:01:03.125  INFO 159976 --- [main] com.szh.monitor.ProxyApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-05-27 17:01:08.032  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'logCollectTimeInfoMapper' and 'com.szh.monitor.mapper.LogCollectTimeInfoMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.048  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'msgSendLogMapper' and 'com.szh.monitor.mapper.MsgSendLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.058  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'operationLogMapper' and 'com.szh.monitor.mapper.OperationLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.059  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'remoteLogSourceMapper' and 'com.szh.monitor.mapper.RemoteLogSourceMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.060  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlDataSourceMapper' and 'com.szh.monitor.mapper.SqlDataSourceMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.061  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlExecuteLogMapper' and 'com.szh.monitor.mapper.SqlExecuteLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.069  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlExecuteRuleMapper' and 'com.szh.monitor.mapper.SqlExecuteRuleMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:01:08.072  WARN 159976 --- [main] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[com.szh.monitor.mapper]' package. Please check your configuration.
+2026-05-27 17:01:09.259  WARN 159976 --- [main] c.b.m.e.s.MybatisSqlSessionFactoryBean   : Property 'mapperLocations' was specified but matching resources are not found.
+2026-05-27 17:01:12.715  INFO 159976 --- [main] c.s.m.service.impl.GrafanaLogServiceImp  : webClient初始化完成 [东莞生产, 南昌生产, 开发环境, 测试环境, 郑州生产]
+2026-05-27 17:01:12.727  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-27 17:01:15.171  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-27 17:01:15.179  INFO 159976 --- [main] c.s.m.service.impl.SqlExecutorService    : 南昌生产-jdbcTemplate 已载入
+2026-05-27 17:01:15.188  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-05-27 17:01:15.693  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-05-27 17:01:15.694  INFO 159976 --- [main] c.s.m.service.impl.SqlExecutorService    : 莲上-南澳自来水生产-jdbcTemplate 已载入
+2026-05-27 17:01:15.696  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-05-27 17:01:16.540  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-05-27 17:01:16.549  INFO 159976 --- [main] c.s.m.service.impl.SqlExecutorService    : 郑州生产-jdbcTemplate 已载入
+2026-05-27 17:01:17.951  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-05-27 17:01:18.493  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-05-27 17:01:19.458  WARN 159976 --- [main] onfigReactiveWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #3 of class path resource [db/datainit.sql]: INSERT OR IGNORE INTO sql_execute_rule ( environment_name, sql_file_name, execute_limit, execute_start_time, execute_end_time, execute_frequency ) VALUES ('閮戝窞鐢熶骇', '寮?闃?妫?鏌?-搴斿紑鏈紑.sql', 99, '15:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪彂鍏抽榾鎸囦护1澶╁悗闃?闂ㄧ姸鎬佷粛涓哄紑闃?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩搴斿叧闃?鏈叧闃?妫?鏌?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '浼樻儬鍒版湡璐︽埛0閲忛渶鎵嬪姩鍏抽榾limit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩璁″垝涓嬪彂鍏抽榾鐢ㄦ按鎴?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩宸蹭笅鍙戝叧闃?鐨勭敤姘存埛limit5.sql', 1, '12:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鍏抽榾鎸囦护涓嬪彂1澶╁悗浠嶇户缁敤姘寸殑寮傚父鐢ㄦ按鎴?.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-寮?绁ㄦ?婚涓庤处鍗曟?婚涓嶇浉绛夌粺璁?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-娣辨境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-闈掓境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-浜戞境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鑾蹭笂娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鍚庡畢娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_rule)
+2026-05-27 17:01:19.471  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2026-05-27 17:01:19.482  INFO 159976 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+2026-05-27 17:01:19.522  INFO 159976 --- [main] ConditionEvaluationReportLoggingListener : 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2026-05-27 17:01:19.641 ERROR 159976 --- [main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #3 of class path resource [db/datainit.sql]: INSERT OR IGNORE INTO sql_execute_rule ( environment_name, sql_file_name, execute_limit, execute_start_time, execute_end_time, execute_frequency ) VALUES ('閮戝窞鐢熶骇', '寮?闃?妫?鏌?-搴斿紑鏈紑.sql', 99, '15:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪彂鍏抽榾鎸囦护1澶╁悗闃?闂ㄧ姸鎬佷粛涓哄紑闃?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩搴斿叧闃?鏈叧闃?妫?鏌?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '浼樻儬鍒版湡璐︽埛0閲忛渶鎵嬪姩鍏抽榾limit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩璁″垝涓嬪彂鍏抽榾鐢ㄦ按鎴?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩宸蹭笅鍙戝叧闃?鐨勭敤姘存埛limit5.sql', 1, '12:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鍏抽榾鎸囦护涓嬪彂1澶╁悗浠嶇户缁敤姘寸殑寮傚父鐢ㄦ按鎴?.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-寮?绁ㄦ?婚涓庤处鍗曟?婚涓嶇浉绛夌粺璁?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-娣辨境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-闈掓境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-浜戞境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鑾蹭笂娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鍚庡畢娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_rule)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:620) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:322) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:955) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:929) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:591) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext.refresh(ReactiveWebServerApplicationContext.java:66) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:732) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:409) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1300) [spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1289) [spring-boot-2.7.18.jar:2.7.18]
+	at com.szh.monitor.ProxyApplication.main(ProxyApplication.java:24) [classes/:na]
+Caused by: org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #3 of class path resource [db/datainit.sql]: INSERT OR IGNORE INTO sql_execute_rule ( environment_name, sql_file_name, execute_limit, execute_start_time, execute_end_time, execute_frequency ) VALUES ('閮戝窞鐢熶骇', '寮?闃?妫?鏌?-搴斿紑鏈紑.sql', 99, '15:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪彂鍏抽榾鎸囦护1澶╁悗闃?闂ㄧ姸鎬佷粛涓哄紑闃?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩搴斿叧闃?鏈叧闃?妫?鏌?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '浼樻儬鍒版湡璐︽埛0閲忛渶鎵嬪姩鍏抽榾limit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩璁″垝涓嬪彂鍏抽榾鐢ㄦ按鎴?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撴棩宸蹭笅鍙戝叧闃?鐨勭敤姘存埛limit5.sql', 1, '12:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鍏抽榾鎸囦护涓嬪彂1澶╁悗浠嶇户缁敤姘寸殑寮傚父鐢ㄦ按鎴?.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('閮戝窞鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '寮?璐︾郴缁熶笌钀ユ敹寰呭嚭璐︽按閲忓钩琛℃鏌ョ粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ラ缁撶畻姘撮噺涓庡疄鏃惰绠楁按閲忓姣攍imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '瀛樺湪鏈璐﹀鐞嗙殑浜ゆ槗.sql', 1, '14:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '闃舵绱骞宠　妫?鏌imit5.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈笂鎶ヨ鏁拌澶囨暟閲忕粺璁?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嶈繛缁妱璇绘寚搴︽鏌imit1-25骞?7鏈?1鍙蜂互鍚庣殑鏁版嵁.sql', 1, '11:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏃ョ粨绠楁暟鎹笂鎶ユ儏鍐?.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '搴斿畾鏈熺粨璐︽湭缁撹处.sql', 1, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛娴佹按鏈熷垵鏈熸湯杩炵画鎬ф鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '鏈叆鍐屼絾鏈夊湪鐢ㄦ按鐨勭敤姘存埛.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '缁熻娴嬮噺鍙傛暟涓嶅惈OPEN_VALUE鐨勮澶?.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '涓嬪崟鍥炶皟鏃堕棿宸秴杩?2鍒嗛挓鐨勬敮浠樿鍗昹imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛涓庝紭鎯犵粦瀹氱殑姘撮噺鍜岄噾棰濆钩琛℃鏌imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '褰撳ぉ瀛樺湪寰俊鏀粯閿?璐﹀け璐ユ暟鎹甽imit5.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '5鍒嗛挓鍓嶅瓨鍦ㄥ緟娑堣垂鐨勭绾挎満鍙栨按璁㈠崟.sql', 99, '10:00:00','20:00:00', 60), ('鍗楁槍鐢熶骇', '璐︽埛浼樻儬璁板綍鍜岃璐规斂绛栬皟鏁翠綑閲忓钩琛℃鏌?.sql', 99, '10:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-寮?绁ㄦ?婚涓庤处鍗曟?婚涓嶇浉绛夌粺璁?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-娣辨境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-闈掓境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-浜戞境娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鑾蹭笂娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60), ('鑾蹭笂-鍗楁境鑷潵姘寸敓浜?', '鑷潵姘?-鍚庡畢娆犺垂璐﹀崟骞宠　妫?鏌?.sql', 99, '09:00:00','20:00:00', 60); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_rule)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:282) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.init.ResourceDatabasePopulator.populate(ResourceDatabasePopulator.java:254) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute(DatabasePopulatorUtils.java:54) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	at org.springframework.boot.jdbc.init.DataSourceScriptDatabaseInitializer.runScripts(DataSourceScriptDatabaseInitializer.java:90) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.runScripts(AbstractScriptDatabaseInitializer.java:145) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applyScripts(AbstractScriptDatabaseInitializer.java:107) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.applyDataScripts(AbstractScriptDatabaseInitializer.java:101) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.initializeDatabase(AbstractScriptDatabaseInitializer.java:76) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.boot.sql.init.AbstractScriptDatabaseInitializer.afterPropertiesSet(AbstractScriptDatabaseInitializer.java:65) ~[spring-boot-2.7.18.jar:2.7.18]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1863) ~[spring-beans-5.3.31.jar:5.3.31]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1800) ~[spring-beans-5.3.31.jar:5.3.31]
+	... 18 common frames omitted
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_rule)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Statement.lambda$execute$0(JDBC3Statement.java:54) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Statement.withConnectionTimeout(JDBC3Statement.java:454) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Statement.execute(JDBC3Statement.java:43) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java) ~[HikariCP-4.0.3.jar:na]
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:261) ~[spring-jdbc-5.3.31.jar:5.3.31]
+	... 28 common frames omitted
+
+2026-05-27 17:03:41.980  INFO 161568 --- [main] com.szh.monitor.ProxyApplication         : Starting ProxyApplication using Java 1.8.0_401 on DX0065AX707-1 with PID 161568 (Z:\monitor\target\classes started by 82111 in Z:\monitor)
+2026-05-27 17:03:41.988  INFO 161568 --- [main] com.szh.monitor.ProxyApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-05-27 17:03:45.885  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'logCollectTimeInfoMapper' and 'com.szh.monitor.mapper.LogCollectTimeInfoMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.890  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'msgSendLogMapper' and 'com.szh.monitor.mapper.MsgSendLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.902  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'operationLogMapper' and 'com.szh.monitor.mapper.OperationLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.903  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'remoteLogSourceMapper' and 'com.szh.monitor.mapper.RemoteLogSourceMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.904  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlDataSourceMapper' and 'com.szh.monitor.mapper.SqlDataSourceMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.905  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlExecuteLogMapper' and 'com.szh.monitor.mapper.SqlExecuteLogMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.911  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'sqlExecuteRuleMapper' and 'com.szh.monitor.mapper.SqlExecuteRuleMapper' mapperInterface. Bean already defined with the same name!
+2026-05-27 17:03:45.912  WARN 161568 --- [main] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[com.szh.monitor.mapper]' package. Please check your configuration.
+2026-05-27 17:03:47.083  WARN 161568 --- [main] c.b.m.e.s.MybatisSqlSessionFactoryBean   : Property 'mapperLocations' was specified but matching resources are not found.
+2026-05-27 17:03:50.146  INFO 161568 --- [main] c.s.m.service.impl.GrafanaLogServiceImp  : webClient初始化完成 [东莞生产, 南昌生产, 开发环境, 测试环境, 郑州生产]
+2026-05-27 17:03:50.161  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-27 17:03:52.639  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-27 17:03:52.659  INFO 161568 --- [main] c.s.m.service.impl.SqlExecutorService    : 南昌生产-jdbcTemplate 已载入
+2026-05-27 17:03:52.673  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-05-27 17:03:53.602  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-05-27 17:03:53.607  INFO 161568 --- [main] c.s.m.service.impl.SqlExecutorService    : 莲上-南澳自来水生产-jdbcTemplate 已载入
+2026-05-27 17:03:53.612  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-05-27 17:03:54.458  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-05-27 17:03:54.463  INFO 161568 --- [main] c.s.m.service.impl.SqlExecutorService    : 郑州生产-jdbcTemplate 已载入
+2026-05-27 17:03:55.366  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-05-27 17:03:55.553  INFO 161568 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-05-27 17:03:56.745  INFO 161568 --- [main] org.quartz.impl.StdSchedulerFactory      : Using default implementation for ThreadExecutor
+2026-05-27 17:03:56.782  INFO 161568 --- [main] org.quartz.core.SchedulerSignalerImpl    : Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+2026-05-27 17:03:56.783  INFO 161568 --- [main] org.quartz.core.QuartzScheduler          : Quartz Scheduler v.2.3.2 created.
+2026-05-27 17:03:56.792  INFO 161568 --- [main] org.quartz.simpl.RAMJobStore             : RAMJobStore initialized.
+2026-05-27 17:03:56.795  INFO 161568 --- [main] org.quartz.core.QuartzScheduler          : Scheduler meta-data: Quartz Scheduler (v2.3.2) 'quartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+2026-05-27 17:03:56.799  INFO 161568 --- [main] org.quartz.impl.StdSchedulerFactory      : Quartz scheduler 'quartzScheduler' initialized from an externally provided properties instance.
+2026-05-27 17:03:56.801  INFO 161568 --- [main] org.quartz.impl.StdSchedulerFactory      : Quartz scheduler version: 2.3.2
+2026-05-27 17:03:56.803  INFO 161568 --- [main] org.quartz.core.QuartzScheduler          : JobFactory set to: org.springframework.scheduling.quartz.SpringBeanJobFactory@d54d0f5
+2026-05-27 17:03:58.191  INFO 161568 --- [main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 4000
+2026-05-27 17:03:58.354  INFO 161568 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoint(s) beneath base path '/actuator'
+2026-05-27 17:03:58.413  INFO 161568 --- [main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 18081
+2026-05-27 17:03:58.431  INFO 161568 --- [main] o.s.s.quartz.SchedulerFactoryBean        : Starting Quartz Scheduler now
+2026-05-27 17:03:58.433  INFO 161568 --- [main] org.quartz.core.QuartzScheduler          : Scheduler quartzScheduler_$_NON_CLUSTERED started.
+2026-05-27 17:03:58.441  INFO 161568 --- [main] s.a.ScheduledAnnotationBeanPostProcessor : More than one TaskScheduler bean exists within the context, and none is named 'taskScheduler'. Mark one of them as primary or name it 'taskScheduler' (possibly as an alias); or implement the SchedulingConfigurer interface and call ScheduledTaskRegistrar#setScheduler explicitly within the configureTasks() callback: [retrySQL, executorSQL, grafanaLog]
+2026-05-27 17:03:58.467  INFO 161568 --- [main] com.szh.monitor.ProxyApplication         : Started ProxyApplication in 17.787 seconds (JVM running for 18.361)
+2026-05-27 17:03:58.850  INFO 161568 --- [main] c.s.m.s.i.LogCollectTimeInfoServiceImp   : 测试环境_BOSS-BCS 配置关闭，无需初始化日志采集开始时间
+2026-05-27 17:03:58.858  INFO 161568 --- [main] c.s.m.s.i.LogCollectTimeInfoServiceImp   : 开发环境_BOSS-BCS 配置关闭，无需初始化日志采集开始时间
+2026-05-27 17:03:58.893 ERROR 161568 --- [pool-4-thread-1] c.s.m.service.impl.SqlExecutorService    : 数据脚本执行不可预见异常 请检查环境 
+
+org.springframework.jdbc.UncategorizedSQLException: 
+### Error querying database.  Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_log)
+### The error may exist in com/szh/monitor/mapper/SqlExecuteLogMapper.java (best guess)
+### The error may involve com.szh.monitor.mapper.SqlExecuteLogMapper.findEnvironmentNameAndFailedCountGt0
+### The error occurred while executing a query
+### SQL: SELECT * FROM sql_execute_log WHERE environment_name=? and execute_date=? and failed_count>0
+### Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_log)
+; uncategorized SQLException; SQL state [null]; error code [1]; [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_log); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_log)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.sun.proxy.$Proxy71.selectList(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:166) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.sun.proxy.$Proxy80.findEnvironmentNameAndFailedCountGt0(Unknown Source) ~[na:na]
+	at com.szh.monitor.service.impl.SqlExecuteLogServiceImp.findEnvironmentNameAndFailedCountGt0(SqlExecuteLogServiceImp.java:57) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecuteLogServiceImp$$FastClassBySpringCGLIB$$b792a22d.invoke(<generated>) ~[classes/:na]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.invokeMethod(CglibAopProxy.java:386) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.access$000(CglibAopProxy.java:85) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:703) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.SqlExecuteLogServiceImp$$EnhancerBySpringCGLIB$$6a0a6b20.findEnvironmentNameAndFailedCountGt0(<generated>) ~[classes/:na]
+	at com.szh.monitor.context.ExecuteJDBCContext.getFailFiles(ExecuteJDBCContext.java:228) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$executeRetry$11(SqlExecutorService.java:185) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$execute$9(SqlExecutorService.java:153) ~[classes/:na]
+	at java.util.HashMap.forEach(HashMap.java:1290) ~[na:1.8.0_401]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:151) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.executeRetry(SqlExecutorService.java:184) ~[classes/:na]
+	at java.util.ArrayList.forEach(ArrayList.java:1259) ~[na:1.8.0_401]
+	at com.szh.monitor.scheduled.ExecuteFailedRetry.retry(ExecuteFailedRetry.java:21) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) ~[na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) ~[na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) ~[na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) ~[na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_401]
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: sql_execute_log)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.CorePreparedStatement.<init>(CorePreparedStatement.java:46) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3PreparedStatement.<init>(JDBC3PreparedStatement.java:32) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4PreparedStatement.<init>(JDBC4PreparedStatement.java:25) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.prepareStatement(JDBC4Connection.java:34) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:225) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:205) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.prepareStatement(ProxyConnection.java:337) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.prepareStatement(HikariProxyConnection.java) ~[HikariCP-4.0.3.jar:na]
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.instantiateStatement(PreparedStatementHandler.java:86) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.BaseStatementHandler.prepare(BaseStatementHandler.java:88) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.prepare(RoutingStatementHandler.java:59) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:87) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:62) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:325) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:156) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:109) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:89) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:151) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:145) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:140) ~[mybatis-3.5.10.jar:3.5.10]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	... 35 common frames omitted
+
+2026-05-27 17:03:59.824 ERROR 161568 --- [pool-4-thread-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+org.springframework.jdbc.UncategorizedSQLException: 
+### Error updating database.  Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+### The error may exist in com/szh/monitor/mapper/MsgSendLogMapper.java (best guess)
+### The error may involve com.szh.monitor.mapper.MsgSendLogMapper.insert
+### The error occurred while executing an update
+### SQL: INSERT INTO msg_send_log  ( content, send_webhook, msg_type, create_time, send_date, send_status )  VALUES  ( ?, ?, ?, ?, ?, ? )
+### Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+; uncategorized SQLException; SQL state [null]; error code [1]; [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.sun.proxy.$Proxy71.insert(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.insert(SqlSessionTemplate.java:272) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:59) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.sun.proxy.$Proxy85.insert(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.extension.service.IService.save(IService.java:63) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl.saveOrUpdate(ServiceImpl.java:165) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl$$FastClassBySpringCGLIB$$76535273.invoke(<generated>) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:388) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:707) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.MsgSendLogServiceImp$$EnhancerBySpringCGLIB$$adad48c4.saveOrUpdate(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsgAndStore(SendWechatService.java:110) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendNewMsgAndStore(SendWechatService.java:81) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsg(SendWechatService.java:48) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService$$FastClassBySpringCGLIB$$6c609240.invoke(<generated>) ~[classes/:na]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.invokeMethod(CglibAopProxy.java:386) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.access$000(CglibAopProxy.java:85) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:703) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.SendWechatService$$EnhancerBySpringCGLIB$$b5355f39.sendMsg(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendDispatchService.sendMsg(SendDispatchService.java:25) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$execute$9(SqlExecutorService.java:167) ~[classes/:na]
+	at java.util.HashMap.forEach(HashMap.java:1290) ~[na:1.8.0_401]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:151) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.executeRetry(SqlExecutorService.java:184) ~[classes/:na]
+	at java.util.ArrayList.forEach(ArrayList.java:1259) ~[na:1.8.0_401]
+	at com.szh.monitor.scheduled.ExecuteFailedRetry.retry(ExecuteFailedRetry.java:21) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) [na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) [na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) [na:1.8.0_401]
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.CorePreparedStatement.<init>(CorePreparedStatement.java:46) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3PreparedStatement.<init>(JDBC3PreparedStatement.java:32) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4PreparedStatement.<init>(JDBC4PreparedStatement.java:25) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.prepareStatement(JDBC4Connection.java:34) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:225) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:205) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:220) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.prepareStatement(ProxyConnection.java:372) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.prepareStatement(HikariProxyConnection.java) ~[HikariCP-4.0.3.jar:na]
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.instantiateStatement(PreparedStatementHandler.java:83) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.BaseStatementHandler.prepare(BaseStatementHandler.java:88) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.prepare(RoutingStatementHandler.java:59) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:87) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:194) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.insert(DefaultSqlSession.java:181) ~[mybatis-3.5.10.jar:3.5.10]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	... 49 common frames omitted
+
+2026-05-27 17:03:59.861  INFO 161568 --- [pool-4-thread-1] c.s.m.service.impl.SqlExecutorService    : 南昌生产-加载SQL执行规则 []
+2026-05-27 17:03:59.893  INFO 161568 --- [pool-4-thread-1] c.s.m.service.impl.SqlExecutorService    : 郑州生产-加载SQL执行规则 []
+2026-05-27 17:03:59.931  INFO 161568 --- [pool-4-thread-1] c.s.m.service.impl.SqlExecutorService    : 莲上-南澳自来水生产-加载SQL执行规则 []
+2026-05-27 17:03:59.943 ERROR 161568 --- [pool-4-thread-1] c.s.m.service.impl.SqlExecutorService    : 数据脚本执行不可预见异常 请检查环境 
+
+java.lang.RuntimeException: SQL目录不存在
+	at com.szh.monitor.service.impl.SqlExecutorService.executeSqlFiles(SqlExecutorService.java:66) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$execute$10(SqlExecutorService.java:178) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$execute$9(SqlExecutorService.java:153) ~[classes/:na]
+	at java.util.HashMap.forEach(HashMap.java:1290) ~[na:1.8.0_401]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:151) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:177) ~[classes/:na]
+	at java.util.ArrayList.forEach(ArrayList.java:1259) ~[na:1.8.0_401]
+	at com.szh.monitor.scheduled.ExecutorScheduler.executor(ExecutorScheduler.java:38) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) ~[na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) ~[na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) ~[na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) ~[na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) ~[na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) ~[na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) ~[na:1.8.0_401]
+
+2026-05-27 17:04:00.160 ERROR 161568 --- [pool-4-thread-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+org.springframework.jdbc.UncategorizedSQLException: 
+### Error updating database.  Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+### The error may exist in com/szh/monitor/mapper/MsgSendLogMapper.java (best guess)
+### The error may involve com.szh.monitor.mapper.MsgSendLogMapper.insert
+### The error occurred while executing an update
+### SQL: INSERT INTO msg_send_log  ( content, send_webhook, msg_type, create_time, send_date, send_status )  VALUES  ( ?, ?, ?, ?, ?, ? )
+### Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+; uncategorized SQLException; SQL state [null]; error code [1]; [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.sun.proxy.$Proxy71.insert(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.insert(SqlSessionTemplate.java:272) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:59) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.sun.proxy.$Proxy85.insert(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.extension.service.IService.save(IService.java:63) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl.saveOrUpdate(ServiceImpl.java:165) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl$$FastClassBySpringCGLIB$$76535273.invoke(<generated>) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:388) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:707) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.MsgSendLogServiceImp$$EnhancerBySpringCGLIB$$adad48c4.saveOrUpdate(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsgAndStore(SendWechatService.java:110) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendNewMsgAndStore(SendWechatService.java:81) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsg(SendWechatService.java:48) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService$$FastClassBySpringCGLIB$$6c609240.invoke(<generated>) ~[classes/:na]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.invokeMethod(CglibAopProxy.java:386) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.access$000(CglibAopProxy.java:85) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:703) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.SendWechatService$$EnhancerBySpringCGLIB$$b5355f39.sendMsg(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendDispatchService.sendMsg(SendDispatchService.java:25) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.lambda$execute$9(SqlExecutorService.java:167) ~[classes/:na]
+	at java.util.HashMap.forEach(HashMap.java:1290) ~[na:1.8.0_401]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:151) ~[classes/:na]
+	at com.szh.monitor.service.impl.SqlExecutorService.execute(SqlExecutorService.java:177) ~[classes/:na]
+	at java.util.ArrayList.forEach(ArrayList.java:1259) ~[na:1.8.0_401]
+	at com.szh.monitor.scheduled.ExecutorScheduler.executor(ExecutorScheduler.java:38) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) [na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) [na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) [na:1.8.0_401]
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.CorePreparedStatement.<init>(CorePreparedStatement.java:46) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3PreparedStatement.<init>(JDBC3PreparedStatement.java:32) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4PreparedStatement.<init>(JDBC4PreparedStatement.java:25) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.prepareStatement(JDBC4Connection.java:34) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:225) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:205) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:220) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.prepareStatement(ProxyConnection.java:372) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.prepareStatement(HikariProxyConnection.java) ~[HikariCP-4.0.3.jar:na]
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.instantiateStatement(PreparedStatementHandler.java:83) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.BaseStatementHandler.prepare(BaseStatementHandler.java:88) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.prepare(RoutingStatementHandler.java:59) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:87) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:194) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.insert(DefaultSqlSession.java:181) ~[mybatis-3.5.10.jar:3.5.10]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	... 49 common frames omitted
+
+2026-05-27 17:04:08.475 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 16:34:08~2026-05-27 17:04:08]内产生的日志进行分析
+2026-05-27 17:04:09.773 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:34:08.475~2026-05-27T17:04:08.475]拉取数据满[500]条，继续从[2026-05-27 16:44:32]开始拉取
+2026-05-27 17:04:10.264 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:44:32.545~2026-05-27T17:04:08.475]拉取数据满[500]条，继续从[2026-05-27 16:47:05]开始拉取
+2026-05-27 17:04:10.754 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:47:05.928~2026-05-27T17:04:08.475]拉取数据满[500]条，继续从[2026-05-27 16:54:00]开始拉取
+2026-05-27 17:04:11.405 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:54:00.199~2026-05-27T17:04:08.475]拉取数据满[500]条，继续从[2026-05-27 17:00:00]开始拉取
+2026-05-27 17:04:12.072 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 从[2026-05-27T17:00:00.235~2026-05-27T17:04:08.475]拉取数据满[500]条，继续从[2026-05-27 17:00:00]开始拉取
+2026-05-27 17:04:12.360 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 时间区间[2026-05-27 16:34:08~2026-05-27 17:04:08]处理完成，共获取 2615 条日志
+2026-05-27 17:04:12.366 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 16:34:12~2026-05-27 17:04:12]内产生的日志进行分析
+2026-05-27 17:04:12.811 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:34:12.366~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:36:29]开始拉取
+2026-05-27 17:04:13.101 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:36:29.996~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:36:42]开始拉取
+2026-05-27 17:04:13.403 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:36:42.271~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:37:07]开始拉取
+2026-05-27 17:04:13.687 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:37:07.586~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:37:50]开始拉取
+2026-05-27 17:04:14.005 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:37:50.702~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:38:56]开始拉取
+2026-05-27 17:04:14.623 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:38:56.863~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:40:17]开始拉取
+2026-05-27 17:04:14.989 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:40:17.566~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:40:45]开始拉取
+2026-05-27 17:04:15.339 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:40:45.134~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:41:50]开始拉取
+2026-05-27 17:04:15.657 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:41:50.782~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:42:14]开始拉取
+2026-05-27 17:04:15.947 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:42:14.085~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:42:29]开始拉取
+2026-05-27 17:04:18.685 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:42:29.619~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:45:02]开始拉取
+2026-05-27 17:04:19.109 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:45:02.736~2026-05-27T17:04:12.366]拉取数据满[500]条，继续从[2026-05-27 16:45:17]开始拉取
+2026-05-27 17:04:19.728 ERROR 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : Monitor BOSS-BCS error
+
+org.springframework.jdbc.UncategorizedSQLException: 
+### Error updating database.  Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+### The error may exist in com/szh/monitor/mapper/MsgSendLogMapper.java (best guess)
+### The error may involve com.szh.monitor.mapper.MsgSendLogMapper.insert
+### The error occurred while executing an update
+### SQL: INSERT INTO msg_send_log  ( content, send_webhook, msg_type, create_time, send_date, send_status )  VALUES  ( ?, ?, ?, ?, ?, ? )
+### Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+; uncategorized SQLException; SQL state [null]; error code [1]; [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.sun.proxy.$Proxy71.insert(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.insert(SqlSessionTemplate.java:272) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:59) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.sun.proxy.$Proxy85.insert(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.extension.service.IService.save(IService.java:63) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl.saveOrUpdate(ServiceImpl.java:165) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl$$FastClassBySpringCGLIB$$76535273.invoke(<generated>) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:388) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:707) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.MsgSendLogServiceImp$$EnhancerBySpringCGLIB$$adad48c4.saveOrUpdate(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsgAndStore(SendWechatService.java:110) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendNewMsgAndStore(SendWechatService.java:81) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendSimpleMarkDownMsgByLog(SendWechatService.java:116) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService$$FastClassBySpringCGLIB$$6c609240.invoke(<generated>) ~[classes/:na]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.invokeMethod(CglibAopProxy.java:386) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.access$000(CglibAopProxy.java:85) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:703) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.SendWechatService$$EnhancerBySpringCGLIB$$b5355f39.sendSimpleMarkDownMsgByLog(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendDispatchService.sendSimpleMarkDownMsg(SendDispatchService.java:31) ~[classes/:na]
+	at com.szh.monitor.service.impl.GrafanaLogServiceImp.processMonitor(GrafanaLogServiceImp.java:233) ~[classes/:na]
+	at com.szh.monitor.service.impl.GrafanaLogServiceImp.supplement(GrafanaLogServiceImp.java:97) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) [spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) [spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) [na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) [na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) [na:1.8.0_401]
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.CorePreparedStatement.<init>(CorePreparedStatement.java:46) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3PreparedStatement.<init>(JDBC3PreparedStatement.java:32) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4PreparedStatement.<init>(JDBC4PreparedStatement.java:25) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.prepareStatement(JDBC4Connection.java:34) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:225) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:205) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:220) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.prepareStatement(ProxyConnection.java:372) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.prepareStatement(HikariProxyConnection.java) ~[HikariCP-4.0.3.jar:na]
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.instantiateStatement(PreparedStatementHandler.java:83) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.BaseStatementHandler.prepare(BaseStatementHandler.java:88) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.prepare(RoutingStatementHandler.java:59) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:87) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:194) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.insert(DefaultSqlSession.java:181) ~[mybatis-3.5.10.jar:3.5.10]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	... 45 common frames omitted
+
+2026-05-27 17:04:19.740 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[东莞生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 16:34:19~2026-05-27 17:04:19]内产生的日志进行分析
+2026-05-27 17:04:20.285 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[东莞生产] 微服务：[BOSS-BCS] 从[2026-05-27T16:34:19.736~2026-05-27T17:04:19.736]拉取数据满[500]条，继续从[2026-05-27 17:00:00]开始拉取
+2026-05-27 17:04:20.767 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[东莞生产] 微服务：[BOSS-BCS] 时间区间[2026-05-27 16:34:19~2026-05-27 17:04:19]处理完成，共获取 930 条日志
+2026-05-27 17:04:20.772 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : ---------------------------分隔符-------------------------------
+2026-05-27 17:04:38.479 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 17:04:00~2026-05-27 17:04:38]内产生的日志进行分析
+2026-05-27 17:04:38.792 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[郑州生产] 微服务：[BOSS-BCS] 时间区间[2026-05-27 17:04:00~2026-05-27 17:04:38]处理完成，共获取 14 条日志
+2026-05-27 17:04:38.806 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[南昌生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 16:46:22~2026-05-27 17:04:38]内产生的日志进行分析
+2026-05-27 17:04:39.499 ERROR 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : Monitor BOSS-BCS error
+
+org.springframework.jdbc.UncategorizedSQLException: 
+### Error updating database.  Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+### The error may exist in com/szh/monitor/mapper/MsgSendLogMapper.java (best guess)
+### The error may involve com.szh.monitor.mapper.MsgSendLogMapper.insert
+### The error occurred while executing an update
+### SQL: INSERT INTO msg_send_log  ( content, send_webhook, msg_type, create_time, send_date, send_status )  VALUES  ( ?, ?, ?, ?, ?, ? )
+### Cause: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+; uncategorized SQLException; SQL state [null]; error code [1]; [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log); nested exception is org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:92) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.sun.proxy.$Proxy71.insert(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.insert(SqlSessionTemplate.java:272) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:59) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.2.jar:3.5.2]
+	at com.sun.proxy.$Proxy85.insert(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.extension.service.IService.save(IService.java:63) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl.saveOrUpdate(ServiceImpl.java:165) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at com.baomidou.mybatisplus.extension.service.impl.ServiceImpl$$FastClassBySpringCGLIB$$76535273.invoke(<generated>) ~[mybatis-plus-extension-3.5.2.jar:3.5.2]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:792) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:388) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:762) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:707) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.MsgSendLogServiceImp$$EnhancerBySpringCGLIB$$adad48c4.saveOrUpdate(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendMsgAndStore(SendWechatService.java:110) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendNewMsgAndStore(SendWechatService.java:81) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService.sendSimpleMarkDownMsgByLog(SendWechatService.java:116) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendWechatService$$FastClassBySpringCGLIB$$6c609240.invoke(<generated>) ~[classes/:na]
+	at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218) ~[spring-core-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.invokeMethod(CglibAopProxy.java:386) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy.access$000(CglibAopProxy.java:85) ~[spring-aop-5.3.31.jar:5.3.31]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:703) ~[spring-aop-5.3.31.jar:5.3.31]
+	at com.szh.monitor.service.impl.SendWechatService$$EnhancerBySpringCGLIB$$b5355f39.sendSimpleMarkDownMsgByLog(<generated>) ~[classes/:na]
+	at com.szh.monitor.service.impl.SendDispatchService.sendSimpleMarkDownMsg(SendDispatchService.java:31) ~[classes/:na]
+	at com.szh.monitor.service.impl.GrafanaLogServiceImp.processMonitor(GrafanaLogServiceImp.java:233) ~[classes/:na]
+	at com.szh.monitor.service.impl.GrafanaLogServiceImp.supplement(GrafanaLogServiceImp.java:97) ~[classes/:na]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) [spring-context-5.3.31.jar:5.3.31]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) [spring-context-5.3.31.jar:5.3.31]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511) [na:1.8.0_401]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:308) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:180) [na:1.8.0_401]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:294) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) [na:1.8.0_401]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) [na:1.8.0_401]
+	at java.lang.Thread.run(Thread.java:750) [na:1.8.0_401]
+Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: msg_send_log)
+	at org.sqlite.core.DB.newSQLException(DB.java:1179) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.newSQLException(DB.java:1190) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.throwex(DB.java:1150) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare_utf8(Native Method) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.NativeDB.prepare(NativeDB.java:132) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.DB.prepare(DB.java:264) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.core.CorePreparedStatement.<init>(CorePreparedStatement.java:46) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3PreparedStatement.<init>(JDBC3PreparedStatement.java:32) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4PreparedStatement.<init>(JDBC4PreparedStatement.java:25) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc4.JDBC4Connection.prepareStatement(JDBC4Connection.java:34) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:225) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:205) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at org.sqlite.jdbc3.JDBC3Connection.prepareStatement(JDBC3Connection.java:220) ~[sqlite-jdbc-3.45.1.0.jar:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.prepareStatement(ProxyConnection.java:372) ~[HikariCP-4.0.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.prepareStatement(HikariProxyConnection.java) ~[HikariCP-4.0.3.jar:na]
+	at org.apache.ibatis.executor.statement.PreparedStatementHandler.instantiateStatement(PreparedStatementHandler.java:83) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.BaseStatementHandler.prepare(BaseStatementHandler.java:88) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.statement.RoutingStatementHandler.prepare(RoutingStatementHandler.java:59) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:87) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:194) ~[mybatis-3.5.10.jar:3.5.10]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.insert(DefaultSqlSession.java:181) ~[mybatis-3.5.10.jar:3.5.10]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_401]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_401]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_401]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_401]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427) ~[mybatis-spring-2.0.7.jar:2.0.7]
+	... 45 common frames omitted
+
+2026-05-27 17:04:39.528 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[东莞生产] 微服务：[BOSS-BCS] 开始获取时间区间[2026-05-27 17:04:12~2026-05-27 17:04:39]内产生的日志进行分析
+2026-05-27 17:04:39.587 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : 环境：[东莞生产] 微服务：[BOSS-BCS] 时间区间[2026-05-27 17:04:12~2026-05-27 17:04:39]处理完成，共获取 3 条日志
+2026-05-27 17:04:39.608 DEBUG 161568 --- [pool-4-thread-1] c.s.m.service.impl.GrafanaLogServiceImp  : ---------------------------分隔符-------------------------------

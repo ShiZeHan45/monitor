@@ -48,5 +48,6 @@ MetricsProxyController.java
 
 local.txt
 prod.txt
+DEVELOPMENT_LOG.md
 PROJECT_ANALYSIS.md
 DEVELOPMENT_FLOW.md

@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS sql_execute_log (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT, -- 环境名称
+                                               sql_file_name TEXT, -- SQL文件名称
+                                               execute_date INTEGER, -- 执行日期
+                                               failed_count INTEGER, -- 失败次数
+                                               failed_count_reset_time INTEGER, -- 失败次数重置时间
+                                               count INTEGER -- 执行次数
+);
+
+CREATE TABLE IF NOT EXISTS msg_send_log(
+                                           id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                           content TEXT, -- 推送内容
+                                           send_webhook TEXT, -- 推送地址
+                                           msg_type TEXT, -- 消息类型
+                                           environment_name TEXT, -- 环境
+                                           create_time TIMESTAMP , -- 内容产生时间
+                                           send_date TIMESTAMP , -- 内容推送日期
+                                           send_status INTEGER -- 已发送 1发送 0未发送
+);
+
+CREATE TABLE IF NOT EXISTS log_collect_time_info(
+                                           id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                           environment_name TEXT, -- 环境名称
+                                           rule_name TEXT, -- 规则名称
+                                           create_time TIMESTAMP , -- 内容产生时间
+                                           last_ts BIGINT , -- 最新的采集时间戳
+                                           last_time TIMESTAMP -- 最新的采集时间
+);
+
+CREATE TABLE IF NOT EXISTS sql_execute_rule (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT, -- 环境名称
+                                               sql_file_name TEXT, -- SQL文件名称
+                                               execute_limit INTEGER, -- 执行上限次数
+                                               execute_start_time TEXT, -- 从每天的什么时间开始执行 HH:MM:SS
+                                               execute_end_time TEXT, -- 每天什么时候停止执行 HH:MM:SS
+                                               execute_frequency INTEGER -- 执行频率 n分钟一次
+);
+-- 新增：环境+SQL文件 唯一索引（核心）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_env_sql_file
+    ON sql_execute_rule(environment_name, sql_file_name);

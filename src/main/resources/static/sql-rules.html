@@ -43,7 +43,7 @@
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center space-x-4">
                         <h3 class="text-lg font-semibold text-gray-800">规则列表</h3>
-                        <select id="envFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="loadRules()">
+                        <select id="envFilter" onchange="loadRules()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                             <option value="">全部环境</option>
                         </select>
                     </div>
@@ -93,7 +93,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">环境名称 *</label>
                             <select id="environmentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
-                                <option value="">请选择环境名称</option>
+                                <option value="">请选择环境</option>
                             </select>
                         </div>
                         <div>
@@ -104,7 +104,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">执行次数限制</label>
-                            <input type="number" id="executeLimit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1" placeholder="正整数">
+                            <input type="number" id="executeLimit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1" placeholder="请输入正整数">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -135,60 +135,84 @@
     </div>
 
     <script>
+        let environments = [];
+        let sqlFiles = [];
+
         async function loadEnvironments() {
             try {
                 const response = await fetch('/api/environments');
-                const environments = await response.json();
-                
-                const envFilter = document.getElementById('envFilter');
-                const envSelect = document.getElementById('environmentName');
-                
-                environments.forEach(env => {
-                    const option1 = document.createElement('option');
-                    option1.value = env;
-                    option1.textContent = env;
-                    envFilter.appendChild(option1);
-                    
-                    const option2 = document.createElement('option');
-                    option2.value = env;
-                    option2.textContent = env;
-                    envSelect.appendChild(option2);
-                });
+                environments = await response.json();
+                updateEnvironmentSelect('environmentName', environments);
+                updateEnvironmentFilter(environments);
             } catch (error) {
-                console.error('获取环境列表失败:', error);
+                console.error('加载环境列表失败:', error);
             }
+        }
+
+        function updateEnvironmentFilter(envs) {
+            const filter = document.getElementById('envFilter');
+            filter.innerHTML = '<option value="">全部环境</option>';
+            envs.forEach(env => {
+                const option = document.createElement('option');
+                option.value = env;
+                option.textContent = env;
+                filter.appendChild(option);
+            });
+        }
+
+        function updateEnvironmentSelect(selectId, envs) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">请选择环境</option>';
+            envs.forEach(env => {
+                const option = document.createElement('option');
+                option.value = env;
+                option.textContent = env;
+                select.appendChild(option);
+            });
         }
 
         async function loadSqlFiles() {
             try {
                 const response = await fetch('/api/sql-files');
-                const files = await response.json();
-                
-                const select = document.getElementById('sqlFileName');
-                files.forEach(file => {
-                    const option = document.createElement('option');
-                    option.value = file;
-                    option.textContent = file;
-                    select.appendChild(option);
-                });
+                sqlFiles = await response.json();
+                updateSqlFileSelect('sqlFileName', sqlFiles);
             } catch (error) {
-                console.error('获取SQL文件列表失败:', error);
+                console.error('加载SQL文件列表失败:', error);
             }
+        }
+
+        function updateSqlFileSelect(selectId, files) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">请选择SQL文件</option>';
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file;
+                option.textContent = file;
+                select.appendChild(option);
+            });
         }
 
         async function loadRules() {
             try {
-                const env = document.getElementById('envFilter').value;
-                const url = env ? `/api/sql-rules?environmentName=${encodeURIComponent(env)}` : '/api/sql-rules';
+                const envFilter = document.getElementById('envFilter').value;
+                let url = '/api/sql-rules';
+                if (envFilter) {
+                    url += '?env=' + encodeURIComponent(envFilter);
+                }
+
                 const response = await fetch(url);
-                const data = await response.json();
-                
+                let data = await response.json();
+
+                if (envFilter) {
+                    data = data.filter(rule => rule.environmentName === envFilter);
+                }
+
                 const tbody = document.getElementById('rulesBody');
                 if (!data || data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">暂无规则</td></tr>';
                     return;
                 }
-                
+
                 tbody.innerHTML = data.map(rule => {
                     return `
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -217,31 +241,43 @@
             }
         }
 
-        function showAddModal() {
+        async function showAddModal() {
             document.getElementById('modalTitle').textContent = '添加规则';
             document.getElementById('ruleId').value = '';
+
+            await loadEnvironments();
+            await loadSqlFiles();
+
             document.getElementById('environmentName').value = '';
-            document.getElementById('environmentName').disabled = false;
             document.getElementById('sqlFileName').value = '';
-            document.getElementById('sqlFileName').disabled = false;
             document.getElementById('executeLimit').value = '';
             document.getElementById('executeStartTime').value = '';
             document.getElementById('executeEndTime').value = '';
             document.getElementById('executeFrequency').value = '';
+
+            document.getElementById('environmentName').disabled = false;
+            document.getElementById('sqlFileName').disabled = false;
+
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        function showEditModal(rule) {
+        async function showEditModal(rule) {
             document.getElementById('modalTitle').textContent = '编辑规则';
             document.getElementById('ruleId').value = rule.id;
+
+            await loadEnvironments();
+            await loadSqlFiles();
+
             document.getElementById('environmentName').value = rule.environmentName;
-            document.getElementById('environmentName').disabled = true;
             document.getElementById('sqlFileName').value = rule.sqlFileName;
-            document.getElementById('sqlFileName').disabled = false;
             document.getElementById('executeLimit').value = rule.executeLimit || '';
             document.getElementById('executeStartTime').value = rule.executeStartTime || '';
             document.getElementById('executeEndTime').value = rule.executeEndTime || '';
             document.getElementById('executeFrequency').value = rule.executeFrequency || '';
+
+            document.getElementById('environmentName').disabled = true;
+            document.getElementById('sqlFileName').disabled = true;
+
             document.getElementById('modal').classList.remove('hidden');
         }
 
@@ -251,34 +287,38 @@
 
         document.getElementById('ruleForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const executeLimit = document.getElementById('executeLimit').value;
-            if (executeLimit && (isNaN(executeLimit) || parseInt(executeLimit) <= 0)) {
+
+            const executeLimitValue = document.getElementById('executeLimit').value;
+            if (executeLimitValue && parseInt(executeLimitValue) < 1) {
                 alert('执行次数限制必须为正整数');
                 return;
             }
-            
-            const environmentName = document.getElementById('environmentName').value;
-            const sqlFileName = document.getElementById('sqlFileName').value;
-            const id = document.getElementById('ruleId').value;
-            
-            const checkResponse = await fetch(`/api/sql-rules/check-unique?environmentName=${encodeURIComponent(environmentName)}&sqlFileName=${encodeURIComponent(sqlFileName)}${id ? '&excludeId=' + id : ''}`);
-            const checkResult = await checkResponse.json();
-            
-            if (!checkResult.unique) {
-                alert(checkResult.message);
-                return;
-            }
-            
+
             const rule = {
-                environmentName: environmentName,
-                sqlFileName: sqlFileName,
-                executeLimit: executeLimit ? parseInt(executeLimit) : null,
+                environmentName: document.getElementById('environmentName').value,
+                sqlFileName: document.getElementById('sqlFileName').value,
+                executeLimit: executeLimitValue ? parseInt(executeLimitValue) : null,
                 executeStartTime: document.getElementById('executeStartTime').value || null,
                 executeEndTime: document.getElementById('executeEndTime').value || null,
                 executeFrequency: document.getElementById('executeFrequency').value ? parseInt(document.getElementById('executeFrequency').value) : null
             };
-            
+
+            const id = document.getElementById('ruleId').value;
+
+            if (!id) {
+                try {
+                    const checkResponse = await fetch(`/api/sql-rules/check-unique?environmentName=${encodeURIComponent(rule.environmentName)}&sqlFileName=${encodeURIComponent(rule.sqlFileName)}`);
+                    const checkResult = await checkResponse.json();
+
+                    if (checkResult.exists) {
+                        alert('该环境名称+SQL文件名的规则已存在');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('检查唯一性失败:', error);
+                }
+            }
+
             try {
                 let response;
                 if (id) {
@@ -294,14 +334,13 @@
                         body: JSON.stringify(rule)
                     });
                 }
-                
+
                 if (response.ok) {
                     closeModal();
                     loadRules();
                     alert(id ? '更新成功' : '添加成功');
                 } else {
-                    const result = await response.json();
-                    alert(result.message || '操作失败');
+                    alert('操作失败');
                 }
             } catch (error) {
                 console.error('保存规则失败:', error);
@@ -311,12 +350,12 @@
 
         async function deleteRule(id) {
             if (!confirm('确定要删除这条规则吗？')) return;
-            
+
             try {
                 const response = await fetch(`/api/sql-rules/${id}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     loadRules();
                     alert('删除成功');
@@ -334,7 +373,7 @@
             await loadSqlFiles();
             await loadRules();
         }
-        
+
         init();
     </script>
 </body>

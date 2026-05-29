@@ -1,0 +1,5 @@
+﻿set timeout 30
+spawn scp -o StrictHostKeyChecking=no target/actuator.jar root@192.168.199.85:/soft/actuator/
+expect "password:"
+send "water\$8888\r"
+expect eof
