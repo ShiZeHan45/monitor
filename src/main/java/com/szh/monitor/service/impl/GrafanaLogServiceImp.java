@@ -30,6 +30,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -232,7 +233,7 @@ public class GrafanaLogServiceImp {
 
         long sliceStart = globalStart;
         int sliceTotal = 0;
-        boolean hasError = false;
+        AtomicBoolean hasError = new AtomicBoolean(false);
         while (true) {
             Map body = webClient.get()
                     .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
@@ -241,7 +242,7 @@ public class GrafanaLogServiceImp {
                     .bodyToMono(Map.class)
                     .onErrorResume(e -> {
                         logger.error("{}-{} ❌ WebClient 调用 Loki 失败", info.getEnvironmentName(), item.getName(), e);
-                        hasError = true;
+                        hasError.set(true);
                         return Mono.empty();
                     })
                     .block();
@@ -323,7 +324,7 @@ public class GrafanaLogServiceImp {
             }
         }
 
-        updateDataSourceOnlineStatus(info, !hasError);
+        updateDataSourceOnlineStatus(info, !hasError.get());
     }
 
     private void updateDataSourceOnlineStatus(DataSourceInfo info, boolean isOnline) {
