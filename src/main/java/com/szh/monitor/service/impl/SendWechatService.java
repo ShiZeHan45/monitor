@@ -117,5 +117,14 @@ public class SendWechatService implements SendService {
         sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook(),environmentName);
     }
 
+    @Override
+    public void sendSimpleMarkDownMsgByLog(String content, String environmentName, String webhook) {
+        if (webhook == null || webhook.isEmpty()) {
+            sendNewMsgAndStore(content, "markdown", baseConfig.getLogWechatWebhook(), environmentName);
+        } else {
+            sendNewMsgAndStore(content, "markdown", webhook, environmentName);
+        }
+    }
+
 
 }

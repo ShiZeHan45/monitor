@@ -28,8 +28,8 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
 
     @Override
     public void initLastTSMAP() {
-        grafanaLogServiceImp.getGrafanaInfoMap().forEach((environmentName,grafanaInfo)->{
-            for (MonitorRules monitor : grafanaInfo.getMonitors()) {
+        grafanaLogServiceImp.getDataSourceInfoMap().forEach((environmentName,info)->{
+            for (GrafanaLogServiceImp.MonitorRuleInfo monitor : info.getMonitors()) {
                 if(!monitor.isEnabled()){
                     logger.info("{} 配置关闭，无需初始化日志采集开始时间",environmentName+"_"+monitor.getName());
                 }

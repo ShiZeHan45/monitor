@@ -31,4 +31,10 @@ public class SendDispatchService {
             sendService.sendSimpleMarkDownMsgByLog(content, environmentName);
         }
     }
+
+    public void sendSimpleMarkDownMsg(String content, String environmentName, String webhook){
+        for (SendService sendService : sendServices) {
+            sendService.sendSimpleMarkDownMsgByLog(content, environmentName, webhook);
+        }
+    }
 }

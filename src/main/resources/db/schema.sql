@@ -40,3 +40,36 @@ CREATE TABLE IF NOT EXISTS sql_execute_rule (
 -- 新增：环境+SQL文件 唯一索引（核心）
 CREATE UNIQUE INDEX IF NOT EXISTS idx_env_sql_file
     ON sql_execute_rule(environment_name, sql_file_name);
+
+CREATE TABLE IF NOT EXISTS grafana_data_source (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               url TEXT, -- Grafana API地址
+                                               environment_name TEXT UNIQUE, -- 环境名称（唯一）
+                                               datasource_id TEXT, -- 数据源ID
+                                               username TEXT, -- 用户名
+                                               password TEXT, -- 密码
+                                               webhook TEXT, -- 默认推送地址
+                                               week TEXT, -- 星期配置（JSON数组）
+                                               start_time TEXT, -- 开始时间 HH:mm
+                                               end_time TEXT, -- 结束时间 HH:mm
+                                               enabled INTEGER DEFAULT 1, -- 是否启用 1启用 0禁用
+                                               create_time TIMESTAMP, -- 创建时间
+                                               update_time TIMESTAMP -- 更新时间
+);
+
+CREATE TABLE IF NOT EXISTS grafana_monitor_rule (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               data_source_id INTEGER, -- 数据源ID
+                                               name TEXT, -- 规则名称
+                                               query_expr TEXT, -- 查询表达式
+                                               keywords TEXT, -- 关键词（JSON数组）
+                                               exclusion_keywords TEXT, -- 排除关键词（JSON数组）
+                                               context_lines INTEGER DEFAULT 5, -- 上下文行数
+                                               webhook TEXT, -- 推送地址（为空时使用数据源默认地址）
+                                               enabled INTEGER DEFAULT 1, -- 是否启用 1启用 0禁用
+                                               create_time TIMESTAMP, -- 创建时间
+                                               update_time TIMESTAMP, -- 更新时间
+                                               FOREIGN KEY(data_source_id) REFERENCES grafana_data_source(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_rule_data_source_id
+    ON grafana_monitor_rule(data_source_id);
