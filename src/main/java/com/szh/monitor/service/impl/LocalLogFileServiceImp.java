@@ -117,7 +117,7 @@ public class LocalLogFileServiceImp implements WatchService {
 
             String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",localLogConfig.getName(),errorBlock);
 
-            sendDispatchService.sendSimpleMarkDownMsg(content);
+            sendDispatchService.sendSimpleMarkDownMsg(content, localLogConfig.getName());
 
 //            System.out.println("✅ 已推送异常日志到企业微信，时间：" + now);
 //            System.out.println(content);

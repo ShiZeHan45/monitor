@@ -113,8 +113,8 @@ public class SendWechatService implements SendService {
 
 
     @Override
-    public void sendSimpleMarkDownMsgByLog(String content) {
-        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook(),null);
+    public void sendSimpleMarkDownMsgByLog(String content, String environmentName) {
+        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook(),environmentName);
     }
 
 

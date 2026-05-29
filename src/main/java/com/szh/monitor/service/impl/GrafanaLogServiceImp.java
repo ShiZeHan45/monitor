@@ -222,7 +222,7 @@ public class GrafanaLogServiceImp {
                 logCollectTimeInfoService.updateOrSave(grafanaInfo.getEnvironmentName(), item.getName(), batchMaxTs);
             }
 
-            // 推送异常日志
+            //推送异常日志
             if (!hitLogs.isEmpty()) {
                 String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",
                         grafanaInfo.getEnvironmentName(),
@@ -230,7 +230,7 @@ public class GrafanaLogServiceImp {
                 if (content.length() > 1500) {
                     content = content.substring(0, 1500) + "\n...（内容过长已截断）";
                 }
-                sendDispatchService.sendSimpleMarkDownMsg(content);
+                sendDispatchService.sendSimpleMarkDownMsg(content, grafanaInfo.getEnvironmentName());
                 logger.info("📩 {} 已推送 {} 条日志，并更新 lastTs={},时间：{} 推送内容：{}", grafanaInfo.getEnvironmentName(), hitLogs.size(), batchMaxTs,
                         LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), content);
             }

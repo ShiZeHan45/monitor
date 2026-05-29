@@ -26,9 +26,9 @@ public class SendDispatchService {
         }
     }
 
-    public void sendSimpleMarkDownMsg(String content){
+    public void sendSimpleMarkDownMsg(String content, String environmentName){
         for (SendService sendService : sendServices) {
-            sendService.sendSimpleMarkDownMsgByLog(content);
+            sendService.sendSimpleMarkDownMsgByLog(content, environmentName);
         }
     }
 }
