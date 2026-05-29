@@ -49,6 +49,7 @@ public class GrafanaLogServiceImp {
     private final Integer TIME = 30;
     private final Integer DEFAULT_LIMIT = 500;
     private final Map<String, Long> lastTsMap = new HashMap<>();
+    private final Map<String, Boolean> checkedDataSourceMap = new HashMap<>();
 
     private HttpClient httpClient;
 
@@ -83,6 +84,7 @@ public class GrafanaLogServiceImp {
         synchronized (webClientMap) {
             webClientMap.clear();
             dataSourceInfoMap.clear();
+            checkedDataSourceMap.clear();
 
             List<GrafanaDataSource> dataSources = dataSourceService.listEnabled();
             for (GrafanaDataSource ds : dataSources) {
@@ -98,6 +100,7 @@ public class GrafanaLogServiceImp {
                 webClientMap.put(ds.getEnvironmentName(), webClient);
 
                 DataSourceInfo info = new DataSourceInfo();
+                info.setId(ds.getId());
                 info.setUrl(ds.getUrl());
                 info.setDatasourceId(ds.getDatasourceId());
                 info.setEnvironmentName(ds.getEnvironmentName());
@@ -169,6 +172,7 @@ public class GrafanaLogServiceImp {
     @Async("grafanaLog")
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
+        checkedDataSourceMap.clear();
         synchronized (webClientMap) {
             for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {
                 DataSourceInfo info = dataSourceInfoMap.get(entry.getKey());
@@ -228,6 +232,7 @@ public class GrafanaLogServiceImp {
 
         long sliceStart = globalStart;
         int sliceTotal = 0;
+        boolean hasError = false;
         while (true) {
             Map body = webClient.get()
                     .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
@@ -236,6 +241,7 @@ public class GrafanaLogServiceImp {
                     .bodyToMono(Map.class)
                     .onErrorResume(e -> {
                         logger.error("{}-{} ❌ WebClient 调用 Loki 失败", info.getEnvironmentName(), item.getName(), e);
+                        hasError = true;
                         return Mono.empty();
                     })
                     .block();
@@ -316,9 +322,26 @@ public class GrafanaLogServiceImp {
                 sliceStart = batchMaxTs + 1;
             }
         }
+
+        updateDataSourceOnlineStatus(info, !hasError);
+    }
+
+    private void updateDataSourceOnlineStatus(DataSourceInfo info, boolean isOnline) {
+        String key = info.getEnvironmentName();
+        if (checkedDataSourceMap.containsKey(key)) {
+            return;
+        }
+        checkedDataSourceMap.put(key, true);
+        try {
+            dataSourceService.updateOnlineStatus(info.getId(), isOnline);
+            logger.debug("数据源 [{}] 在线状态更新为: {}", info.getEnvironmentName(), isOnline ? "在线" : "离线");
+        } catch (Exception e) {
+            logger.error("更新数据源 [{}] 在线状态失败", info.getEnvironmentName(), e);
+        }
     }
 
     public static class DataSourceInfo {
+        private Long id;
         private String url;
         private String datasourceId;
         private String environmentName;
@@ -328,6 +351,8 @@ public class GrafanaLogServiceImp {
         private LocalTime endTime;
         private List<MonitorRuleInfo> monitors;
 
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
         public String getUrl() { return url; }
         public void setUrl(String url) { this.url = url; }
         public String getDatasourceId() { return datasourceId; }

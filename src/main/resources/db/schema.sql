@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS grafana_data_source (
                                                end_time TEXT, -- 结束时间 HH:mm
                                                enabled INTEGER DEFAULT 1, -- 是否启用 1启用 0禁用
                                                create_time TIMESTAMP, -- 创建时间
-                                               update_time TIMESTAMP -- 更新时间
+                                               update_time TIMESTAMP, -- 更新时间
+                                               last_check_time TIMESTAMP, -- 最后检查时间
+                                               is_online INTEGER DEFAULT 0 -- 是否在线 1在线 0离线
 );
 
 CREATE TABLE IF NOT EXISTS grafana_monitor_rule (

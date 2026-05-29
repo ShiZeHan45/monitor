@@ -21,11 +21,26 @@ public class GrafanaDataSourceServiceImp extends ServiceImpl<GrafanaDataSourceMa
     }
 
     @Override
+    public boolean updateOnlineStatus(Long dataSourceId, boolean isOnline) {
+        GrafanaDataSource dataSource = getById(dataSourceId);
+        if (dataSource == null) {
+            return false;
+        }
+        dataSource.setIsOnline(isOnline ? 1 : 0);
+        dataSource.setLastCheckTime(LocalDateTime.now());
+        dataSource.setUpdateTime(LocalDateTime.now());
+        return updateById(dataSource);
+    }
+
+    @Override
     public boolean save(GrafanaDataSource entity) {
         entity.setCreateTime(LocalDateTime.now());
         entity.setUpdateTime(LocalDateTime.now());
         if (entity.getEnabled() == null) {
             entity.setEnabled(1);
+        }
+        if (entity.getIsOnline() == null) {
+            entity.setIsOnline(0);
         }
         return super.save(entity);
     }

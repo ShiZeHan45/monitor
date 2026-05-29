@@ -50,4 +50,10 @@ public class GrafanaDataSource {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    @TableField("last_check_time")
+    private LocalDateTime lastCheckTime;
+
+    @TableField("is_online")
+    private Integer isOnline;
 }

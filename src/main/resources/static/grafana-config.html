@@ -235,12 +235,17 @@
                 
                 container.innerHTML = dataSources.map(ds => {
                     const isSelected = selectedDataSourceId === ds.id;
+                    const isOnline = ds.isOnline === 1;
                     return `
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${isSelected ? 'ring-2 ring-blue-500' : ''}" onclick="selectDataSource(${ds.id})">
                         <div class="flex items-center">
+                            <span class="relative flex h-3 w-3 mr-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 ${isOnline ? 'bg-green-500' : 'bg-gray-500'}"></span>
+                            </span>
                             <i class="fa fa-server text-blue-500 mr-3"></i>
                             <div>
-                                <div class="text-sm font-medium text-gray-800">${escapeHtml(ds.environmentName)}</div>
+                                <div class="text-sm font-medium text-gray-800">${escapeHtml(ds.environmentName)} <span class="text-xs text-gray-500">${isOnline ? '(在线)' : '(离线)'}</span></div>
                                 <div class="text-xs text-gray-500">${escapeHtml(ds.url)}</div>
                             </div>
                         </div>

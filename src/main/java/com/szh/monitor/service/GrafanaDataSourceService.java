@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface GrafanaDataSourceService extends IService<GrafanaDataSource> {
     List<GrafanaDataSource> listEnabled();
+    boolean updateOnlineStatus(Long dataSourceId, boolean isOnline);
 }
