@@ -222,7 +222,7 @@ public class GrafanaLogServiceImp {
                 logCollectTimeInfoService.updateOrSave(grafanaInfo.getEnvironmentName(), item.getName(), batchMaxTs);
             }
 
-            //推送异常日志
+            // 推送异常日志
             if (!hitLogs.isEmpty()) {
                 String content = MessageFormat.format("{0}🚨 **检测到异常日志**\n```\n {1} \n```",
                         grafanaInfo.getEnvironmentName(),
