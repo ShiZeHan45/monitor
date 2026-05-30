@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
@@ -42,14 +41,7 @@ public class GrafanaDataSourceHealthChecker {
             }
 
             boolean isReachable = InetAddress.getByName(ip).isReachable(PING_TIMEOUT);
-
             dataSourceService.updateOnlineStatus(ds.getId(), isReachable);
-
-            if (isReachable) {
-                logger.info("数据源 [{}] 在线 (IP: {})", environmentName, ip);
-            } else {
-                logger.warn("数据源 [{}] 离线 (IP: {})", environmentName, ip);
-            }
 
         } catch (Exception e) {
             logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
