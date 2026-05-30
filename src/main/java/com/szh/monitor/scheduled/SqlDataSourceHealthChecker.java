@@ -18,7 +18,7 @@ public class SqlDataSourceHealthChecker {
     @Autowired
     private SqlDataSourceService dataSourceService;
 
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 300_000)
     public void checkHealth() {
         List<SqlDataSource> dataSources = dataSourceService.listEnabled();
         for (SqlDataSource ds : dataSources) {

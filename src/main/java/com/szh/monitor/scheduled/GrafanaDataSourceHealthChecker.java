@@ -42,7 +42,7 @@ public class GrafanaDataSourceHealthChecker {
                 );
     }
 
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 300_000)
     public void checkHealth() {
         List<GrafanaDataSource> dataSources = dataSourceService.listEnabled();
         for (GrafanaDataSource ds : dataSources) {
