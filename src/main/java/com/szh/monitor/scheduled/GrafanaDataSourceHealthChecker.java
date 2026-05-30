@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -52,6 +53,7 @@ public class GrafanaDataSourceHealthChecker {
 
     private void checkDataSourceHealth(GrafanaDataSource ds) {
         String environmentName = ds.getEnvironmentName();
+        boolean isOnline = false;
         try {
             String basicAuth = Base64Utils.encodeToString(
                     (ds.getUsername() + ":" + ds.getPassword()).getBytes()
@@ -64,13 +66,23 @@ public class GrafanaDataSourceHealthChecker {
                     .build();
 
             Map<String, Object> response = webClient.get()
-                    .uri(ds.getUrl() + "/api/datasources/proxy/" + ds.getDatasourceId() + "/api/health")
+                    .uri(ds.getUrl() + "/api/org")
                     .retrieve()
                     .bodyToMono(Map.class)
-                    .onErrorResume(e -> Mono.empty())
+                    .onErrorResume(WebClientResponseException.class, e -> {
+                        logger.warn("数据源 [{}] 访问失败: {} - {}", environmentName, e.getStatusCode(), e.getMessage());
+                        return Mono.empty();
+                    })
+                    .onErrorResume(Exception.class, e -> {
+                        logger.warn("数据源 [{}] 访问异常: {}", environmentName, e.getMessage());
+                        return Mono.empty();
+                    })
                     .block();
 
-            boolean isOnline = response != null && !response.isEmpty();
+            isOnline = response != null && !response.isEmpty();
+            if (isOnline) {
+                logger.debug("数据源 [{}] 健康检查通过", environmentName);
+            }
             dataSourceService.updateOnlineStatus(ds.getId(), isOnline);
 
         } catch (Exception e) {
