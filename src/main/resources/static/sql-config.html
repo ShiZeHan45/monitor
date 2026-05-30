@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL数据源配置 - 监控系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-blue-900 text-white fixed left-0 top-0 min-h-screen">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-folder-open mr-3"></i>SQL文件维护
+                    </a>
+                    <a href="/grafana-config.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-cloud mr-3"></i>远程日志采集配置
+                    </a>
+                    <a href="/sql-config.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-database mr-3"></i>SQL数据源配置
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">SQL数据源配置</h2>
+                        <p class="text-gray-500 mt-1">配置SQL执行数据源</p>
+                    </div>
+                    <button onclick="refreshConfig()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <i class="fa fa-refresh mr-2"></i>刷新配置
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fa fa-server mr-2"></i>数据源列表
+                    </h3>
+                    <button onclick="showAddDataSourceModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center">
+                        <i class="fa fa-plus mr-1"></i>新增数据源
+                    </button>
+                </div>
+                <div class="space-y-3" id="dataSourceList">
+                    <div class="flex items-center justify-center text-gray-500 py-8">
+                        <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dataSourceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800" id="dataSourceModalTitle">新增数据源</h3>
+                <button onclick="closeDataSourceModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <form id="dataSourceForm">
+                    <input type="hidden" id="dsId">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">环境名称 *</label>
+                            <input type="text" id="dsEnvironmentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">JDBC URL *</label>
+                            <input type="text" id="dsJdbcUrl" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名 *</label>
+                            <input type="text" id="dsUsername" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">密码 *</label>
+                            <input type="password" id="dsPassword" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">驱动类名 *</label>
+                            <input type="text" id="dsDriverClassName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">推送Webhook</label>
+                            <input type="text" id="dsWebhook" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">开始时间 (HH:mm)</label>
+                            <input type="text" id="dsStartTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="08:00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">结束时间 (HH:mm)</label>
+                            <input type="text" id="dsEndTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="20:00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">星期 (逗号分隔)</label>
+                            <input type="text" id="dsWeek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="1,2,3,4,5,6,7">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">是否启用</label>
+                            <select id="dsEnabled" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="closeDataSourceModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    取消
+                </button>
+                <button onclick="saveDataSource()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function escapeHtml(str) {
+            if (str == null) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        async function loadDataSources() {
+            try {
+                const response = await fetch('/api/sql/datasources');
+                const dataSources = await response.json();
+                const container = document.getElementById('dataSourceList');
+                
+                if (!dataSources || dataSources.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8">暂无数据源</div>';
+                    return;
+                }
+                
+                container.innerHTML = dataSources.map(ds => {
+                    const isOnline = ds.isOnline === 1;
+                    return `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <span class="relative flex h-3 w-3 mr-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 ${isOnline ? 'bg-green-500' : 'bg-gray-500'}"></span>
+                            </span>
+                            <i class="fa fa-database text-blue-500 mr-3"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-800">${escapeHtml(ds.environmentName)} <span class="text-xs text-gray-500">${isOnline ? '(在线)' : '(离线)'}</span></div>
+                                <div class="text-xs text-gray-500">${escapeHtml(ds.jdbcUrl)}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" ${ds.enabled === 1 ? 'checked' : ''} onchange="toggleDataSourceEnabled(${ds.id}, this.checked)">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <button onclick="editDataSource(${ds.id})" class="text-blue-500 hover:text-blue-700" title="编辑">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button onclick="deleteDataSource(${ds.id})" class="text-red-500 hover:text-red-700" title="删除">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (error) {
+                console.error('获取数据源列表失败:', error);
+                document.getElementById('dataSourceList').innerHTML = '<div class="text-center text-gray-500 py-8">加载失败</div>';
+            }
+        }
+
+        async function toggleDataSourceEnabled(id, enabled) {
+            try {
+                const response = await fetch(`/api/sql/datasources/${id}`)
+                const ds = await response.json();
+                ds.enabled = enabled ? 1 : 0;
+                
+                const updateResponse = await fetch(`/api/sql/datasources/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ds)
+                });
+                const result = await updateResponse.json();
+                
+                if (result.success) {
+                    await refreshConfig();
+                    loadDataSources();
+                } else {
+                    alert(result.message);
+                    loadDataSources();
+                }
+            } catch (error) {
+                console.error('切换状态失败:', error);
+                alert('切换状态失败');
+                loadDataSources();
+            }
+        }
+
+        async function editDataSource(id) {
+            try {
+                const response = await fetch(`/api/sql/datasources/${id}`);
+                const ds = await response.json();
+                if (!ds.id) {
+                    alert('获取数据源信息失败');
+                    return;
+                }
+                
+                document.getElementById('dataSourceModalTitle').textContent = '编辑数据源';
+                document.getElementById('dsId').value = ds.id;
+                document.getElementById('dsEnvironmentName').value = ds.environmentName || '';
+                document.getElementById('dsJdbcUrl').value = ds.jdbcUrl || '';
+                document.getElementById('dsUsername').value = ds.username || '';
+                document.getElementById('dsPassword').value = ds.password || '';
+                document.getElementById('dsDriverClassName').value = ds.driverClassName || '';
+                document.getElementById('dsWebhook').value = ds.webhook || '';
+                document.getElementById('dsStartTime').value = ds.startTime || '';
+                document.getElementById('dsEndTime').value = ds.endTime || '';
+                try {
+                    const weekArray = JSON.parse(ds.week);
+                    document.getElementById('dsWeek').value = Array.isArray(weekArray) ? weekArray.join(',') : '1,2,3,4,5,6,7';
+                } catch (e) {
+                    document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
+                }
+                document.getElementById('dsEnabled').value = ds.enabled;
+                document.getElementById('dataSourceModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('获取数据源信息失败:', error);
+                alert('获取数据源信息失败');
+            }
+        }
+
+        function showAddDataSourceModal() {
+            document.getElementById('dataSourceModalTitle').textContent = '新增数据源';
+            document.getElementById('dsId').value = '';
+            document.getElementById('dsEnvironmentName').value = '';
+            document.getElementById('dsJdbcUrl').value = '';
+            document.getElementById('dsUsername').value = '';
+            document.getElementById('dsPassword').value = '';
+            document.getElementById('dsDriverClassName').value = '';
+            document.getElementById('dsWebhook').value = '';
+            document.getElementById('dsStartTime').value = '';
+            document.getElementById('dsEndTime').value = '';
+            document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
+            document.getElementById('dsEnabled').value = '1';
+            document.getElementById('dataSourceModal').classList.remove('hidden');
+        }
+
+        function closeDataSourceModal() {
+            document.getElementById('dataSourceModal').classList.add('hidden');
+        }
+
+        async function saveDataSource() {
+            const id = document.getElementById('dsId').value;
+            const weekValue = document.getElementById('dsWeek').value;
+            const weekArray = weekValue ? weekValue.split(',').map(w => parseInt(w.trim())).filter(w => !isNaN(w)) : [1,2,3,4,5,6,7];
+            
+            const data = {
+                id: id ? parseInt(id) : null,
+                environmentName: document.getElementById('dsEnvironmentName').value,
+                jdbcUrl: document.getElementById('dsJdbcUrl').value,
+                username: document.getElementById('dsUsername').value,
+                password: document.getElementById('dsPassword').value,
+                driverClassName: document.getElementById('dsDriverClassName').value,
+                webhook: document.getElementById('dsWebhook').value,
+                startTime: document.getElementById('dsStartTime').value,
+                endTime: document.getElementById('dsEndTime').value,
+                week: JSON.stringify(weekArray),
+                enabled: parseInt(document.getElementById('dsEnabled').value)
+            };
+
+            try {
+                const response = await fetch(`/api/sql/datasources${id ? '/' + id : ''}`, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    closeDataSourceModal();
+                    loadDataSources();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败');
+            }
+        }
+
+        async function deleteDataSource(id) {
+            if (!confirm('确定要删除该数据源吗？')) return;
+            
+            try {
+                const response = await fetch(`/api/sql/datasources/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    loadDataSources();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败');
+            }
+        }
+
+        async function refreshConfig() {
+            try {
+                const response = await fetch('/api/sql/refresh', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('配置刷新成功');
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('刷新失败:', error);
+                alert('刷新失败');
+            }
+        }
+
+        loadDataSources();
+    </script>
+</body>
+</html>

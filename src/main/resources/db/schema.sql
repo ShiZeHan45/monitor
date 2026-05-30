@@ -75,3 +75,21 @@ CREATE TABLE IF NOT EXISTS grafana_monitor_rule (
 );
 CREATE INDEX IF NOT EXISTS idx_rule_data_source_id
     ON grafana_monitor_rule(data_source_id);
+
+CREATE TABLE IF NOT EXISTS sql_data_source (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               environment_name TEXT UNIQUE, -- 环境名称（唯一）
+                                               jdbc_url TEXT, -- JDBC连接地址
+                                               username TEXT, -- 用户名
+                                               password TEXT, -- 密码
+                                               driver_class_name TEXT, -- 驱动类名
+                                               webhook TEXT, -- 默认推送地址
+                                               week TEXT, -- 星期配置（JSON数组）
+                                               start_time TEXT, -- 开始时间 HH:mm
+                                               end_time TEXT, -- 结束时间 HH:mm
+                                               enabled INTEGER DEFAULT 1, -- 是否启用 1启用 0禁用
+                                               create_time TIMESTAMP, -- 创建时间
+                                               update_time TIMESTAMP, -- 更新时间
+                                               last_check_time TIMESTAMP, -- 最后检查时间
+                                               is_online INTEGER DEFAULT 0 -- 是否在线 1在线 0离线
+);
