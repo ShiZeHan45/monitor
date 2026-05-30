@@ -233,7 +233,11 @@ public class ExecuteJDBCContext {
     }
 
     public List<String> getExecuteSqlList(String environmentName) {
-        return sqlExecuteRuleMap.get(environmentName).stream().map(SqlExecuteRule::getSqlFileName).collect(Collectors.toList());
+        List<SqlExecuteRule> rules = sqlExecuteRuleMap.get(environmentName);
+        if (rules == null || rules.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return rules.stream().map(SqlExecuteRule::getSqlFileName).collect(Collectors.toList());
     }
 
     @Data

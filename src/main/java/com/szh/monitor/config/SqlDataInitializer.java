@@ -2,7 +2,9 @@ package com.szh.monitor.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.szh.monitor.entity.SqlDataSource;
+import com.szh.monitor.entity.SqlExecuteRule;
 import com.szh.monitor.service.SqlDataSourceService;
+import com.szh.monitor.service.SqlExecuteRuleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -22,6 +24,9 @@ public class SqlDataInitializer implements CommandLineRunner {
 
     @Resource
     private SqlDataSourceService dataSourceService;
+
+    @Resource
+    private SqlExecuteRuleService ruleService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,6 +62,23 @@ public class SqlDataInitializer implements CommandLineRunner {
 
                 dataSourceService.save(dataSource);
                 logger.info("已导入SQL数据源: {}", info.getEnvironmentName());
+
+                // 初始化规则
+                if (info.getExecuteSql() != null && !info.getExecuteSql().isEmpty()) {
+                    for (String sqlFileName : info.getExecuteSql()) {
+                        SqlExecuteRule rule = new SqlExecuteRule();
+                        rule.setEnvironmentName(info.getEnvironmentName());
+                        rule.setSqlFileName(sqlFileName);
+                        // 默认值
+                        rule.setExecuteLimit(999);
+                        rule.setExecuteStartTime("00:00:00");
+                        rule.setExecuteEndTime("23:59:59");
+                        rule.setExecuteFrequency(5);
+                        
+                        ruleService.save(rule);
+                        logger.info("已导入规则: {} - {}", info.getEnvironmentName(), sqlFileName);
+                    }
+                }
             } catch (Exception e) {
                 logger.error("导入SQL数据源 {} 失败: {}", info.getEnvironmentName(), e.getMessage());
             }

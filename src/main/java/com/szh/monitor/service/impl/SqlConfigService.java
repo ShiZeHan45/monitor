@@ -2,7 +2,9 @@ package com.szh.monitor.service.impl;
 
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.entity.SqlDataSource;
+import com.szh.monitor.entity.SqlExecuteRule;
 import com.szh.monitor.service.SqlDataSourceService;
+import com.szh.monitor.service.SqlExecuteRuleService;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -24,6 +26,9 @@ public class SqlConfigService {
 
     @Autowired
     private SqlDataSourceService dataSourceService;
+
+    @Autowired
+    private SqlExecuteRuleService ruleService;
 
     @Autowired
     private ExecuteJDBCContext executeJDBCContext;
@@ -100,7 +105,11 @@ public class SqlConfigService {
                     // 更新ExecuteJDBCContext
                     executeJDBCContext.addJdbcTemplate(ds.getEnvironmentName(), beanName);
                     
-                    logger.info("✅ 数据源初始化成功: {}", ds.getEnvironmentName());
+                    // 加载该数据源的规则
+                    List<SqlExecuteRule> rules = ruleService.findByEnvironmentName(ds.getEnvironmentName());
+                    executeJDBCContext.addSqlExecuteRule(ds.getEnvironmentName(), rules);
+                    
+                    logger.info("✅ 数据源初始化成功: {}, 规则数: {}", ds.getEnvironmentName(), rules.size());
                 } catch (Exception e) {
                     logger.error("❌ 数据源初始化失败: {} - {}", ds.getEnvironmentName(), e.getMessage(), e);
                 }
