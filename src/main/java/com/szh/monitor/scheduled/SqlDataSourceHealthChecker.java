@@ -5,17 +5,19 @@ import com.szh.monitor.service.SqlDataSourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
+import java.net.InetAddress;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class SqlDataSourceHealthChecker {
     private static final Logger logger = LoggerFactory.getLogger(SqlDataSourceHealthChecker.class);
+    private static final int PING_TIMEOUT = 3000;
+    private static final Pattern JDBC_IP_PATTERN = Pattern.compile("://([^/:]+)");
 
     @Autowired
     private SqlDataSourceService dataSourceService;
@@ -30,37 +32,42 @@ public class SqlDataSourceHealthChecker {
 
     private void checkDataSourceHealth(SqlDataSource ds) {
         String environmentName = ds.getEnvironmentName();
+        String jdbcUrl = ds.getJdbcUrl();
+
         try {
-            String beanName = ds.getEnvironmentName() + "JdbcTemplate";
-
-            if (!dataSourceService.containsBean(beanName)) {
-                logger.warn("数据源 [{}] 的 JdbcTemplate Bean 不存在", environmentName);
+            String ip = extractIpFromJdbcUrl(jdbcUrl);
+            if (ip == null) {
+                logger.warn("数据源 [{}] 无法从JDBC URL提取IP地址: {}", environmentName, jdbcUrl);
                 dataSourceService.updateOnlineStatus(ds.getId(), false);
                 return;
             }
 
-            JdbcTemplate jdbcTemplate = dataSourceService.getBean(beanName, JdbcTemplate.class);
+            boolean isReachable = InetAddress.getByName(ip).isReachable(PING_TIMEOUT);
 
-            if (jdbcTemplate == null) {
-                logger.warn("数据源 [{}] 的 JdbcTemplate Bean 为 null", environmentName);
-                dataSourceService.updateOnlineStatus(ds.getId(), false);
-                return;
+            dataSourceService.updateOnlineStatus(ds.getId(), isReachable);
+
+            if (isReachable) {
+                logger.info("数据源 [{}] 在线 (IP: {})", environmentName, ip);
+            } else {
+                logger.warn("数据源 [{}] 离线 (IP: {})", environmentName, ip);
             }
-
-            DataSource dataSource = jdbcTemplate.getDataSource();
-            if (dataSource == null) {
-                logger.warn("数据源 [{}] 的 DataSource 为 null", environmentName);
-                dataSourceService.updateOnlineStatus(ds.getId(), false);
-                return;
-            }
-
-            jdbcTemplate.execute("SELECT 1");
-            dataSourceService.updateOnlineStatus(ds.getId(), true);
-            logger.info("数据源 [{}] 在线", environmentName);
 
         } catch (Exception e) {
             logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
             dataSourceService.updateOnlineStatus(ds.getId(), false);
+        }
+    }
+
+    private String extractIpFromJdbcUrl(String jdbcUrl) {
+        try {
+            Matcher matcher = JDBC_IP_PATTERN.matcher(jdbcUrl);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+            return null;
+        } catch (Exception e) {
+            logger.error("解析JDBC URL失败: {}", jdbcUrl, e);
+            return null;
         }
     }
 }

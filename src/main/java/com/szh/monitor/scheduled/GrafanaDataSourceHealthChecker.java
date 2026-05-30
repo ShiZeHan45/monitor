@@ -2,50 +2,24 @@ package com.szh.monitor.scheduled;
 
 import com.szh.monitor.entity.GrafanaDataSource;
 import com.szh.monitor.service.GrafanaDataSourceService;
-import com.szh.monitor.service.impl.GrafanaLogServiceImp;
-import io.netty.channel.ChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Base64Utils;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class GrafanaDataSourceHealthChecker {
     private static final Logger logger = LoggerFactory.getLogger(GrafanaDataSourceHealthChecker.class);
+    private static final int PING_TIMEOUT = 3000;
 
     @Autowired
     private GrafanaDataSourceService dataSourceService;
-
-    @Autowired
-    private GrafanaLogServiceImp grafanaLogService;
-
-    private final HttpClient httpClient;
-
-    public GrafanaDataSourceHealthChecker() {
-        httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                .responseTimeout(Duration.ofSeconds(5))
-                .doOnConnected(conn ->
-                        conn.addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS))
-                );
-    }
 
     @Scheduled(fixedRate = 60_000)
     public void checkHealth() {
@@ -57,39 +31,39 @@ public class GrafanaDataSourceHealthChecker {
 
     private void checkDataSourceHealth(GrafanaDataSource ds) {
         String environmentName = ds.getEnvironmentName();
+        String url = ds.getUrl();
+
         try {
-            String basicAuth = Base64Utils.encodeToString(
-                    (ds.getUsername() + ":" + ds.getPassword()).getBytes()
-            );
+            String ip = extractIp(url);
+            if (ip == null) {
+                logger.warn("数据源 [{}] 无法从URL提取IP地址: {}", environmentName, url);
+                dataSourceService.updateOnlineStatus(ds.getId(), false);
+                return;
+            }
 
-            WebClient webClient = WebClient.builder()
-                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
-                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .clientConnector(new ReactorClientHttpConnector(httpClient))
-                    .build();
+            boolean isReachable = InetAddress.getByName(ip).isReachable(PING_TIMEOUT);
 
-            Map<String, Object> response = webClient.get()
-                    .uri(ds.getUrl() + "/api/datasources/proxy/" + ds.getDatasourceId() + "/api/health")
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .onErrorResume(e -> {
-                        logger.warn("数据源 [{}] 健康检查失败: {}", environmentName, e.getMessage());
-                        return Mono.empty();
-                    })
-                    .block();
+            dataSourceService.updateOnlineStatus(ds.getId(), isReachable);
 
-            boolean isOnline = response != null && !response.isEmpty();
-            dataSourceService.updateOnlineStatus(ds.getId(), isOnline);
-
-            if (isOnline) {
-                logger.info("数据源 [{}] 在线", environmentName);
+            if (isReachable) {
+                logger.info("数据源 [{}] 在线 (IP: {})", environmentName, ip);
             } else {
-                logger.warn("数据源 [{}] 离线", environmentName);
+                logger.warn("数据源 [{}] 离线 (IP: {})", environmentName, ip);
             }
 
         } catch (Exception e) {
             logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
             dataSourceService.updateOnlineStatus(ds.getId(), false);
+        }
+    }
+
+    private String extractIp(String urlStr) {
+        try {
+            URL url = new URL(urlStr);
+            return url.getHost();
+        } catch (Exception e) {
+            logger.error("解析URL失败: {}", urlStr, e);
+            return null;
         }
     }
 }
