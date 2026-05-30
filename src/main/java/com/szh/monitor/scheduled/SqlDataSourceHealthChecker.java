@@ -5,19 +5,15 @@ import com.szh.monitor.service.SqlDataSourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 public class SqlDataSourceHealthChecker {
     private static final Logger logger = LoggerFactory.getLogger(SqlDataSourceHealthChecker.class);
-    private static final int PING_TIMEOUT = 3000;
-    private static final Pattern JDBC_IP_PATTERN = Pattern.compile("://([^/:]+)");
 
     @Autowired
     private SqlDataSourceService dataSourceService;
@@ -32,35 +28,26 @@ public class SqlDataSourceHealthChecker {
 
     private void checkDataSourceHealth(SqlDataSource ds) {
         String environmentName = ds.getEnvironmentName();
-        String jdbcUrl = ds.getJdbcUrl();
-
         try {
-            String ip = extractIpFromJdbcUrl(jdbcUrl);
-            if (ip == null) {
-                logger.warn("数据源 [{}] 无法从JDBC URL提取IP地址: {}", environmentName, jdbcUrl);
+            String beanName = ds.getEnvironmentName() + "JdbcTemplate";
+
+            if (!dataSourceService.containsBean(beanName)) {
+                logger.warn("数据源 [{}] 的JdbcTemplate Bean不存在", environmentName);
                 dataSourceService.updateOnlineStatus(ds.getId(), false);
                 return;
             }
 
-            boolean isReachable = InetAddress.getByName(ip).isReachable(PING_TIMEOUT);
-            dataSourceService.updateOnlineStatus(ds.getId(), isReachable);
-
-        } catch (Exception e) {
-            logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
-            dataSourceService.updateOnlineStatus(ds.getId(), false);
-        }
-    }
-
-    private String extractIpFromJdbcUrl(String jdbcUrl) {
-        try {
-            Matcher matcher = JDBC_IP_PATTERN.matcher(jdbcUrl);
-            if (matcher.find()) {
-                return matcher.group(1);
+            JdbcTemplate jdbcTemplate = dataSourceService.getBean(beanName, JdbcTemplate.class);
+            if (jdbcTemplate == null) {
+                dataSourceService.updateOnlineStatus(ds.getId(), false);
+                return;
             }
-            return null;
+
+            jdbcTemplate.execute("SELECT 1");
+            dataSourceService.updateOnlineStatus(ds.getId(), true);
+
         } catch (Exception e) {
-            logger.error("解析JDBC URL失败: {}", jdbcUrl, e);
-            return null;
+            dataSourceService.updateOnlineStatus(ds.getId(), false);
         }
     }
 }
