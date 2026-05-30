@@ -30,7 +30,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,7 +49,6 @@ public class GrafanaLogServiceImp {
     private final Integer TIME = 30;
     private final Integer DEFAULT_LIMIT = 500;
     private final Map<String, Long> lastTsMap = new HashMap<>();
-    private final Map<String, Boolean> checkedDataSourceMap = new HashMap<>();
 
     private HttpClient httpClient;
 
@@ -85,7 +83,6 @@ public class GrafanaLogServiceImp {
         synchronized (webClientMap) {
             webClientMap.clear();
             dataSourceInfoMap.clear();
-            checkedDataSourceMap.clear();
 
             List<GrafanaDataSource> dataSources = dataSourceService.listEnabled();
             for (GrafanaDataSource ds : dataSources) {
@@ -173,7 +170,6 @@ public class GrafanaLogServiceImp {
     @Async("grafanaLog")
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
-        checkedDataSourceMap.clear();
         synchronized (webClientMap) {
             for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {
                 DataSourceInfo info = dataSourceInfoMap.get(entry.getKey());
@@ -233,7 +229,6 @@ public class GrafanaLogServiceImp {
 
         long sliceStart = globalStart;
         int sliceTotal = 0;
-        AtomicBoolean hasError = new AtomicBoolean(false);
         while (true) {
             Map body = webClient.get()
                     .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
@@ -242,7 +237,6 @@ public class GrafanaLogServiceImp {
                     .bodyToMono(Map.class)
                     .onErrorResume(e -> {
                         logger.error("{}-{} ❌ WebClient 调用 Loki 失败", info.getEnvironmentName(), item.getName(), e);
-                        hasError.set(true);
                         return Mono.empty();
                     })
                     .block();
@@ -322,22 +316,6 @@ public class GrafanaLogServiceImp {
                         LocalDateTime.ofInstant(Instant.ofEpochMilli(batchMaxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 sliceStart = batchMaxTs + 1;
             }
-        }
-
-        updateDataSourceOnlineStatus(info, !hasError.get());
-    }
-
-    private void updateDataSourceOnlineStatus(DataSourceInfo info, boolean isOnline) {
-        String key = info.getEnvironmentName();
-        if (checkedDataSourceMap.containsKey(key)) {
-            return;
-        }
-        checkedDataSourceMap.put(key, true);
-        try {
-            dataSourceService.updateOnlineStatus(info.getId(), isOnline);
-            logger.debug("数据源 [{}] 在线状态更新为: {}", info.getEnvironmentName(), isOnline ? "在线" : "离线");
-        } catch (Exception e) {
-            logger.error("更新数据源 [{}] 在线状态失败", info.getEnvironmentName(), e);
         }
     }
 
