@@ -596,6 +596,21 @@ public class MonitorController {
         );
         result.put("todayPushCount", todayLogs.size());
 
+        // 1.1 今日SQL异常推送数和日志异常推送数
+        long sqlExceptionCount = 0;
+        long logExceptionCount = 0;
+        for (MsgSendLog log : todayLogs) {
+            String content = log.getContent() != null ? log.getContent().toLowerCase() : "";
+            if (content.contains("sql")) {
+                sqlExceptionCount++;
+            }
+            if (content.contains("日志")) {
+                logExceptionCount++;
+            }
+        }
+        result.put("todaySqlExceptionCount", sqlExceptionCount);
+        result.put("todayLogExceptionCount", logExceptionCount);
+
         // 2. 在线数据源数量
         List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
         List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
