@@ -586,7 +586,19 @@ public class MonitorController {
         );
         result.put("todayPushCount", todayLogs.size());
 
-        // 2. 在线数据源数量
+        // 2. 今日SQL异常推送数
+        int todaySqlExceptionCount = (int) todayLogs.stream()
+            .filter(log -> log.getContent() != null && log.getContent().toLowerCase().contains("sql"))
+            .count();
+        result.put("todaySqlExceptionCount", todaySqlExceptionCount);
+
+        // 3. 今日日志异常推送数
+        int todayLogExceptionCount = (int) todayLogs.stream()
+            .filter(log -> log.getContent() != null && log.getContent().contains("日志"))
+            .count();
+        result.put("todayLogExceptionCount", todayLogExceptionCount);
+
+        // 4. 在线数据源数量
         List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
         List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
         
@@ -598,18 +610,6 @@ public class MonitorController {
             .count();
         result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
         result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
-
-        // 3. 活跃SQL规则数量
-        Long activeRuleCount = sqlExecuteRuleMapper.selectCount(null);
-        result.put("activeRuleCount", activeRuleCount);
-
-        // 4. 最近24小时异常总数
-        LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
-        List<MsgSendLog> last24hLogs = msgSendLogMapper.selectList(
-            new LambdaQueryWrapper<MsgSendLog>()
-                .ge(MsgSendLog::getCreateTime, yesterday)
-        );
-        result.put("last24hExceptionCount", last24hLogs.size());
 
         return ResponseEntity.ok(result);
     }

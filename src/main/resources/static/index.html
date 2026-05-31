@@ -77,6 +77,28 @@
                         </div>
                     </div>
                 </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">今日SQL异常推送</p>
+                            <p class="text-3xl font-bold text-gray-800" id="todaySqlExceptionCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-exclamation-circle text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">今日日志异常推送</p>
+                            <p class="text-3xl font-bold text-gray-800" id="todayLogExceptionCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-file-text text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
                 <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -87,28 +109,6 @@
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                             <i class="fa fa-database text-green-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">活跃规则数</p>
-                            <p class="text-3xl font-bold text-gray-800" id="activeRuleCount">0</p>
-                        </div>
-                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                            <i class="fa fa-list-alt text-purple-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">24小时异常</p>
-                            <p class="text-3xl font-bold text-gray-800" id="last24hExceptionCount">0</p>
-                        </div>
-                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                            <i class="fa fa-exclamation-triangle text-orange-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -383,10 +383,10 @@
                 const data = await response.json();
 
                 document.getElementById('todayPushCount').textContent = data.todayPushCount || 0;
+                document.getElementById('todaySqlExceptionCount').textContent = data.todaySqlExceptionCount || 0;
+                document.getElementById('todayLogExceptionCount').textContent = data.todayLogExceptionCount || 0;
                 document.getElementById('onlineDataSourceCount').textContent = data.onlineDataSourceCount || 0;
                 document.getElementById('totalDataSourceCount').textContent = data.totalDataSourceCount || 0;
-                document.getElementById('activeRuleCount').textContent = data.activeRuleCount || 0;
-                document.getElementById('last24hExceptionCount').textContent = data.last24hExceptionCount || 0;
             } catch (error) {
                 console.error('获取Dashboard统计数据失败:', error);
             }
