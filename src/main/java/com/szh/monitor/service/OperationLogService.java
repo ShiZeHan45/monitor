@@ -2,7 +2,7 @@ package com.szh.monitor.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.entity.OperationLog;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 public interface OperationLogService {
 

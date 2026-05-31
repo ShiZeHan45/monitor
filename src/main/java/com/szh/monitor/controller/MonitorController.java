@@ -19,7 +19,7 @@ import com.szh.monitor.mapper.SqlDataSourceMapper;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.mapper.SqlExecuteRuleMapper;
 import com.szh.monitor.service.OperationLogService;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

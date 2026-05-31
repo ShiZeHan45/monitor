@@ -7,7 +7,7 @@ import com.szh.monitor.service.GrafanaDataSourceService;
 import com.szh.monitor.service.GrafanaMonitorRuleService;
 import com.szh.monitor.service.OperationLogService;
 import com.szh.monitor.service.impl.GrafanaLogServiceImp;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
