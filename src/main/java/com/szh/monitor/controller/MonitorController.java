@@ -6,12 +6,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
+import com.szh.monitor.entity.GrafanaDataSource;
 import com.szh.monitor.entity.LogCollectTimeInfo;
 import com.szh.monitor.entity.MsgSendLog;
+import com.szh.monitor.entity.SqlDataSource;
 import com.szh.monitor.entity.SqlExecuteLog;
 import com.szh.monitor.entity.SqlExecuteRule;
+import com.szh.monitor.mapper.GrafanaDataSourceMapper;
 import com.szh.monitor.mapper.LogCollectTimeInfoMapper;
 import com.szh.monitor.mapper.MsgSendLogMapper;
+import com.szh.monitor.mapper.SqlDataSourceMapper;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.mapper.SqlExecuteRuleMapper;
 import org.slf4j.Logger;
@@ -57,6 +61,12 @@ public class MonitorController {
 
     @Autowired
     private SQLConfig sqlConfig;
+
+    @Autowired
+    private GrafanaDataSourceMapper grafanaDataSourceMapper;
+
+    @Autowired
+    private SqlDataSourceMapper sqlDataSourceMapper;
 
     @GetMapping("/stats/today")
     public ResponseEntity<Map<String, Object>> getTodayStats() {
@@ -563,5 +573,78 @@ public class MonitorController {
             result.put("message", "SQL执行失败: " + e.getMessage());
             return ResponseEntity.ok(result);
         }
+    }
+
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 今日总推送数
+        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(
+            new LambdaQueryWrapper<MsgSendLog>()
+                .like(MsgSendLog::getCreateTime, LocalDate.now().toString())
+        );
+        result.put("todayPushCount", todayLogs.size());
+
+        // 2. 在线数据源数量
+        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
+        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
+        
+        int onlineGrafanaCount = (int) grafanaDataSources.stream()
+            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
+            .count();
+        int onlineSqlCount = (int) sqlDataSources.stream()
+            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
+            .count();
+        result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
+        result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
+
+        // 3. 活跃SQL规则数量
+        Long activeRuleCount = sqlExecuteRuleMapper.selectCount(null);
+        result.put("activeRuleCount", activeRuleCount);
+
+        // 4. 最近24小时异常总数
+        LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
+        List<MsgSendLog> last24hLogs = msgSendLogMapper.selectList(
+            new LambdaQueryWrapper<MsgSendLog>()
+                .ge(MsgSendLog::getCreateTime, yesterday)
+        );
+        result.put("last24hExceptionCount", last24hLogs.size());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/stats/datasource-status")
+    public ResponseEntity<List<Map<String, Object>>> getDataSourceStatus() {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // Grafana数据源
+        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
+        for (GrafanaDataSource ds : grafanaDataSources) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", ds.getEnvironmentName());
+            item.put("type", "Grafana");
+            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
+            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
+            item.put("lastCheckTime", ds.getLastCheckTime());
+            result.add(item);
+        }
+
+        // SQL数据源
+        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
+        for (SqlDataSource ds : sqlDataSources) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", ds.getEnvironmentName());
+            item.put("type", "SQL");
+            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
+            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
+            item.put("lastCheckTime", ds.getLastCheckTime());
+            result.add(item);
+        }
+
+        // 按名称排序
+        result.sort(Comparator.comparing(m -> (String) m.get("name")));
+
+        return ResponseEntity.ok(result);
     }
 }

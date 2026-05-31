@@ -64,6 +64,82 @@
                 <p class="text-gray-500 mt-1" id="currentDate"></p>
             </div>
 
+            <!-- 关键指标卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">今日总推送数</p>
+                            <p class="text-3xl font-bold text-gray-800" id="todayPushCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-bell text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">在线数据源</p>
+                            <p class="text-3xl font-bold text-gray-800">
+                                <span id="onlineDataSourceCount">0</span>/<span id="totalDataSourceCount">0</span>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-database text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">活跃规则数</p>
+                            <p class="text-3xl font-bold text-gray-800" id="activeRuleCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-list-alt text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">24小时异常</p>
+                            <p class="text-3xl font-bold text-gray-800" id="last24hExceptionCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-exclamation-triangle text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据源在线状态 -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fa fa-plug mr-2"></i>数据源在线状态
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">环境名称</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后检查</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataSourceStatusBody">
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                    <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
                 <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                     <i class="fa fa-bell mr-2"></i>消息推送统计
@@ -300,6 +376,69 @@
             });
         }
 
+        async function fetchDashboardStats() {
+            try {
+                const response = await fetch('/api/stats/dashboard');
+                const data = await response.json();
+
+                document.getElementById('todayPushCount').textContent = data.todayPushCount || 0;
+                document.getElementById('onlineDataSourceCount').textContent = data.onlineDataSourceCount || 0;
+                document.getElementById('totalDataSourceCount').textContent = data.totalDataSourceCount || 0;
+                document.getElementById('activeRuleCount').textContent = data.activeRuleCount || 0;
+                document.getElementById('last24hExceptionCount').textContent = data.last24hExceptionCount || 0;
+            } catch (error) {
+                console.error('获取Dashboard统计数据失败:', error);
+            }
+        }
+
+        async function fetchDataSourceStatus() {
+            try {
+                const response = await fetch('/api/stats/datasource-status');
+                const data = await response.json();
+
+                const tbody = document.getElementById('dataSourceStatusBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(item => {
+                    const statusClass = item.isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                    const statusText = item.isOnline ? '在线' : '离线';
+                    const dotClass = item.isOnline ? 'bg-green-500' : 'bg-red-500';
+                    const typeBadgeClass = item.type === 'Grafana' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
+
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-2 h-2 rounded-full ${dotClass} mr-3"></div>
+                                    <span class="text-sm font-medium text-gray-900">${item.name || '未知'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${typeBadgeClass}">${item.type}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">
+                                    ${statusText}
+                                    ${!item.enabled ? '<span class="ml-1 text-gray-500">(已禁用)</span>' : ''}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${item.lastCheckTime ? formatTime(item.lastCheckTime) : '-'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('获取数据源状态失败:', error);
+                document.getElementById('dataSourceStatusBody').innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
+            }
+        }
+
+        fetchDashboardStats();
+        fetchDataSourceStatus();
         fetchPushStats();
         fetchSqlStats();
     </script>
