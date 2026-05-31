@@ -18,6 +18,8 @@ import com.szh.monitor.mapper.MsgSendLogMapper;
 import com.szh.monitor.mapper.SqlDataSourceMapper;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.mapper.SqlExecuteRuleMapper;
+import com.szh.monitor.service.OperationLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,8 +70,13 @@ public class MonitorController {
     @Autowired
     private SqlDataSourceMapper sqlDataSourceMapper;
 
+    @Autowired
+    private OperationLogService operationLogService;
+
     @GetMapping("/stats/today")
-    public ResponseEntity<Map<String, Object>> getTodayStats() {
+    public ResponseEntity<Map<String, Object>> getTodayStats(HttpServletRequest request) {
+        operationLogService.logVisit(request);
+        
         Map<String, Object> result = new HashMap<>();
 
         int today = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
@@ -79,45 +86,62 @@ public class MonitorController {
 
         Map<String, Long> pushStats = todayLogs.stream()
                 .collect(Collectors.groupingBy(
-                        log -> {
-                            if (log.getContent() != null && log.getContent().contains("SQL")) {
-                                return "sql";
-                            } else if (log.getContent() != null && log.getContent().contains("日志")) {
-                                return "log";
-                            }
-                            return "other";
-                        },
+                        log -> log.getEnvironmentName(),
                         Collectors.counting()
                 ));
 
+        result.put("todayPushStats", pushStats);
+        result.put("todayPushTotal", todayLogs.size());
+
         List<SqlExecuteLog> sqlLogs = sqlExecuteLogMapper.selectList(new LambdaQueryWrapper<SqlExecuteLog>()
-                .eq(SqlExecuteLog::getExecuteDate, today));
+                .eq(SqlExecuteLog::getDate, today));
 
         Map<String, Map<String, Object>> sqlStats = new HashMap<>();
         for (SqlExecuteLog log : sqlLogs) {
             String env = log.getEnvironmentName();
             sqlStats.computeIfAbsent(env, k -> new HashMap<>());
-            Map<String, Object> envStats = sqlStats.get(env);
-            int count = log.getCount() != null ? log.getCount() : 0;
-            int failed = log.getFailedCount() != null ? log.getFailedCount() : 0;
-            envStats.merge("totalCount", count, (a, b) -> (Integer) a + (Integer) b);
-            envStats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
+            sqlStats.get(env).merge("executeCount", 1, Integer::sum);
+            if (log.getError() != null && !log.getError().isEmpty()) {
+                sqlStats.get(env).merge("failedCount", 1, Integer::sum);
+            }
         }
 
-        //过滤掉执行次数为0的环境
-        sqlStats.entrySet().removeIf(entry -> {
-            Map<String, Object> stats = entry.getValue();
-            Object count = stats.get("totalCount");
-            if (count instanceof Integer) {
-                return (Integer) count <= 0;
-            }
-            return true;
-        });
+        result.put("sqlExecuteStats", sqlStats);
 
-        result.put("pushTotal", todayLogs.size());
-        result.put("pushStats", pushStats);
-        result.put("sqlStats", sqlStats);
-        result.put("date", LocalDate.now().toString());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/stats/push-by-env")
+    public ResponseEntity<List<Map<String, Object>>> getPushStatsByEnv() {
+        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(new LambdaQueryWrapper<MsgSendLog>()
+                .like(MsgSendLog::getCreateTime, LocalDate.now().toString()));
+
+        Map<String, Map<String, Object>> stats = new HashMap<>();
+
+        for (MsgSendLog log : todayLogs) {
+            String env = log.getEnvironmentName();
+            stats.computeIfAbsent(env, k -> new HashMap<>());
+            
+            String content = (log.getContent() != null) ? log.getContent().toLowerCase() : "";
+            if (content.contains("sql")) {
+                stats.get(env).merge("sqlPushCount", 1, Integer::sum);
+            }
+            if (content.contains("日志")) {
+                stats.get(env).merge("logPushCount", 1, Integer::sum);
+            }
+        }
+
+        List<Map<String, Object>> result = stats.entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("environmentName", entry.getKey());
+                    item.put("sqlPushCount", entry.getValue().getOrDefault("sqlPushCount", 0));
+                    item.put("logPushCount", entry.getValue().getOrDefault("logPushCount", 0));
+                    return item;
+                })
+                .collect(Collectors.toList());
+
+        Collections.sort(result, Comparator.comparing(m -> (String) m.get("environmentName")));
 
         return ResponseEntity.ok(result);
     }
@@ -126,114 +150,72 @@ public class MonitorController {
     public ResponseEntity<List<Map<String, Object>>> getEnvironmentStats() {
         int today = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
 
-        List<SqlExecuteLog> logs = sqlExecuteLogMapper.selectList(new LambdaQueryWrapper<SqlExecuteLog>()
-                .eq(SqlExecuteLog::getExecuteDate, today));
+        List<SqlExecuteLog> sqlLogs = sqlExecuteLogMapper.selectList(new LambdaQueryWrapper<SqlExecuteLog>()
+                .eq(SqlExecuteLog::getDate, today));
 
         Map<String, Map<String, Object>> envMap = new HashMap<>();
-        for (SqlExecuteLog log : logs) {
+
+        for (SqlExecuteLog log : sqlLogs) {
             String env = log.getEnvironmentName();
             envMap.computeIfAbsent(env, k -> new HashMap<>());
-            Map<String, Object> stats = envMap.get(env);
-            stats.put("environmentName", env);
-            int count = log.getCount() != null ? log.getCount() : 0;
-            int failed = log.getFailedCount() != null ? log.getFailedCount() : 0;
-            stats.merge("executeCount", count, (a, b) -> (Integer) a + (Integer) b);
-            stats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
+            envMap.get(env).merge("executeCount", 1, Integer::sum);
+            if (log.getError() != null && !log.getError().isEmpty()) {
+                envMap.get(env).merge("failedCount", 1, Integer::sum);
+            }
         }
 
-        //过滤掉执行次数为0的环境
         List<Map<String, Object>> result = envMap.values().stream()
                 .filter(stats -> {
                     Object count = stats.get("executeCount");
-                    if (count instanceof Integer) {
-                        return (Integer) count > 0;
-                    }
-                    return false;
+                    return count instanceof Integer && (Integer) count > 0;
                 })
                 .collect(Collectors.toList());
 
+        Collections.sort(result, Comparator.comparing(m -> (String) m.get("environmentName")));
+
         return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/stats/push-by-env")
-    public ResponseEntity<List<Map<String, Object>>> getPushStatsByEnvironment() {
-        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(new LambdaQueryWrapper<MsgSendLog>()
-                .like(MsgSendLog::getCreateTime, LocalDate.now().toString()));
-
-        Map<String, Map<String, Object>> envMap = new LinkedHashMap<>();
-
-        List<String> allEnvs = todayLogs.stream()
-                .map(MsgSendLog::getEnvironmentName)
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-
-        for (String env : allEnvs) {
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("environmentName", env);
-            stats.put("sqlPushCount", 0L);
-            stats.put("logPushCount", 0L);
-            envMap.put(env, stats);
-        }
-
-        for (MsgSendLog log : todayLogs) {
-            String env = log.getEnvironmentName();
-            if (env == null) continue;
-
-            Map<String, Object> stats = envMap.get(env);
-            if (stats == null) {
-                stats = new HashMap<>();
-                stats.put("environmentName", env);
-                stats.put("sqlPushCount", 0L);
-                stats.put("logPushCount", 0L);
-                envMap.put(env, stats);
-            }
-
-            String content = log.getContent() != null ? log.getContent().toLowerCase() : "";
-            if (content.contains("sql")) {
-                stats.merge("sqlPushCount", 1L, (a, b) -> (Long) a + (Long) b);
-            }
-            if (content.contains("日志")) {
-                stats.merge("logPushCount", 1L, (a, b) -> (Long) a + (Long) b);
-            }
-        }
-
-        return ResponseEntity.ok(new ArrayList<>(envMap.values()));
     }
 
     @GetMapping("/push-records")
-    public ResponseEntity<IPage<MsgSendLog>> getPushRecords(
+    public ResponseEntity<Map<String, Object>> getPushRecords(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) String environment) {
+            @RequestParam(required = false) String environmentName) {
 
-        Page<MsgSendLog> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<MsgSendLog> query = new LambdaQueryWrapper<>();
+        Page<MsgSendLog> pageInfo = new Page<>(page, size);
+        LambdaQueryWrapper<MsgSendLog> queryWrapper = new LambdaQueryWrapper<>();
 
         if (date != null && !date.isEmpty()) {
-            query.like(MsgSendLog::getCreateTime, date);
+            queryWrapper.like(MsgSendLog::getCreateTime, date);
         }
 
-        if (environment != null && !environment.isEmpty()) {
-            query.eq(MsgSendLog::getEnvironmentName, environment);
+        if (environmentName != null && !environmentName.isEmpty()) {
+            queryWrapper.eq(MsgSendLog::getEnvironmentName, environmentName);
         }
 
-        query.orderByDesc(MsgSendLog::getCreateTime);
-        IPage<MsgSendLog> result = msgSendLogMapper.selectPage(pageRequest, query);
+        queryWrapper.orderByDesc(MsgSendLog::getCreateTime);
 
-        return ResponseEntity.ok(result);
+        IPage<MsgSendLog> result = msgSendLogMapper.selectPage(pageInfo, queryWrapper);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("records", result.getRecords());
+        response.put("total", result.getTotal());
+        response.put("current", result.getCurrent());
+        response.put("size", result.getSize());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/sql-rules")
     public ResponseEntity<List<SqlExecuteRule>> getSqlRules() {
         List<SqlExecuteRule> rules = sqlExecuteRuleMapper.selectList(null);
+        Collections.sort(rules, Comparator.comparing(SqlExecuteRule::getEnvironmentName));
         return ResponseEntity.ok(rules);
     }
 
     @GetMapping("/sql-rules/{id}")
-    public ResponseEntity<SqlExecuteRule> getSqlRule(@PathVariable Long id) {
+    public ResponseEntity<SqlExecuteRule> getSqlRule(@PathVariable int id) {
         SqlExecuteRule rule = sqlExecuteRuleMapper.selectById(id);
         if (rule == null) {
             return ResponseEntity.notFound().build();
@@ -242,290 +224,249 @@ public class MonitorController {
     }
 
     @PostMapping("/sql-rules")
-    public ResponseEntity<SqlExecuteRule> createSqlRule(@RequestBody SqlExecuteRule rule) {
-        rule.setId(null);
-        sqlExecuteRuleMapper.insert(rule);
-        return ResponseEntity.ok(rule);
+    public ResponseEntity<Map<String, Object>> createSqlRule(@RequestBody SqlExecuteRule rule, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            sqlExecuteRuleMapper.insert(rule);
+            operationLogService.logCreate("SQL规则", rule.getId(), "创建SQL规则: " + rule.getSqlFileName(), request);
+            result.put("success", true);
+            result.put("message", "创建成功");
+            result.put("data", rule);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("创建SQL规则失败", e);
+            result.put("success", false);
+            result.put("message", "创建失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
+        }
     }
 
     @PutMapping("/sql-rules/{id}")
-    public ResponseEntity<SqlExecuteRule> updateSqlRule(@PathVariable Long id, @RequestBody SqlExecuteRule rule) {
-        SqlExecuteRule existing = sqlExecuteRuleMapper.selectById(id);
-        if (existing == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Map<String, Object>> updateSqlRule(@PathVariable int id, @RequestBody SqlExecuteRule rule, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            SqlExecuteRule existing = sqlExecuteRuleMapper.selectById(id);
+            if (existing == null) {
+                result.put("success", false);
+                result.put("message", "规则不存在");
+                return ResponseEntity.ok(result);
+            }
+            
+            rule.setId(id);
+            sqlExecuteRuleMapper.updateById(rule);
+            operationLogService.logEdit("SQL规则", id, "修改SQL规则: " + rule.getSqlFileName(), request);
+            result.put("success", true);
+            result.put("message", "更新成功");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("更新SQL规则失败", e);
+            result.put("success", false);
+            result.put("message", "更新失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
         }
-        rule.setId(id);
-        sqlExecuteRuleMapper.updateById(rule);
-        return ResponseEntity.ok(rule);
     }
 
     @DeleteMapping("/sql-rules/{id}")
-    public ResponseEntity<Void> deleteSqlRule(@PathVariable Long id) {
-        SqlExecuteRule existing = sqlExecuteRuleMapper.selectById(id);
-        if (existing == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Map<String, Object>> deleteSqlRule(@PathVariable int id, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            SqlExecuteRule rule = sqlExecuteRuleMapper.selectById(id);
+            if (rule == null) {
+                result.put("success", false);
+                result.put("message", "规则不存在");
+                return ResponseEntity.ok(result);
+            }
+            
+            sqlExecuteRuleMapper.deleteById(id);
+            operationLogService.logDelete("SQL规则", id, "删除SQL规则: " + rule.getSqlFileName(), request);
+            result.put("success", true);
+            result.put("message", "删除成功");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("删除SQL规则失败", e);
+            result.put("success", false);
+            result.put("message", "删除失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
         }
-        sqlExecuteRuleMapper.deleteById(id);
-        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/environments")
-    public ResponseEntity<List<String>> getEnvironments() {
-        List<LogCollectTimeInfo> infos = logCollectTimeInfoMapper.selectList(null);
-        List<String> envNames = infos.stream()
-                .map(LogCollectTimeInfo::getEnvironmentName)
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(envNames);
+    @GetMapping("/sql-files")
+    public ResponseEntity<List<Map<String, Object>>> getSqlFiles() {
+        List<Map<String, Object>> files = new ArrayList<>();
+        File dir = new File(sqlConfig.getSqlFilePath());
+        if (dir.exists() && dir.isDirectory()) {
+            File[] fileList = dir.listFiles((d, name) -> name.endsWith(".sql"));
+            if (fileList != null) {
+                for (File file : fileList) {
+                    Map<String, Object> fileInfo = new HashMap<>();
+                    fileInfo.put("name", file.getName());
+                    fileInfo.put("size", file.length());
+                    fileInfo.put("lastModified", file.lastModified());
+                    files.add(fileInfo);
+                }
+            }
+        }
+        Collections.sort(files, Comparator.comparing(m -> (String) m.get("name")));
+        return ResponseEntity.ok(files);
     }
 
-    @GetMapping("/sql-rules/check-unique")
-    public ResponseEntity<Map<String, Object>> checkRuleUnique(
-            @RequestParam String environmentName,
-            @RequestParam String sqlFileName,
-            @RequestParam(required = false) Long excludeId) {
+    @GetMapping("/sql-files/{fileName}")
+    public ResponseEntity<Map<String, Object>> getSqlFileContent(@PathVariable String fileName) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Path path = Paths.get(sqlConfig.getSqlFilePath(), fileName);
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+            result.put("success", true);
+            result.put("content", content);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            logger.error("读取SQL文件失败", e);
+            result.put("success", false);
+            result.put("message", "读取失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
+        }
+    }
+
+    @PostMapping("/sql-files/upload")
+    public ResponseEntity<Map<String, Object>> uploadSqlFiles(@RequestParam("files") MultipartFile[] files, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        int successCount = 0;
+        List<String> failedFiles = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+            
+            String fileName = file.getOriginalFilename();
+            if (fileName == null || !fileName.endsWith(".sql")) {
+                failedFiles.add(fileName + " - 不是SQL文件");
+                continue;
+            }
+
+            try {
+                Path path = Paths.get(sqlConfig.getSqlFilePath(), fileName);
+                Files.write(path, file.getBytes());
+                successCount++;
+                operationLogService.logCreate("SQL文件", null, "上传SQL文件: " + fileName, request);
+            } catch (IOException e) {
+                logger.error("上传SQL文件失败: {}", fileName, e);
+                failedFiles.add(fileName + " - " + e.getMessage());
+            }
+        }
+
+        result.put("success", true);
+        result.put("message", String.format("上传完成，成功 %d 个，失败 %d 个", successCount, failedFiles.size()));
+        if (!failedFiles.isEmpty()) {
+            result.put("failedFiles", failedFiles);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/sql-files/{fileName}")
+    public ResponseEntity<Map<String, Object>> deleteSqlFile(@PathVariable String fileName, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Path path = Paths.get(sqlConfig.getSqlFilePath(), fileName);
+            if (Files.exists(path)) {
+                Files.delete(path);
+                operationLogService.logDelete("SQL文件", null, "删除SQL文件: " + fileName, request);
+                result.put("success", true);
+                result.put("message", "删除成功");
+            } else {
+                result.put("success", false);
+                result.put("message", "文件不存在");
+            }
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            logger.error("删除SQL文件失败", e);
+            result.put("success", false);
+            result.put("message", "删除失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
+        }
+    }
+
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
         Map<String, Object> result = new HashMap<>();
 
-        LambdaQueryWrapper<SqlExecuteRule> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SqlExecuteRule::getEnvironmentName, environmentName)
-               .eq(SqlExecuteRule::getSqlFileName, sqlFileName);
+        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(
+            new LambdaQueryWrapper<MsgSendLog>()
+                .like(MsgSendLog::getCreateTime, LocalDate.now().toString())
+        );
+        result.put("todayPushCount", todayLogs.size());
 
-        if (excludeId != null) {
-            wrapper.ne(SqlExecuteRule::getId, excludeId);
-        }
+        int todaySqlExceptionCount = (int) todayLogs.stream()
+            .filter(log -> log.getContent() != null && log.getContent().toLowerCase().contains("sql"))
+            .count();
+        result.put("todaySqlExceptionCount", todaySqlExceptionCount);
 
-        Long count = sqlExecuteRuleMapper.selectCount(wrapper);
-        result.put("isUnique", count == 0);
-        result.put("exists", count > 0);
+        int todayLogExceptionCount = (int) todayLogs.stream()
+            .filter(log -> log.getContent() != null && log.getContent().contains("日志"))
+            .count();
+        result.put("todayLogExceptionCount", todayLogExceptionCount);
+
+        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
+        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
+        
+        int onlineGrafanaCount = (int) grafanaDataSources.stream()
+            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
+            .count();
+        int onlineSqlCount = (int) sqlDataSources.stream()
+            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
+            .count();
+        result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
+        result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
 
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/sql-files")
-    public ResponseEntity<List<String>> getSqlFiles() {
-        File directory = null;
-        try {
-            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
-                directory = new File(sqlConfig.getSqlAbsoluteDir());
-            } else {
-                directory = sqlConfig.getSqlDir().getFile();
+    @GetMapping("/stats/datasource-status")
+    public ResponseEntity<List<Map<String, Object>>> getDataSourceStatus() {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
+        for (GrafanaDataSource ds : grafanaDataSources) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", ds.getEnvironmentName());
+            item.put("type", "Grafana");
+            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
+            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
+            item.put("lastCheckTime", ds.getLastCheckTime());
+            result.add(item);
+        }
+
+        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
+        for (SqlDataSource ds : sqlDataSources) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", ds.getEnvironmentName());
+            item.put("type", "SQL");
+            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
+            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
+            item.put("lastCheckTime", ds.getLastCheckTime());
+            result.add(item);
+        }
+
+        result.sort((m1, m2) -> {
+            String type1 = (String) m1.get("type");
+            String type2 = (String) m2.get("type");
+            Boolean online1 = (Boolean) m1.get("isOnline");
+            Boolean online2 = (Boolean) m2.get("isOnline");
+            String name1 = (String) m1.get("name");
+            String name2 = (String) m2.get("name");
+
+            int typeCompare = type1.compareTo(type2);
+            if (typeCompare != 0) {
+                return typeCompare;
             }
-        } catch (IOException e) {
-            logger.error("获取SQL目录失败", e);
-            return ResponseEntity.internalServerError().build();
-        }
 
-        if (!directory.exists() || !directory.isDirectory()) {
-            return ResponseEntity.ok(Collections.emptyList());
-        }
-
-        List<String> files = Arrays.stream(directory.listFiles())
-                .filter(f -> f.isFile() && f.getName().endsWith(".sql"))
-                .map(File::getName)
-                .sorted()
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(files);
-    }
-
-    @PostMapping("/sql-files/upload")
-    public ResponseEntity<Map<String, Object>> uploadSqlFile(@RequestParam("file") MultipartFile file) {
-        Map<String, Object> result = new HashMap<>();
-
-        if (file.isEmpty()) {
-            result.put("success", false);
-            result.put("message", "请选择要上传的文件");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        if (!file.getOriginalFilename().endsWith(".sql")) {
-            result.put("success", false);
-            result.put("message", "只允许上传SQL文件");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        File directory = null;
-        try {
-            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
-                directory = new File(sqlConfig.getSqlAbsoluteDir());
-            } else {
-                directory = sqlConfig.getSqlDir().getFile();
+            int onlineCompare = Boolean.compare(online2, online1);
+            if (onlineCompare != 0) {
+                return onlineCompare;
             }
-        } catch (IOException e) {
-            logger.error("获取SQL目录失败", e);
-            result.put("success", false);
-            result.put("message", "获取SQL目录失败");
-            return ResponseEntity.internalServerError().body(result);
-        }
 
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+            return name1.compareTo(name2);
+        });
 
-        try {
-            Path filePath = Paths.get(directory.getAbsolutePath(), file.getOriginalFilename());
-            Files.copy(file.getInputStream(), filePath);
-            result.put("success", true);
-            result.put("message", "上传成功");
-            result.put("filename", file.getOriginalFilename());
-            return ResponseEntity.ok(result);
-        } catch (IOException e) {
-            logger.error("上传文件失败", e);
-            result.put("success", false);
-            result.put("message", "上传失败: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-    }
-
-    @DeleteMapping("/sql-files/{filename}")
-    public ResponseEntity<Map<String, Object>> deleteSqlFile(@PathVariable String filename) {
-        Map<String, Object> result = new HashMap<>();
-
-        if (!filename.endsWith(".sql")) {
-            result.put("success", false);
-            result.put("message", "只允许删除SQL文件");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        File directory = null;
-        try {
-            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
-                directory = new File(sqlConfig.getSqlAbsoluteDir());
-            } else {
-                directory = sqlConfig.getSqlDir().getFile();
-            }
-        } catch (IOException e) {
-            logger.error("获取SQL目录失败", e);
-            result.put("success", false);
-            result.put("message", "获取SQL目录失败");
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        File file = new File(directory, filename);
-        if (!file.exists()) {
-            result.put("success", false);
-            result.put("message", "文件不存在");
-            return ResponseEntity.notFound().build();
-        }
-
-        if (file.delete()) {
-            result.put("success", true);
-            result.put("message", "删除成功");
-            return ResponseEntity.ok(result);
-        } else {
-            result.put("success", false);
-            result.put("message", "删除失败");
-            return ResponseEntity.internalServerError().body(result);
-        }
-    }
-
-    @GetMapping("/sql-files/{filename}/content")
-    public ResponseEntity<Map<String, Object>> getSqlFileContent(@PathVariable String filename) {
-        Map<String, Object> result = new HashMap<>();
-
-        if (!filename.endsWith(".sql")) {
-            result.put("success", false);
-            result.put("message", "只支持SQL文件");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        File directory = null;
-        try {
-            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
-                directory = new File(sqlConfig.getSqlAbsoluteDir());
-            } else {
-                directory = sqlConfig.getSqlDir().getFile();
-            }
-        } catch (IOException e) {
-            logger.error("获取SQL目录失败", e);
-            result.put("success", false);
-            result.put("message", "获取SQL目录失败");
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        File file = new File(directory, filename);
-        if (!file.exists()) {
-            result.put("success", false);
-            result.put("message", "文件不存在");
-            return ResponseEntity.notFound().build();
-        }
-
-        try {
-            String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-            result.put("success", true);
-            result.put("content", content);
-            result.put("filename", filename);
-            return ResponseEntity.ok(result);
-        } catch (IOException e) {
-            logger.error("读取文件失败", e);
-            result.put("success", false);
-            result.put("message", "读取文件失败: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-    }
-
-    @PutMapping("/sql-files/{filename}/content")
-    public ResponseEntity<Map<String, Object>> updateSqlFileContent(
-            @PathVariable String filename,
-            @RequestBody Map<String, String> request) {
-        Map<String, Object> result = new HashMap<>();
-
-        if (!filename.endsWith(".sql")) {
-            result.put("success", false);
-            result.put("message", "只支持SQL文件");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        String content = request.get("content");
-        if (content == null || content.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "内容不能为空");
-            return ResponseEntity.badRequest().body(result);
-        }
-
-        File directory = null;
-        try {
-            if (sqlConfig.getSqlAbsoluteDir() != null && !sqlConfig.getSqlAbsoluteDir().isEmpty()) {
-                directory = new File(sqlConfig.getSqlAbsoluteDir());
-            } else {
-                directory = sqlConfig.getSqlDir().getFile();
-            }
-        } catch (IOException e) {
-            logger.error("获取SQL目录失败", e);
-            result.put("success", false);
-            result.put("message", "获取SQL目录失败");
-            return ResponseEntity.internalServerError().body(result);
-        }
-
-        File file = new File(directory, filename);
-        if (!file.exists()) {
-            result.put("success", false);
-            result.put("message", "文件不存在");
-            return ResponseEntity.notFound().build();
-        }
-
-        try {
-            Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
-            result.put("success", true);
-            result.put("message", "更新成功");
-            result.put("filename", filename);
-            return ResponseEntity.ok(result);
-        } catch (IOException e) {
-            logger.error("写入文件失败", e);
-            result.put("success", false);
-            result.put("message", "写入文件失败: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(result);
-        }
-    }
-
-    @GetMapping("/datasources")
-    public ResponseEntity<List<String>> getDataSources() {
-        Map<String, String> jdbcTemplates = executeJDBCContext.getJBDCTemplate();
-        List<String> dataSources = new ArrayList<>(jdbcTemplates.keySet());
-        Collections.sort(dataSources);
-        return ResponseEntity.ok(dataSources);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/sql-debug/execute")
@@ -573,100 +514,5 @@ public class MonitorController {
             result.put("message", "SQL执行失败: " + e.getMessage());
             return ResponseEntity.ok(result);
         }
-    }
-
-    @GetMapping("/stats/dashboard")
-    public ResponseEntity<Map<String, Object>> getDashboardStats() {
-        Map<String, Object> result = new HashMap<>();
-
-        // 1. 今日总推送数
-        List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(
-            new LambdaQueryWrapper<MsgSendLog>()
-                .like(MsgSendLog::getCreateTime, LocalDate.now().toString())
-        );
-        result.put("todayPushCount", todayLogs.size());
-
-        // 2. 今日SQL异常推送数
-        int todaySqlExceptionCount = (int) todayLogs.stream()
-            .filter(log -> log.getContent() != null && log.getContent().toLowerCase().contains("sql"))
-            .count();
-        result.put("todaySqlExceptionCount", todaySqlExceptionCount);
-
-        // 3. 今日日志异常推送数
-        int todayLogExceptionCount = (int) todayLogs.stream()
-            .filter(log -> log.getContent() != null && log.getContent().contains("日志"))
-            .count();
-        result.put("todayLogExceptionCount", todayLogExceptionCount);
-
-        // 4. 在线数据源数量
-        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
-        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
-        
-        int onlineGrafanaCount = (int) grafanaDataSources.stream()
-            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
-            .count();
-        int onlineSqlCount = (int) sqlDataSources.stream()
-            .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
-            .count();
-        result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
-        result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
-
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/stats/datasource-status")
-    public ResponseEntity<List<Map<String, Object>>> getDataSourceStatus() {
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        // Grafana数据源
-        List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
-        for (GrafanaDataSource ds : grafanaDataSources) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", ds.getEnvironmentName());
-            item.put("type", "Grafana");
-            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
-            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
-            item.put("lastCheckTime", ds.getLastCheckTime());
-            result.add(item);
-        }
-
-        // SQL数据源
-        List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
-        for (SqlDataSource ds : sqlDataSources) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", ds.getEnvironmentName());
-            item.put("type", "SQL");
-            item.put("isOnline", ds.getIsOnline() != null && ds.getIsOnline() == 1);
-            item.put("enabled", ds.getEnabled() != null && ds.getEnabled() == 1);
-            item.put("lastCheckTime", ds.getLastCheckTime());
-            result.add(item);
-        }
-
-        // 排序：先按类型（Grafana在前，SQL在后），每种类型内在线的排前面，最后按名称排序
-        result.sort((m1, m2) -> {
-            String type1 = (String) m1.get("type");
-            String type2 = (String) m2.get("type");
-            Boolean online1 = (Boolean) m1.get("isOnline");
-            Boolean online2 = (Boolean) m2.get("isOnline");
-            String name1 = (String) m1.get("name");
-            String name2 = (String) m2.get("name");
-
-            // 先按类型排序：Grafana在前，SQL在后
-            int typeCompare = type1.compareTo(type2);
-            if (typeCompare != 0) {
-                return typeCompare;
-            }
-
-            // 同类型内，在线的排前面
-            int onlineCompare = Boolean.compare(online2, online1);
-            if (onlineCompare != 0) {
-                return onlineCompare;
-            }
-
-            // 最后按名称排序
-            return name1.compareTo(name2);
-        });
-
-        return ResponseEntity.ok(result);
     }
 }
