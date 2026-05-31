@@ -642,8 +642,30 @@ public class MonitorController {
             result.add(item);
         }
 
-        // 按名称排序
-        result.sort(Comparator.comparing(m -> (String) m.get("name")));
+        // 排序：先按类型（Grafana在前，SQL在后），每种类型内在线的排前面，最后按名称排序
+        result.sort((m1, m2) -> {
+            String type1 = (String) m1.get("type");
+            String type2 = (String) m2.get("type");
+            Boolean online1 = (Boolean) m1.get("isOnline");
+            Boolean online2 = (Boolean) m2.get("isOnline");
+            String name1 = (String) m1.get("name");
+            String name2 = (String) m2.get("name");
+
+            // 先按类型排序：Grafana在前，SQL在后
+            int typeCompare = type1.compareTo(type2);
+            if (typeCompare != 0) {
+                return typeCompare;
+            }
+
+            // 同类型内，在线的排前面
+            int onlineCompare = Boolean.compare(online2, online1);
+            if (onlineCompare != 0) {
+                return onlineCompare;
+            }
+
+            // 最后按名称排序
+            return name1.compareTo(name2);
+        });
 
         return ResponseEntity.ok(result);
     }
