@@ -94,6 +94,16 @@ public class MonitorController {
             envStats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
+        //过滤掉执行次数为0的环境
+        sqlStats.entrySet().removeIf(entry -> {
+            Map<String, Object> stats = entry.getValue();
+            Object count = stats.get("totalCount");
+            if (count instanceof Integer) {
+                return (Integer) count <= 0;
+            }
+            return true;
+        });
+
         result.put("pushTotal", todayLogs.size());
         result.put("pushStats", pushStats);
         result.put("sqlStats", sqlStats);
@@ -121,7 +131,18 @@ public class MonitorController {
             stats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
-        return ResponseEntity.ok(new ArrayList<>(envMap.values()));
+        //过滤掉执行次数为0的环境
+        List<Map<String, Object>> result = envMap.values().stream()
+                .filter(stats -> {
+                    Object count = stats.get("executeCount");
+                    if (count instanceof Integer) {
+                        return (Integer) count > 0;
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/stats/push-by-env")
