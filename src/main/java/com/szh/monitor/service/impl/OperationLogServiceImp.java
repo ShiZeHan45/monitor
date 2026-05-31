@@ -36,26 +36,27 @@ public class OperationLogServiceImp implements OperationLogService {
     }
 
     @Override
-    public void logCreate(String module, Integer targetId, String detail, HttpServletRequest request) {
+    public void logCreate(String module, Long targetId, String detail, HttpServletRequest request) {
         log(TYPE_CREATE, module, targetId, detail, request);
     }
 
     @Override
-    public void logEdit(String module, Integer targetId, String detail, HttpServletRequest request) {
+    public void logEdit(String module, Long targetId, String detail, HttpServletRequest request) {
         log(TYPE_EDIT, module, targetId, detail, request);
     }
 
     @Override
-    public void logDelete(String module, Integer targetId, String detail, HttpServletRequest request) {
+    public void logDelete(String module, Long targetId, String detail, HttpServletRequest request) {
         log(TYPE_DELETE, module, targetId, detail, request);
     }
 
     @Override
-    public void log(String operationType, String module, Integer targetId, String detail, HttpServletRequest request) {
+    public void log(String operationType, String module, Long targetId, String detail, HttpServletRequest request) {
         try {
             String ip = getClientIp(request);
             String userAgent = request.getHeader("User-Agent");
-            OperationLog log = new OperationLog(ip, userAgent, operationType, module, targetId, detail);
+            Integer id = targetId != null ? targetId.intValue() : null;
+            OperationLog log = new OperationLog(ip, userAgent, operationType, module, id, detail);
             operationLogMapper.insert(log);
         } catch (Exception e) {
             logger.error("记录操作日志失败", e);

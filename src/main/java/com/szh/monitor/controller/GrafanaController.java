@@ -81,7 +81,7 @@ public class GrafanaController {
             dataSource.setId(id);
             boolean success = dataSourceService.updateById(dataSource);
             if (success) {
-                operationLogService.logEdit("Grafana数据源", id.intValue(), "修改Grafana数据源: " + dataSource.getEnvironmentName(), request);
+                operationLogService.logEdit("Grafana数据源", id, "修改Grafana数据源: " + dataSource.getEnvironmentName(), request);
                 result.put("success", true);
                 result.put("message", "更新成功");
                 grafanaLogService.refreshConfig();
@@ -108,7 +108,7 @@ public class GrafanaController {
             ruleService.removeByDataSourceId(id);
             boolean success = dataSourceService.removeById(id);
             if (success) {
-                operationLogService.logDelete("Grafana数据源", id.intValue(), "删除Grafana数据源: " + name, request);
+                operationLogService.logDelete("Grafana数据源", id, "删除Grafana数据源: " + name, request);
                 result.put("success", true);
                 result.put("message", "删除成功");
                 grafanaLogService.refreshConfig();
@@ -146,7 +146,7 @@ public class GrafanaController {
         try {
             boolean success = ruleService.save(rule);
             if (success) {
-                operationLogService.logCreate("Grafana规则", rule.getId(), "创建监控规则: " + rule.getMonitorName(), request);
+                operationLogService.logCreate("Grafana规则", rule.getId(), "创建监控规则: " + rule.getName(), request);
                 result.put("success", true);
                 result.put("message", "创建成功");
                 result.put("id", rule.getId());
@@ -171,7 +171,7 @@ public class GrafanaController {
             rule.setId(id);
             boolean success = ruleService.updateById(rule);
             if (success) {
-                operationLogService.logEdit("Grafana规则", id.intValue(), "修改监控规则: " + rule.getMonitorName(), request);
+                operationLogService.logEdit("Grafana规则", id, "修改监控规则: " + rule.getName(), request);
                 result.put("success", true);
                 result.put("message", "更新成功");
                 return ResponseEntity.ok(result);
@@ -193,10 +193,10 @@ public class GrafanaController {
         Map<String, Object> result = new HashMap<>();
         try {
             GrafanaMonitorRule rule = ruleService.getById(id);
-            String name = rule != null ? rule.getMonitorName() : "未知";
+            String name = rule != null ? rule.getName() : "未知";
             boolean success = ruleService.removeById(id);
             if (success) {
-                operationLogService.logDelete("Grafana规则", id.intValue(), "删除监控规则: " + name, request);
+                operationLogService.logDelete("Grafana规则", id, "删除监控规则: " + name, request);
                 result.put("success", true);
                 result.put("message", "删除成功");
                 grafanaLogService.refreshConfig();

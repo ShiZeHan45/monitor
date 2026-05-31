@@ -77,7 +77,7 @@ public class SqlController {
             dataSource.setId(id);
             boolean success = dataSourceService.updateById(dataSource);
             if (success) {
-                operationLogService.logEdit("SQL数据源", id.intValue(), "修改SQL数据源: " + dataSource.getEnvironmentName(), request);
+                operationLogService.logEdit("SQL数据源", id, "修改SQL数据源: " + dataSource.getEnvironmentName(), request);
                 result.put("success", true);
                 result.put("message", "更新成功");
                 sqlConfigService.refreshConfig();
@@ -103,7 +103,7 @@ public class SqlController {
             String name = ds != null ? ds.getEnvironmentName() : "未知";
             boolean success = dataSourceService.removeById(id);
             if (success) {
-                operationLogService.logDelete("SQL数据源", id.intValue(), "删除SQL数据源: " + name, request);
+                operationLogService.logDelete("SQL数据源", id, "删除SQL数据源: " + name, request);
                 result.put("success", true);
                 result.put("message", "删除成功");
                 sqlConfigService.refreshConfig();
