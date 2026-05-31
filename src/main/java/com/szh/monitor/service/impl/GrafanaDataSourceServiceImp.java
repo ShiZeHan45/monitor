@@ -33,6 +33,13 @@ public class GrafanaDataSourceServiceImp extends ServiceImpl<GrafanaDataSourceMa
     }
 
     @Override
+    public GrafanaDataSource getByEnvironmentName(String environmentName) {
+        LambdaQueryWrapper<GrafanaDataSource> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(GrafanaDataSource::getEnvironmentName, environmentName);
+        return getOne(queryWrapper);
+    }
+
+    @Override
     public boolean save(GrafanaDataSource entity) {
         entity.setCreateTime(LocalDateTime.now());
         entity.setUpdateTime(LocalDateTime.now());

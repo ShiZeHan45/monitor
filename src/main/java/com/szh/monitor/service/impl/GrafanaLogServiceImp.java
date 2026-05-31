@@ -172,6 +172,14 @@ public class GrafanaLogServiceImp {
     public void supplement() {
         synchronized (webClientMap) {
             for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {
+                String environmentName = entry.getKey();
+                //检查数据源是否在线
+                GrafanaDataSource dataSource = dataSourceService.getByEnvironmentName(environmentName);
+                if (dataSource == null || dataSource.getIsOnline() == null || dataSource.getIsOnline() == 0) {
+                    logger.debug("数据源 [{}] 离线，跳过日志采集", environmentName);
+                    continue;
+                }
+
                 DataSourceInfo info = dataSourceInfoMap.get(entry.getKey());
                 if (info == null || info.getMonitors() == null) {
                     continue;

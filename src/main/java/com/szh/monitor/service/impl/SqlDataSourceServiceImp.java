@@ -59,6 +59,13 @@ public class SqlDataSourceServiceImp extends ServiceImpl<SqlDataSourceMapper, Sq
     }
 
     @Override
+    public SqlDataSource getByEnvironmentName(String environmentName) {
+        LambdaQueryWrapper<SqlDataSource> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SqlDataSource::getEnvironmentName, environmentName);
+        return getOne(queryWrapper);
+    }
+
+    @Override
     public boolean save(SqlDataSource entity) {
         entity.setCreateTime(LocalDateTime.now());
         entity.setUpdateTime(LocalDateTime.now());

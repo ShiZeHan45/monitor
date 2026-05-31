@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
+import com.szh.monitor.entity.SqlDataSource;
 import com.szh.monitor.enums.MsgType;
 import com.szh.monitor.exception.SQLExecutorFailException;
 import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.service.ExecutorService;
+import com.szh.monitor.service.SqlDataSourceService;
 import com.szh.monitor.service.SqlExecuteLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +51,9 @@ public class SqlExecutorService implements ExecutorService {
 
     @Autowired
     private SendDispatchService sendDispatchService;
+
+    @Autowired
+    private SqlDataSourceService sqlDataSourceService;
 
     public void executeSqlFiles(String environmentName, String jdbcTemplateName, List<String> failSQLFiles) {
         File directory = null;
@@ -149,6 +154,13 @@ public class SqlExecutorService implements ExecutorService {
 
     public void execute(BiConsumer<String, String> consumer) {
         executeJDBCContext.getJBDCTemplate().forEach((environmentName, jdbcTemplateName) -> {
+            //检查数据源是否在线
+            SqlDataSource dataSource = sqlDataSourceService.getByEnvironmentName(environmentName);
+            if (dataSource == null || dataSource.getIsOnline() == null || dataSource.getIsOnline() == 0) {
+                logger.debug("数据源 [{}] 离线，跳过SQL执行", environmentName);
+                return;
+            }
+
             try {
                 consumer.accept(environmentName, jdbcTemplateName);
                 //执行到此处，肯定是全部成功执行，那么会将所有文件的失败计数归零

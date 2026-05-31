@@ -11,4 +11,5 @@ public interface SqlDataSourceService extends IService<SqlDataSource> {
     boolean updateOnlineStatus(Long dataSourceId, boolean isOnline);
     boolean containsBean(String beanName);
     <T> T getBean(String beanName, Class<T> requiredType);
+    SqlDataSource getByEnvironmentName(String environmentName);
 }
