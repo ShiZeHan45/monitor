@@ -90,10 +90,10 @@ public class SqlConfigService {
                     // 获取 BeanFactory 来注册 Bean
                     DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) applicationContext.getBeanFactory();
                     
-                    // 先注销旧的Bean
+                    // 先注销旧的Bean并从注册表中移除
                     try {
-                        if (beanFactory.containsBean(beanName)) {
-                            beanFactory.destroyBean(beanName);
+                        if (beanFactory.containsSingleton(beanName)) {
+                            beanFactory.destroySingleton(beanName);
                         }
                     } catch (Exception e) {
                         // 没有旧Bean，忽略
