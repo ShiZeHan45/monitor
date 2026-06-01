@@ -1,11 +1,10 @@
 package com.szh.monitor.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.szh.monitor.annotation.OperationLog;
 import com.szh.monitor.entity.SqlDataSource;
-import com.szh.monitor.service.OperationLogService;
 import com.szh.monitor.service.SqlDataSourceService;
 import com.szh.monitor.service.impl.SqlConfigService;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +22,10 @@ public class SqlController {
 
     private final SqlDataSourceService dataSourceService;
     private final SqlConfigService sqlConfigService;
-    private final OperationLogService operationLogService;
 
-    public SqlController(SqlDataSourceService dataSourceService, SqlConfigService sqlConfigService, OperationLogService operationLogService) {
+    public SqlController(SqlDataSourceService dataSourceService, SqlConfigService sqlConfigService) {
         this.dataSourceService = dataSourceService;
         this.sqlConfigService = sqlConfigService;
-        this.operationLogService = operationLogService;
     }
 
     @GetMapping("/datasources")
@@ -46,12 +43,12 @@ public class SqlController {
     }
 
     @PostMapping("/datasources")
-    public ResponseEntity<Map<String, Object>> createDataSource(@RequestBody SqlDataSource dataSource, HttpServletRequest request) {
+    @OperationLog(module = "SQL数据源", operationType = "CREATE", description = "创建SQL数据源")
+    public ResponseEntity<Map<String, Object>> createDataSource(@RequestBody SqlDataSource dataSource) {
         Map<String, Object> result = new HashMap<>();
         try {
             boolean success = dataSourceService.save(dataSource);
             if (success) {
-                operationLogService.logCreate("SQL数据源", dataSource.getId(), "创建SQL数据源: " + dataSource.getEnvironmentName(), request);
                 result.put("success", true);
                 result.put("message", "创建成功");
                 result.put("id", dataSource.getId());
@@ -71,13 +68,13 @@ public class SqlController {
     }
 
     @PutMapping("/datasources/{id}")
-    public ResponseEntity<Map<String, Object>> updateDataSource(@PathVariable Long id, @RequestBody SqlDataSource dataSource, HttpServletRequest request) {
+    @OperationLog(module = "SQL数据源", operationType = "EDIT", description = "修改SQL数据源")
+    public ResponseEntity<Map<String, Object>> updateDataSource(@PathVariable Long id, @RequestBody SqlDataSource dataSource) {
         Map<String, Object> result = new HashMap<>();
         try {
             dataSource.setId(id);
             boolean success = dataSourceService.updateById(dataSource);
             if (success) {
-                operationLogService.logEdit("SQL数据源", id, "修改SQL数据源: " + dataSource.getEnvironmentName(), request);
                 result.put("success", true);
                 result.put("message", "更新成功");
                 sqlConfigService.refreshConfig();
@@ -96,14 +93,12 @@ public class SqlController {
     }
 
     @DeleteMapping("/datasources/{id}")
-    public ResponseEntity<Map<String, Object>> deleteDataSource(@PathVariable Long id, HttpServletRequest request) {
+    @OperationLog(module = "SQL数据源", operationType = "DELETE", description = "删除SQL数据源")
+    public ResponseEntity<Map<String, Object>> deleteDataSource(@PathVariable Long id) {
         Map<String, Object> result = new HashMap<>();
         try {
-            SqlDataSource ds = dataSourceService.getById(id);
-            String name = ds != null ? ds.getEnvironmentName() : "未知";
             boolean success = dataSourceService.removeById(id);
             if (success) {
-                operationLogService.logDelete("SQL数据源", id, "删除SQL数据源: " + name, request);
                 result.put("success", true);
                 result.put("message", "删除成功");
                 sqlConfigService.refreshConfig();
@@ -122,6 +117,7 @@ public class SqlController {
     }
 
     @PostMapping("/refresh")
+    @OperationLog(module = "SQL配置", operationType = "EDIT", description = "刷新SQL配置")
     public ResponseEntity<Map<String, Object>> refreshConfig() {
         Map<String, Object> result = new HashMap<>();
         try {

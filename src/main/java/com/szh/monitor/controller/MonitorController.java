@@ -3,6 +3,7 @@ package com.szh.monitor.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.szh.monitor.annotation.OperationLog;
 import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
@@ -18,8 +19,6 @@ import com.szh.monitor.mapper.MsgSendLogMapper;
 import com.szh.monitor.mapper.SqlDataSourceMapper;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.mapper.SqlExecuteRuleMapper;
-import com.szh.monitor.service.OperationLogService;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,12 +69,9 @@ public class MonitorController {
     @Autowired
     private SqlDataSourceMapper sqlDataSourceMapper;
 
-    @Autowired
-    private OperationLogService operationLogService;
-
     @GetMapping("/stats/today")
-    public ResponseEntity<Map<String, Object>> getTodayStats(HttpServletRequest request) {
-        operationLogService.logVisit(request);
+    @OperationLog(module = "首页", operationType = "VISIT", description = "访问首页统计")
+    public ResponseEntity<Map<String, Object>> getTodayStats() {
         Map<String, Object> result = new HashMap<>();
 
         int today = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE));
@@ -110,7 +106,6 @@ public class MonitorController {
             envStats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
-        //过滤掉执行次数为0的环境
         sqlStats.entrySet().removeIf(entry -> {
             Map<String, Object> stats = entry.getValue();
             Object count = stats.get("totalCount");
@@ -147,7 +142,6 @@ public class MonitorController {
             stats.merge("failedCount", failed, (a, b) -> (Integer) a + (Integer) b);
         }
 
-        //过滤掉执行次数为0的环境
         List<Map<String, Object>> result = envMap.values().stream()
                 .filter(stats -> {
                     Object count = stats.get("executeCount");
@@ -248,34 +242,33 @@ public class MonitorController {
     }
 
     @PostMapping("/sql-rules")
-    public ResponseEntity<SqlExecuteRule> createSqlRule(@RequestBody SqlExecuteRule rule, HttpServletRequest request) {
+    @OperationLog(module = "SQL规则", operationType = "CREATE", description = "创建SQL规则")
+    public ResponseEntity<SqlExecuteRule> createSqlRule(@RequestBody SqlExecuteRule rule) {
         rule.setId(null);
         sqlExecuteRuleMapper.insert(rule);
-        operationLogService.logCreate("SQL规则", rule.getId(), "创建SQL规则: " + rule.getSqlFileName(), request);
         return ResponseEntity.ok(rule);
     }
 
     @PutMapping("/sql-rules/{id}")
-    public ResponseEntity<SqlExecuteRule> updateSqlRule(@PathVariable Long id, @RequestBody SqlExecuteRule rule, HttpServletRequest request) {
+    @OperationLog(module = "SQL规则", operationType = "EDIT", description = "修改SQL规则")
+    public ResponseEntity<SqlExecuteRule> updateSqlRule(@PathVariable Long id, @RequestBody SqlExecuteRule rule) {
         SqlExecuteRule existing = sqlExecuteRuleMapper.selectById(id);
         if (existing == null) {
             return ResponseEntity.notFound().build();
         }
         rule.setId(id);
         sqlExecuteRuleMapper.updateById(rule);
-        operationLogService.logEdit("SQL规则", id, "修改SQL规则: " + rule.getSqlFileName(), request);
         return ResponseEntity.ok(rule);
     }
 
     @DeleteMapping("/sql-rules/{id}")
-    public ResponseEntity<Void> deleteSqlRule(@PathVariable Long id, HttpServletRequest request) {
+    @OperationLog(module = "SQL规则", operationType = "DELETE", description = "删除SQL规则")
+    public ResponseEntity<Void> deleteSqlRule(@PathVariable Long id) {
         SqlExecuteRule existing = sqlExecuteRuleMapper.selectById(id);
         if (existing == null) {
             return ResponseEntity.notFound().build();
         }
-        String fileName = existing.getSqlFileName();
         sqlExecuteRuleMapper.deleteById(id);
-        operationLogService.logDelete("SQL规则", id, "删除SQL规则: " + fileName, request);
         return ResponseEntity.ok().build();
     }
 
@@ -341,6 +334,7 @@ public class MonitorController {
     }
 
     @PostMapping("/sql-files/upload")
+    @OperationLog(module = "SQL文件", operationType = "CREATE", description = "上传SQL文件")
     public ResponseEntity<Map<String, Object>> uploadSqlFile(@RequestParam("file") MultipartFile file) {
         Map<String, Object> result = new HashMap<>();
 
@@ -390,6 +384,7 @@ public class MonitorController {
     }
 
     @DeleteMapping("/sql-files/{filename}")
+    @OperationLog(module = "SQL文件", operationType = "DELETE", description = "删除SQL文件")
     public ResponseEntity<Map<String, Object>> deleteSqlFile(@PathVariable String filename) {
         Map<String, Object> result = new HashMap<>();
 
@@ -477,6 +472,7 @@ public class MonitorController {
     }
 
     @PutMapping("/sql-files/{filename}/content")
+    @OperationLog(module = "SQL文件", operationType = "EDIT", description = "修改SQL文件内容")
     public ResponseEntity<Map<String, Object>> updateSqlFileContent(
             @PathVariable String filename,
             @RequestBody Map<String, String> request) {
@@ -539,6 +535,7 @@ public class MonitorController {
     }
 
     @PostMapping("/sql-debug/execute")
+    @OperationLog(module = "SQL调试", operationType = "EDIT", description = "执行SQL调试")
     public ResponseEntity<Map<String, Object>> executeSqlDebug(@RequestBody Map<String, String> request) {
         Map<String, Object> result = new HashMap<>();
 
@@ -589,14 +586,12 @@ public class MonitorController {
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
         Map<String, Object> result = new HashMap<>();
 
-        // 1. 今日总推送数
         List<MsgSendLog> todayLogs = msgSendLogMapper.selectList(
             new LambdaQueryWrapper<MsgSendLog>()
                 .like(MsgSendLog::getCreateTime, LocalDate.now().toString())
         );
         result.put("todayPushCount", todayLogs.size());
 
-        // 1.1 今日SQL异常推送数和日志异常推送数
         long sqlExceptionCount = 0;
         long logExceptionCount = 0;
         for (MsgSendLog log : todayLogs) {
@@ -611,10 +606,9 @@ public class MonitorController {
         result.put("todaySqlExceptionCount", sqlExceptionCount);
         result.put("todayLogExceptionCount", logExceptionCount);
 
-        // 2. 在线数据源数量
         List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
         List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
-        
+
         int onlineGrafanaCount = (int) grafanaDataSources.stream()
             .filter(ds -> ds.getIsOnline() != null && ds.getIsOnline() == 1)
             .count();
@@ -624,11 +618,9 @@ public class MonitorController {
         result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
         result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
 
-        // 3. 活跃SQL规则数量
         Long activeRuleCount = sqlExecuteRuleMapper.selectCount(null);
         result.put("activeRuleCount", activeRuleCount);
 
-        // 4. 最近24小时异常总数
         LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
         List<MsgSendLog> last24hLogs = msgSendLogMapper.selectList(
             new LambdaQueryWrapper<MsgSendLog>()
@@ -643,7 +635,6 @@ public class MonitorController {
     public ResponseEntity<List<Map<String, Object>>> getDataSourceStatus() {
         List<Map<String, Object>> result = new ArrayList<>();
 
-        // Grafana数据源
         List<GrafanaDataSource> grafanaDataSources = grafanaDataSourceMapper.selectList(null);
         for (GrafanaDataSource ds : grafanaDataSources) {
             Map<String, Object> item = new HashMap<>();
@@ -655,7 +646,6 @@ public class MonitorController {
             result.add(item);
         }
 
-        // SQL数据源
         List<SqlDataSource> sqlDataSources = sqlDataSourceMapper.selectList(null);
         for (SqlDataSource ds : sqlDataSources) {
             Map<String, Object> item = new HashMap<>();
@@ -667,7 +657,6 @@ public class MonitorController {
             result.add(item);
         }
 
-        // 排序：先按类型（Grafana在前，SQL在后），每种类型内在线的排前面，最后按名称排序
         result.sort((m1, m2) -> {
             String type1 = (String) m1.get("type");
             String type2 = (String) m2.get("type");
@@ -676,19 +665,16 @@ public class MonitorController {
             String name1 = (String) m1.get("name");
             String name2 = (String) m2.get("name");
 
-            // 先按类型排序：Grafana在前，SQL在后
             int typeCompare = type1.compareTo(type2);
             if (typeCompare != 0) {
                 return typeCompare;
             }
 
-            // 同类型内，在线的排前面
             int onlineCompare = Boolean.compare(online2, online1);
             if (onlineCompare != 0) {
                 return onlineCompare;
             }
 
-            // 最后按名称排序
             return name1.compareTo(name2);
         });
 
