@@ -65,8 +65,13 @@ public class GrafanaDataSourceHealthChecker {
                     .clientConnector(new ReactorClientHttpConnector(httpClient))
                     .build();
 
+            String baseUrl = ds.getUrl();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+            
             Map<String, Object> response = webClient.get()
-                    .uri(ds.getUrl() + "/api/org")
+                    .uri(baseUrl + "/api/org")
                     .retrieve()
                     .bodyToMono(Map.class)
                     .onErrorResume(WebClientResponseException.class, e -> {
