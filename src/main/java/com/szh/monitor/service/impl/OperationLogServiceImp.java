@@ -95,6 +95,11 @@ public class OperationLogServiceImp implements OperationLogService {
         return operationLogMapper.selectPage(pageInfo, wrapper);
     }
 
+    @Override
+    public List<String> getModules() {
+        return operationLogMapper.selectDistinctModules();
+    }
+
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {

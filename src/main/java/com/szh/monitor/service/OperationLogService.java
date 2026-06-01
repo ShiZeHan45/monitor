@@ -2,6 +2,8 @@ package com.szh.monitor.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.entity.OperationLog;
+
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 public interface OperationLogService {
@@ -17,4 +19,6 @@ public interface OperationLogService {
     void log(String operationType, String module, Long targetId, String detail, HttpServletRequest request);
 
     Page<OperationLog> getLogs(int page, int size, String operationType, String module, String startDate, String endDate);
+
+    List<String> getModules();
 }

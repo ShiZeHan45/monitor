@@ -61,7 +61,9 @@
                             </select>
                         </div>
                         <div class="relative">
-                            <input type="text" id="filterModule" placeholder="模块名称" onkeypress="if(event.key==='Enter') loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select id="filterModule" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">全部模块</option>
+                            </select>
                         </div>
                         <div class="relative">
                             <input type="date" id="filterStartDate" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -167,6 +169,22 @@
     <script>
         let currentPage = 1;
         let totalPages = 1;
+
+        async function loadModules() {
+            try {
+                const response = await fetch('/api/logs/modules');
+                const modules = await response.json();
+                const select = document.getElementById('filterModule');
+                modules.forEach(module => {
+                    const option = document.createElement('option');
+                    option.value = module;
+                    option.textContent = module;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载模块列表失败:', error);
+            }
+        }
 
         function getFilterParams() {
             const operationType = document.getElementById('filterOperationType').value;
@@ -298,6 +316,7 @@
             return date.toLocaleString('zh-CN');
         }
 
+        loadModules();
         loadLogs();
     </script>
 </body>

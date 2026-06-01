@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -36,5 +37,10 @@ public class OperationLogController {
         result.put("size", logs.getSize());
         result.put("pages", logs.getPages());
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/modules")
+    public ResponseEntity<List<String>> getModules() {
+        return ResponseEntity.ok(operationLogService.getModules());
     }
 }
