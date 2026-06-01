@@ -79,14 +79,27 @@ public class OperationLogAspect {
 
         Object[] args = joinPoint.getArgs();
         if (args != null && args.length > 0) {
+            Object complexArg = null;
             for (int i = 0; i < args.length; i++) {
                 if (args[i] != null) {
-                    try {
-                        String argStr = toJsonString(args[i]);
-                        sb.append(" | 操作内容: ").append(argStr);
+                    if (!isSimpleType(args[i])) {
+                        complexArg = args[i];
                         break;
-                    } catch (Exception e) {
-                        sb.append(" | 操作内容: ").append(args[i].toString());
+                    }
+                }
+            }
+            
+            if (complexArg != null) {
+                try {
+                    String argStr = toJsonString(complexArg);
+                    sb.append(" | 操作内容: ").append(argStr);
+                } catch (Exception e) {
+                    sb.append(" | 操作内容: ").append(complexArg.toString());
+                }
+            } else {
+                for (int i = 0; i < args.length; i++) {
+                    if (args[i] != null) {
+                        sb.append(" | 参数").append(i + 1).append(": ").append(args[i]);
                     }
                 }
             }
@@ -106,6 +119,10 @@ public class OperationLogAspect {
         } catch (Exception e) {
             return obj.toString();
         }
+    }
+
+    private boolean isSimpleType(Object obj) {
+        return obj instanceof String || obj instanceof Number || obj instanceof Boolean;
     }
 
     private String getClientIp(HttpServletRequest request) {
