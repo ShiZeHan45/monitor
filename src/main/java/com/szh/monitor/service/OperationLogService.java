@@ -16,5 +16,5 @@ public interface OperationLogService {
 
     void log(String operationType, String module, Long targetId, String detail, HttpServletRequest request);
 
-    Page<OperationLog> getLogs(int page, int size);
+    Page<OperationLog> getLogs(int page, int size, String operationType, String module, String startDate, String endDate);
 }

@@ -49,7 +49,34 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                <div class="overflow-x-auto">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <select id="filterOperationType" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">全部类型</option>
+                                <option value="VISIT">访问</option>
+                                <option value="CREATE">创建</option>
+                                <option value="EDIT">编辑</option>
+                                <option value="DELETE">删除</option>
+                            </select>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="filterModule" placeholder="模块名称" onkeypress="if(event.key==='Enter') loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="relative">
+                            <input type="date" id="filterStartDate" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="relative">
+                            <input type="date" id="filterEndDate" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button onclick="loadLogs(1)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fa fa-search mr-2"></i>查询
+                        </button>
+                        <button onclick="resetFilters()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 flex items-center">
+                            <i class="fa fa-refresh mr-2"></i>重置
+                        </button>
+                    </div>
+                </div>
                     <table class="w-full">
                         <thead>
                             <tr class="bg-gray-50">
@@ -141,11 +168,28 @@
         let currentPage = 1;
         let totalPages = 1;
 
+        function getFilterParams() {
+            const operationType = document.getElementById('filterOperationType').value;
+            const module = document.getElementById('filterModule').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            const params = new URLSearchParams();
+            if (operationType) params.append('operationType', operationType);
+            if (module) params.append('module', module);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            return params.toString();
+        }
+
         async function loadLogs(page = 1) {
             try {
-                const response = await fetch(`/api/logs?page=${page}&size=20`);
+                currentPage = page;
+                const filterParams = getFilterParams();
+                const response = await fetch(`/api/logs?page=${page}&size=20&${filterParams}`);
                 const data = await response.json();
-                
+
                 const tbody = document.getElementById('logsBody');
                 if (!data.records || data.records.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
@@ -153,15 +197,17 @@
                     document.getElementById('pageInfo').textContent = '第 1 页';
                     document.getElementById('prevPage').disabled = true;
                     document.getElementById('nextPage').disabled = true;
+                    totalPages = 1;
                     return;
                 }
-                
-                currentPage = data.current;
-                totalPages = Math.ceil(data.total / data.size);
-                
+
+                totalPages = data.pages || 1;
+
                 tbody.innerHTML = data.records.map(log => {
                     const detail = log.detail?.length > 50 ? log.detail.substring(0, 50) + '...' : log.detail;
-                    
+                    const operationTypeText = getOperationTypeText(log.operationType);
+                    const operationTypeClass = getOperationTypeClass(log.operationType);
+
                     return `
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.id}</td>
@@ -169,7 +215,7 @@
                                 <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">${log.ip || '-'}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">${log.operationType || '-'}</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full ${operationTypeClass}">${operationTypeText}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">${log.module || '-'}</span>
@@ -186,15 +232,43 @@
                         </tr>
                     `;
                 }).join('');
-                
+
                 document.getElementById('totalRecords').textContent = data.total;
                 document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
-                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('prevPage').disabled = currentPage <= 1;
                 document.getElementById('nextPage').disabled = currentPage >= totalPages;
             } catch (error) {
                 console.error('获取操作日志失败:', error);
                 document.getElementById('logsBody').innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
             }
+        }
+
+        function getOperationTypeText(type) {
+            const typeMap = {
+                'VISIT': '访问',
+                'CREATE': '创建',
+                'EDIT': '编辑',
+                'DELETE': '删除'
+            };
+            return typeMap[type] || type || '-';
+        }
+
+        function getOperationTypeClass(type) {
+            const classMap = {
+                'VISIT': 'bg-blue-100 text-blue-800',
+                'CREATE': 'bg-green-100 text-green-800',
+                'EDIT': 'bg-yellow-100 text-yellow-800',
+                'DELETE': 'bg-red-100 text-red-800'
+            };
+            return classMap[type] || 'bg-gray-100 text-gray-800';
+        }
+
+        function resetFilters() {
+            document.getElementById('filterOperationType').value = '';
+            document.getElementById('filterModule').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            loadLogs(1);
         }
 
         function changePage(page) {

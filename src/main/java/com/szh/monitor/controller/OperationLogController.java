@@ -23,13 +23,18 @@ public class OperationLogController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getLogs(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Page<OperationLog> logs = operationLogService.getLogs(page, size);
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        Page<OperationLog> logs = operationLogService.getLogs(page, size, operationType, module, startDate, endDate);
         Map<String, Object> result = new HashMap<>();
         result.put("records", logs.getRecords());
         result.put("total", logs.getTotal());
         result.put("current", logs.getCurrent());
         result.put("size", logs.getSize());
+        result.put("pages", logs.getPages());
         return ResponseEntity.ok(result);
     }
 }

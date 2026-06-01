@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.szh.monitor.entity.OperationLog;
 import com.szh.monitor.mapper.OperationLogMapper;
@@ -9,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class OperationLogServiceImp implements OperationLogService {
@@ -64,9 +68,31 @@ public class OperationLogServiceImp implements OperationLogService {
     }
 
     @Override
-    public Page<OperationLog> getLogs(int page, int size) {
+    public Page<OperationLog> getLogs(int page, int size, String operationType, String module, String startDate, String endDate) {
         Page<OperationLog> pageInfo = new Page<>(page, size);
-        return operationLogMapper.selectPage(pageInfo, null);
+        LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
+
+        if (operationType != null && !operationType.isEmpty()) {
+            wrapper.eq(OperationLog::getOperationType, operationType);
+        }
+
+        if (module != null && !module.isEmpty()) {
+            wrapper.like(OperationLog::getModule, module);
+        }
+
+        if (startDate != null && !startDate.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startDate + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            wrapper.ge(OperationLog::getCreateTime, start);
+        }
+
+        if (endDate != null && !endDate.isEmpty()) {
+            LocalDateTime end = LocalDateTime.parse(endDate + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            wrapper.le(OperationLog::getCreateTime, end);
+        }
+
+        wrapper.orderByDesc(OperationLog::getCreateTime);
+
+        return operationLogMapper.selectPage(pageInfo, wrapper);
     }
 
     private String getClientIp(HttpServletRequest request) {
