@@ -1,6 +1,7 @@
 package com.szh.monitor.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -12,16 +13,20 @@ public class OperationLog {
     @TableId(type = IdType.AUTO)
     private Integer id;
 
+    @TableField("ip_address")
     private String ip;
 
     private String userAgent;
 
     private String operationType;
 
+    @TableField("operation_module")
     private String module;
 
-    private Integer targetId;
+    @TableField("target_id")
+    private String targetId;
 
+    @TableField("operation_content")
     private String detail;
 
     private LocalDateTime createTime;
@@ -29,7 +34,7 @@ public class OperationLog {
     public OperationLog() {
     }
 
-    public OperationLog(String ip, String userAgent, String operationType, String module, Integer targetId, String detail) {
+    public OperationLog(String ip, String userAgent, String operationType, String module, String targetId, String detail) {
         this.ip = ip;
         this.userAgent = userAgent;
         this.operationType = operationType;
@@ -79,11 +84,11 @@ public class OperationLog {
         this.module = module;
     }
 
-    public Integer getTargetId() {
+    public String getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(Integer targetId) {
+    public void setTargetId(String targetId) {
         this.targetId = targetId;
     }
 

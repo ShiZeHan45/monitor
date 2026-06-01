@@ -93,3 +93,14 @@ CREATE TABLE IF NOT EXISTS sql_data_source (
                                                last_check_time TIMESTAMP, -- 最后检查时间
                                                is_online INTEGER DEFAULT 0 -- 是否在线 1在线 0离线
 );
+
+CREATE TABLE IF NOT EXISTS operation_log (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
+                                               ip TEXT, -- IP地址
+                                               user_agent TEXT, -- User Agent
+                                               operation_type TEXT, -- 操作类型
+                                               module TEXT, -- 模块
+                                               target_id INTEGER, -- 目标ID
+                                               detail TEXT, -- 详情
+                                               create_time TIMESTAMP -- 操作时间
+);

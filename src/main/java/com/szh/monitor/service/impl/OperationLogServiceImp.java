@@ -55,7 +55,7 @@ public class OperationLogServiceImp implements OperationLogService {
         try {
             String ip = getClientIp(request);
             String userAgent = request.getHeader("User-Agent");
-            Integer id = targetId != null ? targetId.intValue() : null;
+            String id = targetId != null ? targetId.toString() : null;
             OperationLog log = new OperationLog(ip, userAgent, operationType, module, id, detail);
             operationLogMapper.insert(log);
         } catch (Exception e) {
