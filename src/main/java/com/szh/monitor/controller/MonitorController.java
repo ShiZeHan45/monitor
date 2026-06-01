@@ -70,7 +70,6 @@ public class MonitorController {
     private SqlDataSourceMapper sqlDataSourceMapper;
 
     @GetMapping("/stats/today")
-    @OperationLog(module = "首页", operationType = "VISIT", description = "访问首页统计")
     public ResponseEntity<Map<String, Object>> getTodayStats() {
         Map<String, Object> result = new HashMap<>();
 
@@ -583,6 +582,7 @@ public class MonitorController {
     }
 
     @GetMapping("/stats/dashboard")
+    @OperationLog(module = "首页", operationType = "VISIT", description = "访问首页统计")
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
         Map<String, Object> result = new HashMap<>();
 
