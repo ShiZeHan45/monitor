@@ -229,6 +229,9 @@ public class GrafanaLogServiceImp {
                 .toInstant()
                 .toEpochMilli();
         String baseUrl = info.getUrl();
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
         String dsId = info.getDatasourceId();
         String url = baseUrl + "/api/datasources/proxy/" + dsId + "/loki/api/v1/query_range";
 
