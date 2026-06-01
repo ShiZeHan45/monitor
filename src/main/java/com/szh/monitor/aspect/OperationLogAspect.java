@@ -1,5 +1,6 @@
 package com.szh.monitor.aspect;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.szh.monitor.annotation.OperationLog;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -19,6 +20,8 @@ import javax.servlet.http.HttpServletRequest;
 public class OperationLogAspect {
 
     private static final Logger logger = LoggerFactory.getLogger(OperationLogAspect.class);
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired(required = false)
     private OperationLogServiceProxy operationLogServiceProxy;
@@ -48,7 +51,7 @@ public class OperationLogAspect {
             throw e;
         } finally {
             long costTime = System.currentTimeMillis() - startTime;
-            String detail = buildDetail(joinPoint, operationType, description, success, errorMsg, costTime);
+            String detail = buildDetail(joinPoint, operationType, description, success, errorMsg, costTime, result);
 
             try {
                 if (operationLogServiceProxy != null) {
@@ -70,19 +73,21 @@ public class OperationLogAspect {
         return attributes != null ? attributes.getRequest() : null;
     }
 
-    private String buildDetail(ProceedingJoinPoint joinPoint, String operationType, String description, boolean success, String errorMsg, long costTime) {
+    private String buildDetail(ProceedingJoinPoint joinPoint, String operationType, String description, boolean success, String errorMsg, long costTime, Object result) {
         StringBuilder sb = new StringBuilder();
         sb.append(description);
-
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        String methodName = signature.getDeclaringType().getSimpleName() + "." + signature.getName();
-        sb.append(" | 方法: ").append(methodName);
 
         Object[] args = joinPoint.getArgs();
         if (args != null && args.length > 0) {
             for (int i = 0; i < args.length; i++) {
-                if (args[i] != null && isSimpleType(args[i])) {
-                    sb.append(" | 参数").append(i + 1).append(": ").append(args[i]);
+                if (args[i] != null) {
+                    try {
+                        String argStr = toJsonString(args[i]);
+                        sb.append(" | 操作内容: ").append(argStr);
+                        break;
+                    } catch (Exception e) {
+                        sb.append(" | 操作内容: ").append(args[i].toString());
+                    }
                 }
             }
         }
@@ -95,13 +100,20 @@ public class OperationLogAspect {
         return sb.toString();
     }
 
-    private boolean isSimpleType(Object obj) {
-        return obj instanceof String || obj instanceof Number || obj instanceof Boolean;
+    private String toJsonString(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return obj.toString();
+        }
     }
 
     private String getClientIp(HttpServletRequest request) {
         if (request == null) return "unknown";
-        String ip = request.getHeader("X-Forwarded-For");
+        String ip = request.getHeader("X-Real-IP");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
+        }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         }
@@ -118,7 +130,14 @@ public class OperationLogAspect {
             ip = request.getRemoteAddr();
         }
         if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
+            String[] ips = ip.split(",");
+            for (String i : ips) {
+                i = i.trim();
+                if (!"unknown".equalsIgnoreCase(i) && !i.isEmpty()) {
+                    ip = i;
+                    break;
+                }
+            }
         }
         return ip;
     }
