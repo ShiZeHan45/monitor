@@ -41,12 +41,10 @@ public class OperationLogAspect {
         Map<String, String> sqlRuleFields = new HashMap<>();
         sqlRuleFields.put("environmentName", "环境名称");
         sqlRuleFields.put("sqlFileName", "SQL文件名");
-        sqlRuleFields.put("enabled", "启用状态");
-        sqlRuleFields.put("executeTime", "执行时间");
-        sqlRuleFields.put("intervalMinutes", "执行间隔(分钟)");
-        sqlRuleFields.put("warningThreshold", "告警阈值");
-        sqlRuleFields.put("limitCount", "执行次数限制");
-        sqlRuleFields.put("webhookUrl", "推送Webhook");
+        sqlRuleFields.put("executeLimit", "执行次数限制");
+        sqlRuleFields.put("executeStartTime", "开始执行时间");
+        sqlRuleFields.put("executeEndTime", "结束执行时间");
+        sqlRuleFields.put("executeFrequency", "执行频率");
         FIELD_NAME_MAPPING.put("SqlExecuteRule", sqlRuleFields);
 
         Map<String, String> sqlDataSourceFields = new HashMap<>();
@@ -55,26 +53,36 @@ public class OperationLogAspect {
         sqlDataSourceFields.put("username", "用户名");
         sqlDataSourceFields.put("password", "密码");
         sqlDataSourceFields.put("driverClassName", "驱动类");
+        sqlDataSourceFields.put("webhook", "推送Webhook");
+        sqlDataSourceFields.put("week", "执行周");
+        sqlDataSourceFields.put("startTime", "开始时间");
+        sqlDataSourceFields.put("endTime", "结束时间");
         sqlDataSourceFields.put("enabled", "启用状态");
         sqlDataSourceFields.put("isOnline", "在线状态");
-        sqlDataSourceFields.put("webhookUrl", "推送Webhook");
         FIELD_NAME_MAPPING.put("SqlDataSource", sqlDataSourceFields);
 
         Map<String, String> grafanaDataSourceFields = new HashMap<>();
         grafanaDataSourceFields.put("environmentName", "环境名称");
-        grafanaDataSourceFields.put("apiUrl", "API地址");
-        grafanaDataSourceFields.put("apiKey", "API密钥");
+        grafanaDataSourceFields.put("url", "API地址");
+        grafanaDataSourceFields.put("datasourceId", "数据源ID");
+        grafanaDataSourceFields.put("username", "用户名");
+        grafanaDataSourceFields.put("password", "密码");
+        grafanaDataSourceFields.put("webhook", "推送Webhook");
+        grafanaDataSourceFields.put("week", "执行周");
+        grafanaDataSourceFields.put("startTime", "开始时间");
+        grafanaDataSourceFields.put("endTime", "结束时间");
         grafanaDataSourceFields.put("enabled", "启用状态");
         grafanaDataSourceFields.put("isOnline", "在线状态");
-        grafanaDataSourceFields.put("webhookUrl", "推送Webhook");
         FIELD_NAME_MAPPING.put("GrafanaDataSource", grafanaDataSourceFields);
 
         Map<String, String> grafanaRuleFields = new HashMap<>();
         grafanaRuleFields.put("dataSourceId", "数据源ID");
-        grafanaRuleFields.put("ruleName", "规则名称");
-        grafanaRuleFields.put("queryType", "查询类型");
-        grafanaRuleFields.put("queryExpression", "查询表达式");
-        grafanaRuleFields.put("warningThreshold", "告警阈值");
+        grafanaRuleFields.put("name", "规则名称");
+        grafanaRuleFields.put("queryExpr", "查询表达式");
+        grafanaRuleFields.put("keywords", "关键词");
+        grafanaRuleFields.put("exclusionKeywords", "排除关键词");
+        grafanaRuleFields.put("contextLines", "上下文行数");
+        grafanaRuleFields.put("webhook", "推送Webhook");
         grafanaRuleFields.put("enabled", "启用状态");
         FIELD_NAME_MAPPING.put("GrafanaMonitorRule", grafanaRuleFields);
     }
