@@ -251,9 +251,9 @@ public class GrafanaLogServiceImp {
         int sliceTotal = 0;
         while (true) {
             Map body = null;
-            int retryCount = 0;
-            int maxRetries = 2;
-            while (body == null && retryCount <= maxRetries) {
+            final int maxRetries = 2;
+            for (int retryCount = 0; retryCount <= maxRetries && body == null; retryCount++) {
+                final int currentRetry = retryCount;
                 try {
                     body = webClient.get()
                             .uri(url + "?direction=forward&query={query}&start={start}&end={end}&limit={limit}",
@@ -261,9 +261,9 @@ public class GrafanaLogServiceImp {
                             .retrieve()
                             .bodyToMono(Map.class)
                             .onErrorResume(e -> {
-                                if (retryCount < maxRetries) {
+                                if (currentRetry < maxRetries) {
                                     logger.warn("{}-{} ⚠️ WebClient 调用 Loki 失败，准备重试 ({}次)", 
-                                            info.getEnvironmentName(), item.getName(), retryCount + 1);
+                                            info.getEnvironmentName(), item.getName(), currentRetry + 1);
                                 } else {
                                     logger.error("{}-{} ❌ WebClient 调用 Loki 失败", info.getEnvironmentName(), item.getName(), e);
                                 }
@@ -271,15 +271,14 @@ public class GrafanaLogServiceImp {
                             })
                             .block();
                 } catch (Exception e) {
-                    if (retryCount < maxRetries) {
+                    if (currentRetry < maxRetries) {
                         logger.warn("{}-{} ⚠️ WebClient 调用异常，准备重试 ({}次)", 
-                                info.getEnvironmentName(), item.getName(), retryCount + 1);
+                                info.getEnvironmentName(), item.getName(), currentRetry + 1);
                     } else {
                         logger.error("{}-{} ❌ WebClient 调用异常", info.getEnvironmentName(), item.getName(), e);
                     }
                 }
-                retryCount++;
-                if (body == null && retryCount <= maxRetries) {
+                if (body == null && retryCount < maxRetries) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ie) {
