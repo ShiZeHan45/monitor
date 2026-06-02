@@ -631,6 +631,12 @@ public class MonitorController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/stats/log-collect")
+    public ResponseEntity<List<Map<String, Object>>> getLogCollectStats() {
+        List<Map<String, Object>> stats = logCollectTimeInfoMapper.getEnvironmentCollectStats();
+        return ResponseEntity.ok(stats);
+    }
+
     @GetMapping("/stats/datasource-status")
     public ResponseEntity<List<Map<String, Object>>> getDataSourceStatus() {
         List<Map<String, Object>> result = new ArrayList<>();

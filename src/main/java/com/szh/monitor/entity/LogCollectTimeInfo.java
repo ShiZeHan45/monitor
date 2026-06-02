@@ -21,6 +21,8 @@ public class LogCollectTimeInfo {
 
     private LocalDateTime lastTime;
 
+    private Long totalCollectCount;
+
     private LocalDateTime createTime;
 
 }

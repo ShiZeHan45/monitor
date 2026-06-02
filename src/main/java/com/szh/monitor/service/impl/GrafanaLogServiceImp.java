@@ -334,7 +334,7 @@ public class GrafanaLogServiceImp {
 
             if (batchMaxTs > lastTsMap.getOrDefault(info.getEnvironmentName() + "_" + item.getName(), globalStart)) {
                 lastTsMap.put(info.getEnvironmentName() + "_" + item.getName(), batchMaxTs);
-                logCollectTimeInfoService.updateOrSave(info.getEnvironmentName(), item.getName(), batchMaxTs);
+                logCollectTimeInfoService.updateOrSave(info.getEnvironmentName(), item.getName(), batchMaxTs, batchCount);
             }
 
             if (!hitLogs.isEmpty()) {

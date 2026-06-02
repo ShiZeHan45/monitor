@@ -46,18 +46,31 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
 
     @Override
     public void updateOrSave(String environmentName, String name, long maxTs) {
-//        logger.debug("固化日志采集起始时间戳 key:[{}] , lastTs[{}] [{}]",environmentName+"_"+name,maxTs,LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        updateOrSave(environmentName, name, maxTs, 0);
+    }
+
+    @Override
+    public void updateOrSave(String environmentName, String name, long maxTs, long collectCount) {
         LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,name);
         if(logCollectTimeInfo==null){
             logCollectTimeInfo = new LogCollectTimeInfo();
             logCollectTimeInfo.setCreateTime(LocalDateTime.now());
             logCollectTimeInfo.setEnvironmentName(environmentName);
             logCollectTimeInfo.setRuleName(name);
-
+            logCollectTimeInfo.setTotalCollectCount(0L);
         }
         logCollectTimeInfo.setLastTs(maxTs);
         logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()));
+        if (collectCount > 0 && logCollectTimeInfo.getTotalCollectCount() != null) {
+            logCollectTimeInfo.setTotalCollectCount(logCollectTimeInfo.getTotalCollectCount() + collectCount);
+        } else if (collectCount > 0) {
+            logCollectTimeInfo.setTotalCollectCount(collectCount);
+        }
         saveOrUpdate(logCollectTimeInfo);
+    }
 
+    @Override
+    public List<Map<String, Object>> getEnvironmentCollectStats() {
+        return getBaseMapper().getEnvironmentCollectStats();
     }
 }
