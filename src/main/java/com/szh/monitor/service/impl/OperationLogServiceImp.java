@@ -33,8 +33,20 @@ public class OperationLogServiceImp implements OperationLogService {
         try {
             String ip = getClientIp(request);
             String userAgent = request.getHeader("User-Agent");
-            OperationLog log = new OperationLog(ip, userAgent, TYPE_VISIT, "首页", null, "访问首页");
-            operationLogMapper.insert(log);
+            
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+            LocalDateTime endOfDay = now.toLocalDate().plusDays(1).atStartOfDay();
+            
+            OperationLog existingLog = operationLogMapper.selectTodayVisitLog(ip, startOfDay, endOfDay);
+            
+            if (existingLog != null) {
+                existingLog.setCreateTime(now);
+                operationLogMapper.updateById(existingLog);
+            } else {
+                OperationLog log = new OperationLog(ip, userAgent, TYPE_VISIT, "首页", null, "访问首页");
+                operationLogMapper.insert(log);
+            }
         } catch (Exception e) {
             logger.error("记录访问日志失败", e);
         }
