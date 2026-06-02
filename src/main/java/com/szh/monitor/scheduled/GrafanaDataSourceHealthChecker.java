@@ -34,9 +34,18 @@ public class GrafanaDataSourceHealthChecker {
     private final HttpClient httpClient;
 
     public GrafanaDataSourceHealthChecker() {
-        httpClient = HttpClient.create()
+        httpClient = HttpClient.create(reactor.netty.resources.ConnectionProvider.builder("health-check-pool")
+                        .maxConnections(10)
+                        .pendingAcquireTimeout(Duration.ofSeconds(30))
+                        .maxIdleTime(Duration.ofSeconds(60))
+                        .maxLifeTime(Duration.ofMinutes(5))
+                        .build())
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
                 .responseTimeout(Duration.ofSeconds(5))
+                .keepAlive(true)
+                .tcpConfiguration(tcp -> tcp
+                        .bootstrap(bootstrap -> bootstrap.option(ChannelOption.SO_KEEPALIVE, true))
+                )
                 .doOnConnected(conn ->
                         conn.addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
                                 .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS))
