@@ -61,20 +61,17 @@ public class GrafanaLogServiceImp {
         this.dataSourceService = dataSourceService;
         this.ruleService = ruleService;
 
-        httpClient = HttpClient.create()
+        httpClient = HttpClient.create(reactor.netty.resources.ConnectionProvider.builder("grafana-connection-pool")
+                        .maxConnections(10)
+                        .pendingAcquireTimeout(Duration.ofSeconds(30))
+                        .maxIdleTime(Duration.ofSeconds(60))
+                        .maxLifeTime(Duration.ofMinutes(5))
+                        .build())
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120000)
                 .responseTimeout(Duration.ofSeconds(120))
                 .keepAlive(true)
                 .tcpConfiguration(tcp -> tcp
                         .bootstrap(bootstrap -> bootstrap.option(ChannelOption.SO_KEEPALIVE, true))
-                )
-                .connectionProvider(
-                        reactor.netty.resources.ConnectionProvider.builder("grafana-connection-pool")
-                                .maxConnections(10)
-                                .pendingAcquireTimeout(Duration.ofSeconds(30))
-                                .maxIdleTime(Duration.ofSeconds(60))
-                                .maxLifeTime(Duration.ofMinutes(5))
-                                .build()
                 )
                 .doOnConnected(conn ->
                         conn.addHandlerLast(new ReadTimeoutHandler(120, TimeUnit.SECONDS))
