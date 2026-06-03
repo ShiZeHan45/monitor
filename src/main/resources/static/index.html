@@ -241,6 +241,38 @@
                         </div>
                     </div>
                 </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500" data-refresh="datasource">
+                    <div class="refresh-icon" onclick="refreshDataSource()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">在线日志数据源</p>
+                            <p class="text-3xl font-bold text-gray-800">
+                                <span id="onlineLogDataSourceCount">0</span>/<span id="totalLogDataSourceCount">0</span>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-file-text text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500" data-refresh="datasource">
+                    <div class="refresh-icon" onclick="refreshDataSource()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">在线SQL数据源</p>
+                            <p class="text-3xl font-bold text-gray-800">
+                                <span id="onlineSqlDataSourceCount">0</span>/<span id="totalSqlDataSourceCount">0</span>
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-table text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
                 <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500" data-refresh="logcollect">
                     <div class="refresh-icon" onclick="refreshLogCollect()" title="刷新数据">
                         <i class="fa fa-refresh"></i>
@@ -808,6 +840,28 @@
                 
                 currentDashboardValues['onlineDataSourceCount'] = online;
                 currentDashboardValues['totalDataSourceCount'] = total;
+                
+                const onlineLog = data.onlineLogDataSourceCount || 0;
+                const totalLog = data.totalLogDataSourceCount || 0;
+                const onlineLogEl = document.getElementById('onlineLogDataSourceCount');
+                const totalLogEl = document.getElementById('totalLogDataSourceCount');
+                if (onlineLogEl) {
+                    onlineLogEl.textContent = onlineLog;
+                }
+                if (totalLogEl) {
+                    totalLogEl.textContent = totalLog;
+                }
+                
+                const onlineSql = data.onlineSqlDataSourceCount || 0;
+                const totalSql = data.totalSqlDataSourceCount || 0;
+                const onlineSqlEl = document.getElementById('onlineSqlDataSourceCount');
+                const totalSqlEl = document.getElementById('totalSqlDataSourceCount');
+                if (onlineSqlEl) {
+                    onlineSqlEl.textContent = onlineSql;
+                }
+                if (totalSqlEl) {
+                    totalSqlEl.textContent = totalSql;
+                }
             } catch (error) {
                 console.error('获取Dashboard统计数据失败:', error);
             }
