@@ -116,8 +116,10 @@ public class OperationLogAspect {
                 for (Object arg : args) {
                     if (arg instanceof Long) {
                         targetId = (Long) arg;
+                        logger.debug("从参数获取 targetId: {}", targetId);
                     } else if (!isSimpleType(arg)) {
                         newEntity = arg;
+                        logger.debug("找到更新实体: {}", arg.getClass().getSimpleName());
                         Class<?> entityClass = arg.getClass();
                         try {
                             Field idField = entityClass.getDeclaredField("id");
@@ -128,13 +130,25 @@ public class OperationLogAspect {
                             } else if (idValue instanceof Integer) {
                                 targetId = ((Integer) idValue).longValue();
                             }
+                            logger.debug("从实体获取 targetId: {}", targetId);
                         } catch (Exception e) {
+                            logger.debug("从实体获取id失败: {}", e.getMessage());
                         }
                     }
                 }
 
                 if (targetId != null && newEntity != null) {
                     oldEntity = getOldEntity(newEntity.getClass(), targetId);
+                    if (oldEntity == null) {
+                        logger.warn("获取旧数据失败，targetId={}, entityClass={}", targetId, newEntity.getClass().getSimpleName());
+                    }
+                } else {
+                    if (targetId == null) {
+                        logger.debug("targetId 为空，跳过获取旧数据");
+                    }
+                    if (newEntity == null) {
+                        logger.debug("newEntity 为空，跳过获取旧数据");
+                    }
                 }
             } else if (methodName.startsWith("create")) {
                 Object[] args = joinPoint.getArgs();
@@ -167,14 +181,28 @@ public class OperationLogAspect {
     }
 
     private Object getOldEntity(Class<?> entityClass, Long id) {
+        if (entityClass == null || id == null) {
+            return null;
+        }
+        
         try {
-            String mapperName = entityClass.getSimpleName() + "Mapper";
-            BaseMapper<?> mapper = (BaseMapper<?>) applicationContext.getBean(mapperName);
-            if (mapper != null) {
-                return mapper.selectById(id);
+            String simpleName = entityClass.getSimpleName();
+            String mapperName = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1) + "Mapper";
+            
+            if (applicationContext.containsBean(mapperName)) {
+                BaseMapper<?> mapper = (BaseMapper<?>) applicationContext.getBean(mapperName);
+                if (mapper != null) {
+                    Object oldEntity = mapper.selectById(id);
+                    if (oldEntity != null) {
+                        logger.debug("成功获取旧数据: {} id={}", simpleName, id);
+                    }
+                    return oldEntity;
+                }
+            } else {
+                logger.debug("Mapper Bean 不存在: {}", mapperName);
             }
         } catch (Exception e) {
-            logger.debug("获取旧数据失败: {}", e.getMessage());
+            logger.warn("获取旧数据失败: entityClass={}, id={}, error={}", entityClass.getSimpleName(), id, e.getMessage());
         }
         return null;
     }

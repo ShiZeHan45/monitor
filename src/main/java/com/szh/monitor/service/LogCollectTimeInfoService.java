@@ -11,4 +11,6 @@ public interface LogCollectTimeInfoService {
     void updateOrSave(String environmentName, String name, long maxTs, long collectCount);
 
     List<Map<String, Object>> getEnvironmentCollectStats();
+
+    List<Map<String, Object>> getEnvironmentDailyCollectStats();
 }

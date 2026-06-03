@@ -617,6 +617,11 @@ public class MonitorController {
             .count();
         result.put("onlineDataSourceCount", onlineGrafanaCount + onlineSqlCount);
         result.put("totalDataSourceCount", grafanaDataSources.size() + sqlDataSources.size());
+        
+        result.put("onlineLogDataSourceCount", onlineGrafanaCount);
+        result.put("totalLogDataSourceCount", grafanaDataSources.size());
+        result.put("onlineSqlDataSourceCount", onlineSqlCount);
+        result.put("totalSqlDataSourceCount", sqlDataSources.size());
 
         Long activeRuleCount = sqlExecuteRuleMapper.selectCount(null);
         result.put("activeRuleCount", activeRuleCount);
@@ -633,7 +638,38 @@ public class MonitorController {
 
     @GetMapping("/stats/log-collect")
     public ResponseEntity<List<Map<String, Object>>> getLogCollectStats() {
-        List<Map<String, Object>> stats = logCollectTimeInfoMapper.getEnvironmentCollectStats();
+        List<Map<String, Object>> totalStats = logCollectTimeInfoMapper.getEnvironmentCollectStats();
+        List<Map<String, Object>> dailyStats = logCollectTimeInfoMapper.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
+        
+        Map<String, Map<String, Object>> mergedStats = new java.util.LinkedHashMap<>();
+        
+        for (Map<String, Object> stat : totalStats) {
+            String envName = (String) stat.get("environmentName");
+            Map<String, Object> merged = new java.util.HashMap<>();
+            merged.put("environmentName", envName);
+            merged.put("totalCollectCount", stat.get("totalCollectCount"));
+            merged.put("dailyCollectCount", 0L);
+            mergedStats.put(envName, merged);
+        }
+        
+        for (Map<String, Object> stat : dailyStats) {
+            String envName = (String) stat.get("environmentName");
+            Map<String, Object> merged = mergedStats.get(envName);
+            if (merged == null) {
+                merged = new java.util.HashMap<>();
+                merged.put("environmentName", envName);
+                merged.put("totalCollectCount", 0L);
+                mergedStats.put(envName, merged);
+            }
+            merged.put("dailyCollectCount", stat.get("dailyCollectCount"));
+        }
+        
+        return ResponseEntity.ok(new java.util.ArrayList<>(mergedStats.values()));
+    }
+
+    @GetMapping("/stats/log-collect/daily")
+    public ResponseEntity<List<Map<String, Object>>> getDailyLogCollectStats() {
+        List<Map<String, Object>> stats = logCollectTimeInfoMapper.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
         return ResponseEntity.ok(stats);
     }
 

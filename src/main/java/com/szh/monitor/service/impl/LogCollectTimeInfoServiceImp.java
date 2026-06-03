@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -54,25 +55,51 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
     @Override
     public void updateOrSave(String environmentName, String name, long maxTs, long collectCount) {
         LogCollectTimeInfo logCollectTimeInfo = getBaseMapper().findEnvironmentNameAndRuleName(environmentName,name);
+        LocalDate today = LocalDate.now();
+        
         if(logCollectTimeInfo==null){
             logCollectTimeInfo = new LogCollectTimeInfo();
             logCollectTimeInfo.setCreateTime(LocalDateTime.now());
             logCollectTimeInfo.setEnvironmentName(environmentName);
             logCollectTimeInfo.setRuleName(name);
             logCollectTimeInfo.setTotalCollectCount(0L);
+            logCollectTimeInfo.setDailyCollectCount(0L);
+            logCollectTimeInfo.setCollectDate(today);
         }
+        
         logCollectTimeInfo.setLastTs(maxTs);
         logCollectTimeInfo.setLastTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(maxTs), ZoneId.systemDefault()));
+        
         if (collectCount > 0 && logCollectTimeInfo.getTotalCollectCount() != null) {
             logCollectTimeInfo.setTotalCollectCount(logCollectTimeInfo.getTotalCollectCount() + collectCount);
         } else if (collectCount > 0) {
             logCollectTimeInfo.setTotalCollectCount(collectCount);
         }
+        
+        if (collectCount > 0) {
+            LocalDate currentDate = logCollectTimeInfo.getCollectDate();
+            if (currentDate == null || !currentDate.equals(today)) {
+                logCollectTimeInfo.setDailyCollectCount(collectCount);
+                logCollectTimeInfo.setCollectDate(today);
+            } else {
+                if (logCollectTimeInfo.getDailyCollectCount() != null) {
+                    logCollectTimeInfo.setDailyCollectCount(logCollectTimeInfo.getDailyCollectCount() + collectCount);
+                } else {
+                    logCollectTimeInfo.setDailyCollectCount(collectCount);
+                }
+            }
+        }
+        
         saveOrUpdate(logCollectTimeInfo);
     }
 
     @Override
     public List<Map<String, Object>> getEnvironmentCollectStats() {
         return getBaseMapper().getEnvironmentCollectStats();
+    }
+
+    @Override
+    public List<Map<String, Object>> getEnvironmentDailyCollectStats() {
+        return getBaseMapper().getEnvironmentDailyCollectStats(LocalDate.now());
     }
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -22,6 +23,10 @@ public class LogCollectTimeInfo {
     private LocalDateTime lastTime;
 
     private Long totalCollectCount;
+
+    private Long dailyCollectCount;
+
+    private LocalDate collectDate;
 
     private LocalDateTime createTime;
 

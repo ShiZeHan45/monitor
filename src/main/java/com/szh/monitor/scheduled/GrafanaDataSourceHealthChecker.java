@@ -63,45 +63,80 @@ public class GrafanaDataSourceHealthChecker {
     private void checkDataSourceHealth(GrafanaDataSource ds) {
         String environmentName = ds.getEnvironmentName();
         boolean isOnline = false;
-        try {
-            String basicAuth = Base64Utils.encodeToString(
-                    (ds.getUsername() + ":" + ds.getPassword()).getBytes()
-            );
+        
+        final int maxRetries = 2;
+        final long retryDelayMs = 1000;
+        
+        String basicAuth = Base64Utils.encodeToString(
+                (ds.getUsername() + ":" + ds.getPassword()).getBytes()
+        );
 
-            WebClient webClient = WebClient.builder()
-                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
-                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .clientConnector(new ReactorClientHttpConnector(httpClient))
-                    .build();
+        WebClient webClient = WebClient.builder()
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
 
-            String baseUrl = ds.getUrl();
-            if (baseUrl.endsWith("/")) {
-                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-            }
-            
-            Map<String, Object> response = webClient.get()
-                    .uri(baseUrl + "/api/org")
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .onErrorResume(WebClientResponseException.class, e -> {
-                        logger.warn("数据源 [{}] 访问失败: {} - {}", environmentName, e.getStatusCode(), e.getMessage());
-                        return Mono.empty();
-                    })
-                    .onErrorResume(Exception.class, e -> {
-                        logger.warn("数据源 [{}] 访问异常: {}", environmentName, e.getMessage());
-                        return Mono.empty();
-                    })
-                    .block();
-
-            isOnline = response != null && !response.isEmpty();
-            if (isOnline) {
-                logger.debug("数据源 [{}] 健康检查通过", environmentName);
-            }
-            dataSourceService.updateOnlineStatus(ds.getId(), isOnline);
-
-        } catch (Exception e) {
-            logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
-            dataSourceService.updateOnlineStatus(ds.getId(), false);
+        String baseUrl = ds.getUrl();
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
+
+        for (int retryCount = 0; retryCount <= maxRetries; retryCount++) {
+            final int currentRetry = retryCount;
+            try {
+                Map<String, Object> response = webClient.get()
+                        .uri(baseUrl + "/api/org")
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .onErrorResume(WebClientResponseException.class, e -> {
+                            if (currentRetry < maxRetries) {
+                                logger.warn("数据源 [{}] 访问失败 ({}次重试): {} - {}", 
+                                        environmentName, currentRetry + 1, e.getStatusCode(), e.getMessage());
+                            } else {
+                                logger.warn("数据源 [{}] 访问失败 (已达最大重试次数): {} - {}", 
+                                        environmentName, e.getStatusCode(), e.getMessage());
+                            }
+                            return Mono.empty();
+                        })
+                        .onErrorResume(Exception.class, e -> {
+                            if (currentRetry < maxRetries) {
+                                logger.warn("数据源 [{}] 访问异常 ({}次重试): {}", 
+                                        environmentName, currentRetry + 1, e.getMessage());
+                            } else {
+                                logger.warn("数据源 [{}] 访问异常 (已达最大重试次数): {}", 
+                                        environmentName, e.getMessage());
+                            }
+                            return Mono.empty();
+                        })
+                        .block();
+
+                isOnline = response != null && !response.isEmpty();
+                if (isOnline) {
+                    logger.debug("数据源 [{}] 健康检查通过{}", environmentName, retryCount > 0 ? " (重试" + retryCount + "次后)" : "");
+                    break;
+                }
+
+            } catch (Exception e) {
+                if (retryCount < maxRetries) {
+                    logger.warn("数据源 [{}] 健康检查异常 ({}次重试): {}", 
+                            environmentName, retryCount + 1, e.getMessage());
+                } else {
+                    logger.error("数据源 [{}] 健康检查异常 (已达最大重试次数): {}", 
+                            environmentName, e.getMessage());
+                }
+            }
+
+            if (!isOnline && retryCount < maxRetries) {
+                try {
+                    Thread.sleep(retryDelayMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        dataSourceService.updateOnlineStatus(ds.getId(), isOnline);
     }
 }

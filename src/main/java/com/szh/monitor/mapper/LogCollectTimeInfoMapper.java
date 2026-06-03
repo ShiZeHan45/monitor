@@ -15,4 +15,7 @@ public interface LogCollectTimeInfoMapper extends BaseMapper<LogCollectTimeInfo>
 
     @Select("SELECT environment_name as environmentName, SUM(total_collect_count) as totalCollectCount FROM log_collect_time_info WHERE total_collect_count IS NOT NULL GROUP BY environment_name ORDER BY environment_name")
     List<Map<String, Object>> getEnvironmentCollectStats();
+
+    @Select("SELECT environment_name as environmentName, SUM(daily_collect_count) as dailyCollectCount FROM log_collect_time_info WHERE collect_date = #{collectDate} AND daily_collect_count IS NOT NULL GROUP BY environment_name ORDER BY environment_name")
+    List<Map<String, Object>> getEnvironmentDailyCollectStats(java.time.LocalDate collectDate);
 }
