@@ -714,6 +714,10 @@
             todayLogExceptionCount: null,
             onlineDataSourceCount: null,
             totalDataSourceCount: null,
+            onlineLogDataSourceCount: null,
+            totalLogDataSourceCount: null,
+            onlineSqlDataSourceCount: null,
+            totalSqlDataSourceCount: null,
             totalLogCollectCount: null,
             dailyLogCollectCount: null
         };
@@ -774,27 +778,10 @@
                 currentDashboardValues['onlineDataSourceCount'] = online;
                 currentDashboardValues['totalDataSourceCount'] = total;
                 
-                const onlineLog = data.onlineLogDataSourceCount || 0;
-                const totalLog = data.totalLogDataSourceCount || 0;
-                const onlineLogEl = document.getElementById('onlineLogDataSourceCount');
-                const totalLogEl = document.getElementById('totalLogDataSourceCount');
-                if (onlineLogEl) {
-                    onlineLogEl.textContent = onlineLog;
-                }
-                if (totalLogEl) {
-                    totalLogEl.textContent = totalLog;
-                }
-                
-                const onlineSql = data.onlineSqlDataSourceCount || 0;
-                const totalSql = data.totalSqlDataSourceCount || 0;
-                const onlineSqlEl = document.getElementById('onlineSqlDataSourceCount');
-                const totalSqlEl = document.getElementById('totalSqlDataSourceCount');
-                if (onlineSqlEl) {
-                    onlineSqlEl.textContent = onlineSql;
-                }
-                if (totalSqlEl) {
-                    totalSqlEl.textContent = totalSql;
-                }
+                animateCount('onlineLogDataSourceCount', data.onlineLogDataSourceCount || 0);
+                animateCount('totalLogDataSourceCount', data.totalLogDataSourceCount || 0);
+                animateCount('onlineSqlDataSourceCount', data.onlineSqlDataSourceCount || 0);
+                animateCount('totalSqlDataSourceCount', data.totalSqlDataSourceCount || 0);
             } catch (error) {
                 console.error('获取Dashboard统计数据失败:', error);
             }
