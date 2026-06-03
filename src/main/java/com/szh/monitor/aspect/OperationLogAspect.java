@@ -106,12 +106,26 @@ public class OperationLogAspect {
         Object oldEntity = null;
         Object newEntity = null;
         Long targetId = null;
+        String sqlFileName = null;
 
         try {
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             String methodName = signature.getName();
 
-            if (methodName.startsWith("update")) {
+            if ("SQL调试".equals(module)) {
+                Object[] args = joinPoint.getArgs();
+                for (Object arg : args) {
+                    if (arg instanceof Map) {
+                        Map<?, ?> mapArg = (Map<?, ?>) arg;
+                        Object fileNameObj = mapArg.get("filename");
+                        if (fileNameObj != null && !fileNameObj.toString().isEmpty()) {
+                            sqlFileName = fileNameObj.toString();
+                            description = "执行SQL调试 | 文件: " + sqlFileName;
+                        }
+                        break;
+                    }
+                }
+            } else if (methodName.startsWith("update")) {
                 Object[] args = joinPoint.getArgs();
                 for (Object arg : args) {
                     if (arg instanceof Long) {

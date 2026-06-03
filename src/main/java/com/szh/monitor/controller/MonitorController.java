@@ -547,6 +547,7 @@ public class MonitorController {
 
         String environmentName = request.get("environment");
         String sql = request.get("sql");
+        String filename = request.get("filename");
 
         if (environmentName == null || environmentName.trim().isEmpty()) {
             result.put("success", false);
@@ -580,7 +581,7 @@ public class MonitorController {
             result.put("message", "查询成功，返回 " + results.size() + " 条记录");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            logger.error("执行SQL调试失败: environment={}, sql={}", environmentName, sql, e);
+            logger.error("执行SQL调试失败: environment={}, filename={}, sql={}", environmentName, filename, sql, e);
             result.put("success", false);
             result.put("error", e.getMessage());
             result.put("message", "SQL执行失败: " + e.getMessage());
