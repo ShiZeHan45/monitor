@@ -20,5 +20,7 @@ public interface OperationLogService {
 
     Page<OperationLog> getLogs(int page, int size, String operationType, String module, String startDate, String endDate);
 
+    long countLogs(String operationType, String module, String startDate, String endDate);
+
     List<String> getModules();
 }

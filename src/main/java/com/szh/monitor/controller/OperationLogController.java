@@ -30,12 +30,15 @@ public class OperationLogController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         Page<OperationLog> logs = operationLogService.getLogs(page, size, operationType, module, startDate, endDate);
+        long totalCount = operationLogService.countLogs(operationType, module, startDate, endDate);
+        int totalPages = (int) Math.ceil((double) totalCount / size);
+        
         Map<String, Object> result = new HashMap<>();
         result.put("records", logs.getRecords());
-        result.put("total", logs.getTotal());
+        result.put("total", totalCount);
         result.put("current", logs.getCurrent());
         result.put("size", logs.getSize());
-        result.put("pages", logs.getPages());
+        result.put("pages", totalPages);
         return ResponseEntity.ok(result);
     }
 

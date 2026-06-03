@@ -83,6 +83,18 @@ public class OperationLogServiceImp implements OperationLogService {
     @Override
     public Page<OperationLog> getLogs(int page, int size, String operationType, String module, String startDate, String endDate) {
         Page<OperationLog> pageInfo = new Page<>(page, size);
+        LambdaQueryWrapper<OperationLog> wrapper = buildQueryWrapper(operationType, module, startDate, endDate);
+        wrapper.orderByDesc(OperationLog::getCreateTime);
+        return operationLogMapper.selectPage(pageInfo, wrapper);
+    }
+
+    @Override
+    public long countLogs(String operationType, String module, String startDate, String endDate) {
+        LambdaQueryWrapper<OperationLog> wrapper = buildQueryWrapper(operationType, module, startDate, endDate);
+        return operationLogMapper.selectCount(wrapper);
+    }
+
+    private LambdaQueryWrapper<OperationLog> buildQueryWrapper(String operationType, String module, String startDate, String endDate) {
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
 
         if (operationType != null && !operationType.isEmpty()) {
@@ -102,10 +114,8 @@ public class OperationLogServiceImp implements OperationLogService {
             LocalDateTime end = LocalDateTime.parse(endDate + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             wrapper.le(OperationLog::getCreateTime, end);
         }
-
-        wrapper.orderByDesc(OperationLog::getCreateTime);
-
-        return operationLogMapper.selectPage(pageInfo, wrapper);
+        
+        return wrapper;
     }
 
     @Override
