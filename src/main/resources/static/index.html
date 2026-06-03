@@ -15,6 +15,7 @@
         }
         .stat-card {
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
         }
         .stat-card:hover {
             transform: translateY(-2px);
@@ -23,6 +24,113 @@
         .clickable:hover {
             cursor: pointer;
             color: #2563eb;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+        
+        @keyframes flash {
+            0%, 100% { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            50% { box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2); }
+        }
+        .card-updated {
+            animation: flash 0.5s ease-out;
+        }
+        
+        .refresh-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .stat-card:hover .refresh-icon {
+            opacity: 0.6;
+        }
+        .refresh-icon:hover {
+            opacity: 1 !important;
+        }
+        .refresh-icon i {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes countUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .count-animating {
+            animation: countUp 0.4s ease-out;
+        }
+        
+        /* 高性能数字滚动动画 */
+        .digit-display {
+            display: inline-flex;
+            align-items: center;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .digit-wrapper {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 1px;
+            overflow: hidden;
+            position: relative;
+            height: 1.4em;
+            width: 0.8em;
+            will-change: transform;
+        }
+        
+        .digit-strip {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 800ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .digit-char {
+            height: 1.4em;
+            line-height: 1.4em;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .digit-separator {
+            display: inline-flex;
+            align-items: center;
+            height: 1.4em;
+            margin: 0 2px;
+            font-weight: bold;
+            color: inherit;
+        }
+        
+        .digit-prefix, .digit-suffix {
+            display: inline-flex;
+            align-items: center;
+            height: 1.4em;
+            margin: 0 2px;
         }
     </style>
 </head>
@@ -62,14 +170,23 @@
         </div>
 
         <div class="ml-64 p-8 flex-1">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800">今日统计概览</h2>
-                <p class="text-gray-500 mt-1" id="currentDate"></p>
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">今日统计概览</h2>
+                    <p class="text-gray-500 mt-1" id="currentDate"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">最后更新</p>
+                    <p class="text-lg font-medium text-gray-700" id="lastUpdateTime">--:--:--</p>
+                </div>
             </div>
 
             <!-- 关键指标卡片 -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500" data-refresh="dashboard">
+                    <div class="refresh-icon" onclick="refreshDashboard()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">今日总推送数</p>
@@ -80,7 +197,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500" data-refresh="dashboard">
+                    <div class="refresh-icon" onclick="refreshDashboard()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">今日SQL异常推送</p>
@@ -91,7 +211,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500" data-refresh="dashboard">
+                    <div class="refresh-icon" onclick="refreshDashboard()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">今日日志异常推送</p>
@@ -102,7 +225,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500" data-refresh="datasource">
+                    <div class="refresh-icon" onclick="refreshDataSource()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">在线数据源</p>
@@ -115,7 +241,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500" data-refresh="logcollect">
+                    <div class="refresh-icon" onclick="refreshLogCollect()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">累计日志采集</p>
@@ -123,6 +252,20 @@
                         </div>
                         <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                             <i class="fa fa-file-text-o text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl shadow-sm p-6 border-l-4 border-indigo-500" data-refresh="logcollect">
+                    <div class="refresh-icon" onclick="refreshLogCollect()" title="刷新数据">
+                        <i class="fa fa-refresh"></i>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">日累计日志采集</p>
+                            <p class="text-3xl font-bold text-gray-800" id="dailyLogCollectCount">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <i class="fa fa-calendar text-indigo-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -164,11 +307,12 @@
                             <tr class="bg-gray-50">
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">环境名称</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">累计采集数</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日累计采集数</th>
                             </tr>
                         </thead>
                         <tbody id="logCollectStatsBody">
                             <tr>
-                                <td colspan="2" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="3" class="px-6 py-12 text-center text-gray-500">
                                     <i class="fa fa-spinner fa-spin mr-2"></i>加载中...
                                 </td>
                             </tr>
@@ -252,6 +396,108 @@
             day: 'numeric',
             weekday: 'long'
         });
+
+        const POLL_INTERVAL_DASHBOARD = 30000;
+        const POLL_INTERVAL_LOGCOLLECT = 60000;
+        const POLL_INTERVAL_DATASOURCE = 60000;
+        const POLL_INTERVAL_PUSH = 30000;
+        const POLL_INTERVAL_SQL = 60000;
+
+        let dashboardTimer = null;
+        let logCollectTimer = null;
+        let dataSourceTimer = null;
+        let pushTimer = null;
+        let sqlTimer = null;
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('lastUpdateTime').textContent = timeStr;
+        }
+
+        function startRotatingAnimation(refreshType) {
+            const icons = document.querySelectorAll(`[data-refresh="${refreshType}"] .refresh-icon i`);
+            icons.forEach(icon => icon.classList.add('rotating'));
+        }
+
+        function stopRotatingAnimation(refreshType) {
+            setTimeout(() => {
+                const icons = document.querySelectorAll(`[data-refresh="${refreshType}"] .refresh-icon i`);
+                icons.forEach(icon => icon.classList.remove('rotating'));
+            }, 1000);
+        }
+
+        function triggerCardFlash(refreshType) {
+            const cards = document.querySelectorAll(`[data-refresh="${refreshType}"]`);
+            cards.forEach(card => {
+                card.classList.remove('card-updated');
+                void card.offsetWidth;
+                card.classList.add('card-updated');
+            });
+        }
+
+        function startPolling() {
+            refreshDashboard();
+            refreshLogCollect();
+            refreshDataSource();
+            refreshPushStats();
+            refreshSqlStats();
+
+            dashboardTimer = setInterval(refreshDashboard, POLL_INTERVAL_DASHBOARD);
+            logCollectTimer = setInterval(refreshLogCollect, POLL_INTERVAL_LOGCOLLECT);
+            dataSourceTimer = setInterval(refreshDataSource, POLL_INTERVAL_DATASOURCE);
+            pushTimer = setInterval(refreshPushStats, POLL_INTERVAL_PUSH);
+            sqlTimer = setInterval(refreshSqlStats, POLL_INTERVAL_SQL);
+        }
+
+        function stopPolling() {
+            if (dashboardTimer) clearInterval(dashboardTimer);
+            if (logCollectTimer) clearInterval(logCollectTimer);
+            if (dataSourceTimer) clearInterval(dataSourceTimer);
+            if (pushTimer) clearInterval(pushTimer);
+            if (sqlTimer) clearInterval(sqlTimer);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                startPolling();
+            }
+        });
+
+        function refreshDashboard() {
+            startRotatingAnimation('dashboard');
+            fetchDashboardStats().then(() => {
+                stopRotatingAnimation('dashboard');
+                triggerCardFlash('dashboard');
+                updateLastUpdateTime();
+            });
+        }
+
+        function refreshLogCollect() {
+            startRotatingAnimation('logcollect');
+            fetchLogCollectStats().then(() => {
+                stopRotatingAnimation('logcollect');
+                triggerCardFlash('logcollect');
+            });
+        }
+
+        function refreshDataSource() {
+            startRotatingAnimation('datasource');
+            fetchDataSourceStatus().then(() => {
+                stopRotatingAnimation('datasource');
+                triggerCardFlash('datasource');
+            });
+        }
+
+        function refreshPushStats() {
+            fetchPushStats();
+        }
+
+        function refreshSqlStats() {
+            fetchSqlStats();
+        }
 
         async function fetchPushStats() {
             try {
@@ -415,16 +661,153 @@
             });
         }
 
+        let currentDashboardValues = {
+            todayPushCount: null,
+            todaySqlExceptionCount: null,
+            todayLogExceptionCount: null,
+            onlineDataSourceCount: null,
+            totalDataSourceCount: null,
+            totalLogCollectCount: null,
+            dailyLogCollectCount: null
+        };
+
+        function formatNumber(num) {
+            if (num === 0) return '0';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function animateCount(elementId, newValue, isFormatted = false) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            const newNum = isFormatted ? parseInt(newValue.replace(/[^0-9]/g, '')) || 0 : newValue;
+            const oldValue = currentDashboardValues[elementId];
+            
+            if (oldValue !== null && oldValue === newNum) {
+                return;
+            }
+
+            const displayValue = formatNumber(newNum);
+            
+            if (oldValue === null) {
+                element.textContent = displayValue;
+                currentDashboardValues[elementId] = newNum;
+                return;
+            }
+
+            const oldDisplayValue = formatNumber(oldValue);
+            animateDigitChange(element, oldDisplayValue, displayValue);
+            currentDashboardValues[elementId] = newNum;
+        }
+
+        function animateDigitChange(element, oldValue, newValue) {
+            const oldChars = oldValue.split('');
+            const newChars = newValue.split('');
+            
+            while (oldChars.length < newChars.length) {
+                oldChars.unshift(' ');
+            }
+            while (newChars.length < oldChars.length) {
+                newChars.unshift(' ');
+            }
+
+            let result = '';
+            for (let i = 0; i < newChars.length; i++) {
+                const oldChar = oldChars[i];
+                const newChar = newChars[i];
+                
+                if (newChar === ',') {
+                    result += ',';
+                } else if (oldChar === newChar && /\d/.test(oldChar)) {
+                    result += newChar;
+                } else if (/\d/.test(newChar)) {
+                    const oldDigit = /\d/.test(oldChar) ? parseInt(oldChar) : parseInt(newChar);
+                    const newDigit = parseInt(newChar);
+                    
+                    result += `<span class="digit-spin" data-old="${oldDigit}" data-new="${newDigit}">${oldDigit}</span>`;
+                }
+            }
+            
+            element.innerHTML = result;
+            
+            setTimeout(() => {
+                const spinElements = element.querySelectorAll('.digit-spin');
+                spinElements.forEach(el => {
+                    const oldDigit = parseInt(el.dataset.old);
+                    const newDigit = parseInt(el.dataset.new);
+                    
+                    const wrapper = document.createElement('span');
+                    wrapper.className = 'digit-wrapper';
+                    wrapper.style.cssText = `
+                        display: inline-flex;
+                        flex-direction: column;
+                        overflow: hidden;
+                        height: 1.4em;
+                        width: 0.7em;
+                        position: relative;
+                        vertical-align: middle;
+                    `;
+                    
+                    const strip = document.createElement('span');
+                    strip.className = 'digit-strip';
+                    strip.style.cssText = `
+                        display: flex;
+                        flex-direction: column;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        transition: transform 800ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                        transform: translateY(-${oldDigit * 100}%);
+                    `;
+                    
+                    for (let d = 0; d <= 9; d++) {
+                        const digitSpan = document.createElement('span');
+                        digitSpan.textContent = d;
+                        digitSpan.style.cssText = `
+                            height: 1.4em;
+                            line-height: 1.4em;
+                            text-align: center;
+                            flex-shrink: 0;
+                        `;
+                        strip.appendChild(digitSpan);
+                    }
+                    
+                    wrapper.appendChild(strip);
+                    el.replaceWith(wrapper);
+                    
+                    requestAnimationFrame(() => {
+                        strip.style.transform = `translateY(-${newDigit * 100}%)`;
+                    });
+                    
+                    setTimeout(() => {
+                        wrapper.innerHTML = newDigit;
+                    }, 850);
+                });
+            }, 10);
+        }
+
         async function fetchDashboardStats() {
             try {
                 const response = await fetch('/api/stats/dashboard');
                 const data = await response.json();
 
-                document.getElementById('todayPushCount').textContent = data.todayPushCount || 0;
-                document.getElementById('todaySqlExceptionCount').textContent = data.todaySqlExceptionCount || 0;
-                document.getElementById('todayLogExceptionCount').textContent = data.todayLogExceptionCount || 0;
-                document.getElementById('onlineDataSourceCount').textContent = data.onlineDataSourceCount || 0;
-                document.getElementById('totalDataSourceCount').textContent = data.totalDataSourceCount || 0;
+                animateCount('todayPushCount', data.todayPushCount || 0);
+                animateCount('todaySqlExceptionCount', data.todaySqlExceptionCount || 0);
+                animateCount('todayLogExceptionCount', data.todayLogExceptionCount || 0);
+                
+                const online = data.onlineDataSourceCount || 0;
+                const total = data.totalDataSourceCount || 0;
+                const onlineEl = document.getElementById('onlineDataSourceCount');
+                const totalEl = document.getElementById('totalDataSourceCount');
+                if (onlineEl) {
+                    onlineEl.textContent = online;
+                }
+                if (totalEl) {
+                    totalEl.textContent = total;
+                }
+                
+                currentDashboardValues['onlineDataSourceCount'] = online;
+                currentDashboardValues['totalDataSourceCount'] = total;
             } catch (error) {
                 console.error('获取Dashboard统计数据失败:', error);
             }
@@ -437,15 +820,19 @@
 
                 const tbody = document.getElementById('logCollectStatsBody');
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-gray-500">暂无数据</td></tr>';
                     document.getElementById('totalLogCollectCount').textContent = 0;
+                    document.getElementById('dailyLogCollectCount').textContent = 0;
                     return;
                 }
 
                 let total = 0;
+                let dailyTotal = 0;
                 tbody.innerHTML = data.map(item => {
                     const count = item.totalCollectCount || 0;
+                    const dailyCount = item.dailyCollectCount || 0;
                     total += count;
+                    dailyTotal += dailyCount;
                     return `
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -457,14 +844,18 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm font-medium text-purple-600">${count.toLocaleString()} 条</span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-medium text-indigo-600">${dailyCount.toLocaleString()} 条</span>
+                            </td>
                         </tr>
                     `;
                 }).join('');
 
-                document.getElementById('totalLogCollectCount').textContent = total.toLocaleString();
+                animateCount('totalLogCollectCount', total.toLocaleString(), true);
+                animateCount('dailyLogCollectCount', dailyTotal.toLocaleString(), true);
             } catch (error) {
                 console.error('获取日志采集统计数据失败:', error);
-                document.getElementById('logCollectStatsBody').innerHTML = '<tr><td colspan="2" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
+                document.getElementById('logCollectStatsBody').innerHTML = '<tr><td colspan="3" class="px-6 py-12 text-center text-gray-500">加载失败</td></tr>';
             }
         }
 
@@ -514,11 +905,7 @@
             }
         }
 
-        fetchDashboardStats();
-        fetchDataSourceStatus();
-        fetchPushStats();
-        fetchSqlStats();
-        fetchLogCollectStats();
+        startPolling();
     </script>
 </body>
 </html>
