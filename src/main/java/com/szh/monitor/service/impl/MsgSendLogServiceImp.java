@@ -1,5 +1,6 @@
 package com.szh.monitor.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.szh.monitor.entity.MsgSendLog;
 import com.szh.monitor.mapper.MsgSendLogMapper;
@@ -22,9 +23,20 @@ public class MsgSendLogServiceImp extends ServiceImpl<MsgSendLogMapper, MsgSendL
 
     @Override
     public void clear() {
-        //只保留近14天的推送记录
         LocalDateTime date = LocalDate.now().minusDays(14).atStartOfDay();
         int clear = getBaseMapper().clear(date);
         logger.info("删除信息推送记录条数{}",clear);
+    }
+
+    @Override
+    public long countLogs(String date, String environment) {
+        LambdaQueryWrapper<MsgSendLog> query = new LambdaQueryWrapper<>();
+        if (date != null && !date.isEmpty()) {
+            query.like(MsgSendLog::getCreateTime, date);
+        }
+        if (environment != null && !environment.isEmpty()) {
+            query.eq(MsgSendLog::getEnvironmentName, environment);
+        }
+        return getBaseMapper().selectCount(query);
     }
 }

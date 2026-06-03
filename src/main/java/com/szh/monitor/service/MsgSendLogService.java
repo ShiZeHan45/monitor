@@ -9,4 +9,6 @@ public interface MsgSendLogService extends IService<MsgSendLog> {
     List<MsgSendLog> findSendStatusFalse();
 
     void clear();
+
+    long countLogs(String date, String environment);
 }

@@ -201,6 +201,9 @@ public class MonitorController {
         return ResponseEntity.ok(new ArrayList<>(envMap.values()));
     }
 
+    @Autowired
+    private com.szh.monitor.service.MsgSendLogService msgSendLogService;
+
     @GetMapping("/push-records")
     public ResponseEntity<IPage<MsgSendLog>> getPushRecords(
             @RequestParam(defaultValue = "1") int page,
@@ -221,6 +224,10 @@ public class MonitorController {
 
         query.orderByDesc(MsgSendLog::getCreateTime);
         IPage<MsgSendLog> result = msgSendLogMapper.selectPage(pageRequest, query);
+        
+        long total = msgSendLogService.countLogs(date, environment);
+        result.setTotal(total);
+        result.setPages((total + size - 1) / size);
 
         return ResponseEntity.ok(result);
     }
