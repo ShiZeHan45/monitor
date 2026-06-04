@@ -5,6 +5,7 @@ import com.szh.monitor.entity.SqlDataSource;
 import com.szh.monitor.entity.SqlExecuteRule;
 import com.szh.monitor.service.SqlDataSourceService;
 import com.szh.monitor.service.SqlExecuteRuleService;
+import com.szh.monitor.service.impl.SqlConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -27,6 +28,9 @@ public class SqlDataInitializer implements CommandLineRunner {
 
     @Resource
     private SqlExecuteRuleService ruleService;
+
+    @Resource
+    private SqlConfigService sqlConfigService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -85,5 +89,9 @@ public class SqlDataInitializer implements CommandLineRunner {
         }
 
         logger.info("YML配置初始化完成");
+
+        // 导入完成后刷新数据源配置，创建JdbcTemplate Bean
+        sqlConfigService.refreshConfig();
+        logger.info("数据源配置刷新完成");
     }
 }

@@ -5,6 +5,7 @@ import com.szh.monitor.entity.GrafanaDataSource;
 import com.szh.monitor.entity.GrafanaMonitorRule;
 import com.szh.monitor.service.GrafanaDataSourceService;
 import com.szh.monitor.service.GrafanaMonitorRuleService;
+import com.szh.monitor.service.impl.GrafanaLogServiceImp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -28,6 +29,9 @@ public class GrafanaDataInitializer implements CommandLineRunner {
     private GrafanaMonitorRuleService ruleService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Resource
+    private GrafanaLogServiceImp grafanaLogService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -88,5 +92,9 @@ public class GrafanaDataInitializer implements CommandLineRunner {
         }
 
         logger.info("YML配置初始化完成");
+
+        // 导入完成后刷新Grafana配置
+        grafanaLogService.refreshConfig();
+        logger.info("Grafana配置刷新完成");
     }
 }
