@@ -306,6 +306,11 @@ public class OperationLogAspect {
             Object oldValue = oldEntity != null ? getFieldValue(oldEntity, entry.getKey()) : null;
             Object newValue = getFieldValue(newEntity, entry.getKey());
 
+            // 新值为空表示该字段未被本次操作涉及，跳过不记录
+            if (newValue == null) {
+                continue;
+            }
+
             String oldStr = formatValue(oldValue);
             String newStr = formatValue(newValue);
 
