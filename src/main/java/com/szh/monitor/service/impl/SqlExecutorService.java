@@ -84,6 +84,10 @@ public class SqlExecutorService implements ExecutorService {
         JdbcTemplate jdbcTemplate = SpringContextUtil.getBean(jdbcTemplateName, JdbcTemplate.class);
         logger.info("当前环境：{} 开始执行SQL文件：{}", environmentName, Arrays.stream(sqlFiles).map(File::getName).collect(Collectors.joining(",")));
 
+        // 获取数据源级webhook（为空则推送使用全局默认）
+        SqlDataSource dataSource = sqlDataSourceService.getByEnvironmentName(environmentName);
+        String webhook = dataSource != null ? dataSource.getWebhook() : null;
+
         //全局异常标识，只要其中一个文件执行出错，则标记为true
         boolean exception = false;
         //记录执行成功的SQL文件和执行失败的SQL文件
@@ -107,7 +111,7 @@ public class SqlExecutorService implements ExecutorService {
                 List<Map<String, Object>> results = jdbcTemplate.queryForList(sql);
                 if (!results.isEmpty()) {
                     logger.debug("文件：{} 查询结果：{}", sqlFile.getName(), objectMapper.writeValueAsString(results));
-                    sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, getTitle(), environmentName), (StringBuilder appendMsg) -> {
+                    sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, getTitle(), environmentName).webhook(webhook), (StringBuilder appendMsg) -> {
                         appendMsg.append("文件: ").append(sqlFile.getName()).append("\n\n");
 
                         // 添加表头
@@ -161,6 +165,9 @@ public class SqlExecutorService implements ExecutorService {
                 return;
             }
 
+            // 获取数据源级webhook（可能为空，为空时推送使用全局webhook）
+            String webhook = dataSource.getWebhook();
+
             try {
                 consumer.accept(environmentName, jdbcTemplateName);
                 //执行到此处，肯定是全部成功执行，那么会将所有文件的失败计数归零
@@ -169,14 +176,14 @@ public class SqlExecutorService implements ExecutorService {
                 //错误计数
                 int failedCount = executeJDBCContext.addFailedCount(environmentName, e.getFailSQLFiles());
                 if (failedCount > 0 && failedCount % 8 == 0) {
-                    sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行异常", environmentName), (StringBuilder appendMsg) -> {
+                    sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行异常", environmentName).webhook(webhook), (StringBuilder appendMsg) -> {
                         appendMsg.append(MessageFormat.format("执行失败{0}次 请检查网络环境", failedCount));
                     });
                 }
                 logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}", environmentName, failedCount), e);
             } catch (Exception e) {
                 logger.error("数据脚本执行不可预见异常 请检查环境 ", e);
-                sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行不可预见异常", environmentName), (StringBuilder appendMsg) -> {
+                sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行不可预见异常", environmentName).webhook(webhook), (StringBuilder appendMsg) -> {
                     appendMsg.append("数据脚本执行不可预见异常 请检查环境");
                 });
             }

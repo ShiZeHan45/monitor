@@ -45,7 +45,11 @@ public class SendWechatService implements SendService {
         }
         sendMessage.append(msgForm.getEnvironmentName()).append("-").append(msgForm.getTitle()).append("\n");
         msg.accept(sendMessage);
-        sendNewMsgAndStore(sendMessage.toString(),"text",baseConfig.getWechatWebhook(),msgForm.getEnvironmentName());
+        // 优先使用 MsgForm 中的 webhook，没有则用全局默认
+        String webhook = msgForm.getWebhook() != null && !msgForm.getWebhook().isEmpty()
+                ? msgForm.getWebhook()
+                : baseConfig.getWechatWebhook();
+        sendNewMsgAndStore(sendMessage.toString(),"text",webhook,msgForm.getEnvironmentName());
     }
 
     @Scheduled(cron = "0 30 9 * * ?")

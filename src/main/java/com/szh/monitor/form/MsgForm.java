@@ -11,6 +11,8 @@ public class MsgForm {
     private String title;
     //环境信息
     private String environmentName;
+    //webhook，为空则使用全局默认
+    private String webhook;
 
     public MsgForm(MsgType msgType,String title,String environmentName){
         this.msgType = msgType;
@@ -20,6 +22,11 @@ public class MsgForm {
 
     public static MsgForm builder(MsgType msgType,String title,String environmentName){
         return new MsgForm(msgType,title,environmentName);
+    }
+
+    public MsgForm webhook(String webhook) {
+        this.webhook = webhook;
+        return this;
     }
 
 }
