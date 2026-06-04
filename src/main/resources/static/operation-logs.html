@@ -6,6 +6,9 @@
     <title>操作日志 - 监控系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
 </head>
 <body class="bg-gray-100">
     <div class="flex">
@@ -66,13 +69,24 @@
                             </select>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <input type="date" id="filterStartDate" placeholder="开始日期" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <span class="px-2 text-gray-400">~</span>
-                            <input type="date" id="filterEndDate" placeholder="结束日期" onchange="loadLogs(1)" class="px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div class="relative">
+                                <input type="text" id="dateRangePicker" placeholder="选择日期范围" readonly class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64 cursor-pointer bg-white text-sm">
+                            </div>
+                            <div class="relative">
+                                <select id="filterDatePreset" onchange="onDatePresetChange()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <option value="">快捷选择</option>
+                                    <option value="today">今天</option>
+                                    <option value="yesterday">昨天</option>
+                                    <option value="last7">近7天</option>
+                                    <option value="last30">近30天</option>
+                                    <option value="thisMonth">本月</option>
+                                    <option value="lastMonth">上月</option>
+                                </select>
+                            </div>
+                            <button onclick="resetFilters()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 flex items-center">
+                                <i class="fa fa-refresh mr-2"></i>重置
+                            </button>
                         </div>
-                        <button onclick="resetFilters()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 flex items-center">
-                            <i class="fa fa-refresh mr-2"></i>重置
-                        </button>
                     </div>
                 </div>
                     <table class="w-full">
@@ -165,6 +179,7 @@
     <script>
         let currentPage = 1;
         let totalPages = 1;
+        let dateRangePicker;
 
         async function loadModules() {
             try {
@@ -185,8 +200,12 @@
         function getFilterParams() {
             const operationType = document.getElementById('filterOperationType').value;
             const module = document.getElementById('filterModule').value;
-            const startDate = document.getElementById('filterStartDate').value;
-            const endDate = document.getElementById('filterEndDate').value;
+            const dates = dateRangePicker ? dateRangePicker.selectedDates : [];
+            let startDate = '', endDate = '';
+            if (dates.length === 2) {
+                startDate = flatpickr.formatDate(dates[0], 'Y-m-d');
+                endDate = flatpickr.formatDate(dates[1], 'Y-m-d');
+            }
 
             const params = new URLSearchParams();
             if (operationType) params.append('operationType', operationType);
@@ -195,6 +214,42 @@
             if (endDate) params.append('endDate', endDate);
 
             return params.toString();
+        }
+
+        function onDatePresetChange() {
+            const preset = document.getElementById('filterDatePreset').value;
+            if (!preset) return;
+            const today = new Date();
+            let startDate, endDate = new Date(today);
+
+            switch (preset) {
+                case 'today':
+                    startDate = new Date(today);
+                    break;
+                case 'yesterday':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 1);
+                    endDate = new Date(startDate);
+                    break;
+                case 'last7':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 6);
+                    break;
+                case 'last30':
+                    startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() - 29);
+                    break;
+                case 'thisMonth':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    break;
+                case 'lastMonth':
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+            }
+
+            dateRangePicker.setDate([startDate, endDate]);
+            loadLogs(1);
         }
 
         async function loadLogs(page = 1) {
@@ -280,8 +335,8 @@
         function resetFilters() {
             document.getElementById('filterOperationType').value = '';
             document.getElementById('filterModule').value = '';
-            document.getElementById('filterStartDate').value = '';
-            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterDatePreset').value = '';
+            dateRangePicker.clear();
             loadLogs(1);
         }
 
@@ -313,6 +368,17 @@
         }
 
         loadModules();
+        dateRangePicker = flatpickr("#dateRangePicker", {
+            mode: "range",
+            locale: "zh",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates) {
+                document.getElementById('filterDatePreset').value = '';
+                if (selectedDates.length === 2) {
+                    loadLogs(1);
+                }
+            }
+        });
         loadLogs();
     </script>
 </body>
