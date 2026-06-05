@@ -53,26 +53,26 @@ public class SendWechatService implements SendService {
     }
 
     @Scheduled(cron = "0 30 9 * * ?")
-//    @Scheduled(cron = "0 0/5 * * * ?")
-    @Transactional
     public void pushMsg(){
        List<MsgSendLog> msgSendLogs = sendLogService.findSendStatusFalse();
         for (MsgSendLog msgSendLog : msgSendLogs) {
-            //5秒发一条
             try {
+                //5秒发一条
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                Thread.currentThread().interrupt();
+                break;
             }
             String appendContent="20点~08点 产生的异常消息补推\n";
-            switch (msgSendLog.getMsgType()){
-                case "markdown":
-                    appendContent = "> "+appendContent;
-                default:
-                    break;
+            if ("markdown".equals(msgSendLog.getMsgType())) {
+                appendContent = "> "+appendContent;
             }
             String content = appendContent+msgSendLog.getContent();
-            sendMsgAndStore(content,msgSendLog.getMsgType(),msgSendLog.getSendWebhook(),msgSendLog);
+            try {
+                sendMsgAndStore(content,msgSendLog.getMsgType(),msgSendLog.getSendWebhook(),msgSendLog);
+            } catch (Exception e) {
+                logger.error("补推消息失败: id={}, webhook={}", msgSendLog.getId(), msgSendLog.getSendWebhook(), e);
+            }
         }
     }
 
@@ -96,13 +96,12 @@ public class SendWechatService implements SendService {
             // 使用RestTemplate发送HTTP请求
             // 实际实现见定时任务类中的restTemplate
             WechatMessage wechatMessage = new WechatMessage();
-            switch (msgType){
-                case "text":
-                    wechatMessage.setMsgtype("text");
-                    wechatMessage.setText(new WechatMessage.Text(msg));
-                case "markdown":
-                    wechatMessage.setMsgtype("markdown");
-                    wechatMessage.setMarkdown(new WechatMessage.Text(msg));
+            if ("text".equals(msgType)) {
+                wechatMessage.setMsgtype("text");
+                wechatMessage.setText(new WechatMessage.Text(msg));
+            } else if ("markdown".equals(msgType)) {
+                wechatMessage.setMsgtype("markdown");
+                wechatMessage.setMarkdown(new WechatMessage.Text(msg));
             }
             restTemplate.postForEntity(
                     webHook,
