@@ -72,14 +72,12 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">开始小时</label>
                             <select id="config_quiet_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                ${Array.from({length: 24}, (_, i) => `<option value="${i}">${String(i).padStart(2,'0')}:00</option>`).join('')}
                             </select>
                             <p class="text-xs text-gray-400 mt-1">此时间后产生的消息延迟到次日推送</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">结束小时</label>
                             <select id="config_quiet_end" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                ${Array.from({length: 24}, (_, i) => `<option value="${i}">${String(i).padStart(2,'0')}:00</option>`).join('')}
                             </select>
                             <p class="text-xs text-gray-400 mt-1">此时间后恢复实时推送</p>
                         </div>
@@ -96,6 +94,14 @@
     </div>
 
     <script>
+        function populateHourSelects() {
+            for (let i = 0; i < 24; i++) {
+                const label = String(i).padStart(2, '0') + ':00';
+                document.getElementById('config_quiet_start').innerHTML += '<option value="' + i + '">' + label + '</option>';
+                document.getElementById('config_quiet_end').innerHTML += '<option value="' + i + '">' + label + '</option>';
+            }
+        }
+
         async function loadConfig() {
             try {
                 const response = await fetch('/api/system/config');
@@ -139,6 +145,7 @@
             setTimeout(() => div.classList.add('hidden'), 5000);
         }
 
+        populateHourSelects();
         loadConfig();
     </script>
 </body>
