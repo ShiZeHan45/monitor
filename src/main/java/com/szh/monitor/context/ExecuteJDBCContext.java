@@ -75,12 +75,15 @@ public class ExecuteJDBCContext {
             LocalDateTime currDateTime = LocalDateTime.now();
             LocalDate now = LocalDate.now();
             String executeStartTime = sqlExecuteRule.getExecuteStartTime();
-            String[] start = executeStartTime.split(":");
-            LocalTime startTime = LocalTime.of(Integer.parseInt(start[0]), Integer.parseInt(start[1]), Integer.parseInt(start[2]));
+            if (executeStartTime == null || executeStartTime.isEmpty()) {
+                executeStartTime = "00:00:00";
+            }
+            LocalTime startTime = parseTime(executeStartTime);
             String executeEndTime = sqlExecuteRule.getExecuteEndTime();
-            executeEndTime = executeEndTime==null?"20:00:00":executeEndTime;
-            String[] end = executeEndTime.split(":");
-            LocalTime endTime = LocalTime.of(Integer.parseInt(end[0]), Integer.parseInt(end[1]), Integer.parseInt(end[2]));
+            if (executeEndTime == null || executeEndTime.isEmpty()) {
+                executeEndTime = "20:00:00";
+            }
+            LocalTime endTime = parseTime(executeEndTime);
 
             LocalDateTime startDateTime = now.atTime(startTime);
             LocalDateTime endDateTime = now.atTime(endTime);
@@ -256,6 +259,17 @@ public class ExecuteJDBCContext {
             this.count = count;
             fileCountInfos.add(this);
         }
+    }
+
+    /**
+     * 兼容 HH:mm 和 HH:mm:ss 两种时间格式
+     */
+    private LocalTime parseTime(String timeStr) {
+        String[] parts = timeStr.split(":");
+        int hour = Integer.parseInt(parts[0]);
+        int minute = Integer.parseInt(parts[1]);
+        int second = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+        return LocalTime.of(hour, minute, second);
     }
 
 }
