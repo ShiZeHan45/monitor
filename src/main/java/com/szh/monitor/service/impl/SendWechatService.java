@@ -7,6 +7,7 @@ import com.szh.monitor.form.MsgForm;
 import com.szh.monitor.form.WechatMessage;
 import com.szh.monitor.service.MsgSendLogService;
 import com.szh.monitor.service.SendService;
+import com.szh.monitor.service.SystemConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,8 @@ public class SendWechatService implements SendService {
     private BaseConfig baseConfig;
     @Autowired
     private MsgSendLogService sendLogService;
+    @Autowired
+    private SystemConfigService systemConfigService;
 
 
     public SendWechatService(RestTemplate restTemplate) {
@@ -48,7 +51,10 @@ public class SendWechatService implements SendService {
         // 优先使用 MsgForm 中的 webhook，没有则用全局默认
         String webhook = msgForm.getWebhook() != null && !msgForm.getWebhook().isEmpty()
                 ? msgForm.getWebhook()
-                : baseConfig.getWechatWebhook();
+                : systemConfigService.getWechatWebhook();
+        if (webhook == null || webhook.isEmpty()) {
+            webhook = baseConfig.getWechatWebhook();
+        }
         sendNewMsgAndStore(sendMessage.toString(),"text",webhook,msgForm.getEnvironmentName());
     }
 
@@ -88,9 +94,11 @@ public class SendWechatService implements SendService {
 
     public void sendMsgAndStore(String msg, String msgType, String webHook, MsgSendLog msgSendLog) {
         int hour = LocalDateTime.now().getHour();
-        if (hour >= 20 || hour <= 8) {
+        int quietStart = systemConfigService.getQuietStartHour();
+        int quietEnd = systemConfigService.getQuietEndHour();
+        if (hour >= quietStart || hour <= quietEnd) {
             // 20点-8点不推送短信
-            logger.info("20点-8点不推送预警 推送内容固化,择机推送");
+            logger.info("{}-{}点不推送预警 推送内容固化,择机推送", quietEnd, quietStart);
             msgSendLog.setSendStatus(false);
         }else{
             // 使用RestTemplate发送HTTP请求
@@ -117,16 +125,22 @@ public class SendWechatService implements SendService {
 
     @Override
     public void sendSimpleMarkDownMsgByLog(String content, String environmentName) {
-        sendNewMsgAndStore(content,"markdown",baseConfig.getLogWechatWebhook(),environmentName);
+        String webhook = systemConfigService.getLogWechatWebhook();
+        if (webhook == null || webhook.isEmpty()) {
+            webhook = baseConfig.getLogWechatWebhook();
+        }
+        sendNewMsgAndStore(content,"markdown", webhook, environmentName);
     }
 
     @Override
     public void sendSimpleMarkDownMsgByLog(String content, String environmentName, String webhook) {
         if (webhook == null || webhook.isEmpty()) {
-            sendNewMsgAndStore(content, "markdown", baseConfig.getLogWechatWebhook(), environmentName);
-        } else {
-            sendNewMsgAndStore(content, "markdown", webhook, environmentName);
+            webhook = systemConfigService.getLogWechatWebhook();
+            if (webhook == null || webhook.isEmpty()) {
+                webhook = baseConfig.getLogWechatWebhook();
+            }
         }
+        sendNewMsgAndStore(content, "markdown", webhook, environmentName);
     }
 
 

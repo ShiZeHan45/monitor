@@ -104,3 +104,15 @@ CREATE TABLE IF NOT EXISTS operation_log (
                                                detail TEXT, -- 详情
                                                create_time TIMESTAMP -- 操作时间
 );
+
+CREATE TABLE IF NOT EXISTS system_config (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                               config_key TEXT UNIQUE NOT NULL,
+                                               config_value TEXT,
+                                               updated_at TIMESTAMP
+);
+
+INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('wechat_webhook', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=f3085410-ae83-4509-a71c-4b799c9631cc');
+INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('log_wechat_webhook', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=4c339bf6-62af-4f51-a308-dbff72062035');
+INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('quiet_start', '20');
+INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('quiet_end', '8');
