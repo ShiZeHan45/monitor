@@ -1,5 +1,7 @@
 package com.szh.monitor.scheduled;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.szh.monitor.entity.GrafanaDataSource;
 import com.szh.monitor.service.GrafanaDataSourceService;
 import io.netty.channel.ChannelOption;
@@ -19,7 +21,10 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +37,7 @@ public class GrafanaDataSourceHealthChecker {
     private GrafanaDataSourceService dataSourceService;
 
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GrafanaDataSourceHealthChecker() {
         httpClient = HttpClient.create(reactor.netty.resources.ConnectionProvider.builder("health-check-pool")
@@ -55,7 +61,34 @@ public class GrafanaDataSourceHealthChecker {
     @Scheduled(fixedRate = 300_000)
     public void checkHealth() {
         List<GrafanaDataSource> dataSources = dataSourceService.listEnabled();
+        int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+        LocalTime now = LocalTime.now();
         for (GrafanaDataSource ds : dataSources) {
+            // 星期检查
+            if (ds.getWeek() != null && !ds.getWeek().isEmpty()) {
+                try {
+                    List<Integer> week = objectMapper.readValue(ds.getWeek(), new com.fasterxml.jackson.core.type.TypeReference<List<Integer>>() {});
+                    if (!week.contains(dayOfWeek)) {
+                        logger.debug("数据源 [{}] 不在配置的执行星期内，跳过健康检查", ds.getEnvironmentName());
+                        continue;
+                    }
+                } catch (Exception e) {
+                    logger.warn("解析数据源 [{}] 的星期配置失败", ds.getEnvironmentName());
+                }
+            }
+            // 时间段检查
+            if (ds.getStartTime() != null && !ds.getStartTime().isEmpty() && ds.getEndTime() != null && !ds.getEndTime().isEmpty()) {
+                try {
+                    LocalTime start = LocalTime.parse(ds.getStartTime());
+                    LocalTime end = LocalTime.parse(ds.getEndTime());
+                    if (now.isBefore(start) || now.isAfter(end)) {
+                        logger.debug("数据源 [{}] 不在配置的执行时间段内，跳过健康检查", ds.getEnvironmentName());
+                        continue;
+                    }
+                } catch (Exception e) {
+                    logger.warn("解析数据源 [{}] 的时间段配置失败", ds.getEnvironmentName());
+                }
+            }
             checkDataSourceHealth(ds);
         }
     }
