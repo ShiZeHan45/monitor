@@ -116,3 +116,4 @@ INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('wechat_web
 INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('log_wechat_webhook', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=4c339bf6-62af-4f51-a308-dbff72062035');
 INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('quiet_start', '20');
 INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('quiet_end', '8');
+INSERT OR IGNORE INTO system_config(config_key, config_value) VALUES('push_time', '09:30');

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
@@ -36,6 +37,8 @@ public class SendWechatService implements SendService {
     public SendWechatService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
+
+    private volatile LocalDate lastPushDate = null;
 
 
     @Override
@@ -58,8 +61,30 @@ public class SendWechatService implements SendService {
         sendNewMsgAndStore(sendMessage.toString(),"text",webhook,msgForm.getEnvironmentName());
     }
 
-    @Scheduled(cron = "0 30 9 * * ?")
+    @Scheduled(fixedRate = 60_000)
     public void pushMsg(){
+        // 从DB读取补推时间配置（默认 09:30）
+        String pushTime = systemConfigService.getConfigValue("push_time");
+        if (pushTime == null || pushTime.isEmpty()) {
+            pushTime = "09:30";
+        }
+        String[] parts = pushTime.split(":");
+        int targetHour = Integer.parseInt(parts[0]);
+        int targetMinute = Integer.parseInt(parts[1]);
+        LocalDateTime now = LocalDateTime.now();
+        // 只在目标小时+分钟内执行一次（避免每分钟重复触发）
+        if (now.getHour() != targetHour || now.getMinute() != targetMinute) {
+            return;
+        }
+        // 一天只跑一次
+        if (lastPushDate != null && lastPushDate.equals(now.toLocalDate())) {
+            return;
+        }
+        lastPushDate = now.toLocalDate();
+
+        int quietStart = systemConfigService.getQuietStartHour();
+        int quietEnd = systemConfigService.getQuietEndHour();
+        String notice = String.format("%02d点~%02d点 产生的异常消息补推\n", quietStart, quietEnd);
        List<MsgSendLog> msgSendLogs = sendLogService.findSendStatusFalse();
         for (MsgSendLog msgSendLog : msgSendLogs) {
             try {
@@ -69,7 +94,7 @@ public class SendWechatService implements SendService {
                 Thread.currentThread().interrupt();
                 break;
             }
-            String appendContent="20点~08点 产生的异常消息补推\n";
+            String appendContent = notice;
             if ("markdown".equals(msgSendLog.getMsgType())) {
                 appendContent = "> "+appendContent;
             }
