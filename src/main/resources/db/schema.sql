@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS sql_execute_log (
                                                failed_count_reset_time INTEGER, -- 失败次数重置时间
                                                count INTEGER -- 执行次数
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_env_file_date ON sql_execute_log(environment_name, sql_file_name, execute_date);
 
 CREATE TABLE IF NOT EXISTS msg_send_log(
                                            id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
