@@ -1,5 +1,8 @@
 package com.szh.monitor.service;
 
+import com.szh.monitor.entity.LogCollectTimeInfo;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -13,4 +16,8 @@ public interface LogCollectTimeInfoService {
     List<Map<String, Object>> getEnvironmentCollectStats();
 
     List<Map<String, Object>> getEnvironmentDailyCollectStats();
+
+    void updateLastTs(Long id, LocalDateTime dateTime);
+
+    List<LogCollectTimeInfo> getLastTsList();
 }

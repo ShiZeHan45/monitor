@@ -102,4 +102,23 @@ public class LogCollectTimeInfoServiceImp extends ServiceImpl<LogCollectTimeInfo
     public List<Map<String, Object>> getEnvironmentDailyCollectStats() {
         return getBaseMapper().getEnvironmentDailyCollectStats(LocalDate.now());
     }
+
+    @Override
+    public void updateLastTs(Long id, LocalDateTime dateTime) {
+        LogCollectTimeInfo info = getById(id);
+        if (info == null) return;
+        long ts = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        info.setLastTs(ts);
+        info.setLastTime(dateTime);
+        updateById(info);
+        // 刷新 Grafana 内存中的 lastTsMap
+        String key = info.getEnvironmentName() + "_" + info.getRuleName();
+        grafanaLogServiceImp.initLastTsMap(key, ts);
+        logger.info("已更新采集起始时间: {} -> {} ({})", key, ts, dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
+
+    @Override
+    public List<LogCollectTimeInfo> getLastTsList() {
+        return list();
+    }
 }
