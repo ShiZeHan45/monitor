@@ -121,7 +121,7 @@ public class SendWechatService implements SendService {
         int hour = LocalDateTime.now().getHour();
         int quietStart = systemConfigService.getQuietStartHour();
         int quietEnd = systemConfigService.getQuietEndHour();
-        if (hour >= quietStart || hour <= quietEnd) {
+        if (hour >= quietStart || hour < quietEnd) {
             // 20点-8点不推送短信
             logger.info("{}-{}点不推送预警 推送内容固化,择机推送", quietEnd, quietStart);
             msgSendLog.setSendStatus(false);
