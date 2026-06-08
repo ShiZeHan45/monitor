@@ -17,4 +17,6 @@ public interface SqlExecuteLogService extends IService<SqlExecuteLog> {
     void resetFailedCount(String environmentName);
 
     void clear();
+
+    SqlExecuteLog findByEnvAndFileAndDate(String environmentName, String sqlFileName, Integer executeDate);
 }

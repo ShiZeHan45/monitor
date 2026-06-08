@@ -73,4 +73,9 @@ public class SqlExecuteLogServiceImp extends ServiceImpl<SqlExecuteLogMapper, Sq
         int clearCount = getBaseMapper().clear(getCurrYYYYMMDD());
         logger.info("删除执行记录条数{}",clearCount);
     }
+
+    @Override
+    public SqlExecuteLog findByEnvAndFileAndDate(String environmentName, String sqlFileName, Integer executeDate) {
+        return getBaseMapper().findEnvironmentNameAndFileName(environmentName, sqlFileName, executeDate);
+    }
 }

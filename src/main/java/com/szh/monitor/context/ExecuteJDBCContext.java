@@ -169,33 +169,22 @@ public class ExecuteJDBCContext {
         if (CollectionUtils.isEmpty(failedFiles)) {
             return;
         }
-        List<SqlExecuteLog> failedInfos = sqlExecuteLogService.findEnvironmentNameAndFailedCountGt0(environmentName);
-        List<SqlExecuteLog> sqlExecuteLogs=new ArrayList<>();
-        if (CollectionUtils.isEmpty(failedInfos)) {
-            for (String failedFile : failedFiles) {
+        int currDate = SqlExecuteLogServiceImp.getCurrYYYYMMDD();
+        for (String failedFile : failedFiles) {
+            SqlExecuteLog existing = sqlExecuteLogService.findByEnvAndFileAndDate(environmentName, failedFile, currDate);
+            if (existing == null) {
                 SqlExecuteLog sqlExecuteLog = new SqlExecuteLog();
                 sqlExecuteLog.setEnvironmentName(environmentName);
                 sqlExecuteLog.setSqlFileName(failedFile);
                 sqlExecuteLog.setFailedCount(1);
                 sqlExecuteLog.setCount(0);
-                sqlExecuteLog.setExecuteDate(SqlExecuteLogServiceImp.getCurrYYYYMMDD());
-                sqlExecuteLogs.add(sqlExecuteLog);
-            }
-        } else {
-            for (String failedFile : failedFiles) {
-                SqlExecuteLog sqlExecuteLog = failedInfos.stream().filter(x -> x.getSqlFileName().equals(failedFile)).findAny().orElse(null);
-                if(sqlExecuteLog==null){
-                    sqlExecuteLog = new SqlExecuteLog();
-                    sqlExecuteLog.setEnvironmentName(environmentName);
-                    sqlExecuteLog.setSqlFileName(failedFile);
-                    sqlExecuteLog.setExecuteDate(SqlExecuteLogServiceImp.getCurrYYYYMMDD());
-                    sqlExecuteLog.setFailedCount(1);
-                }else{
-                    sqlExecuteLog.setFailedCount((sqlExecuteLog.getFailedCount()==null?0:sqlExecuteLog.getFailedCount())+1);
-                }
+                sqlExecuteLog.setExecuteDate(currDate);
+                sqlExecuteLogService.save(sqlExecuteLog);
+            } else {
+                existing.setFailedCount((existing.getFailedCount() == null ? 0 : existing.getFailedCount()) + 1);
+                sqlExecuteLogService.updateById(existing);
             }
         }
-        sqlExecuteLogService.saveOrUpdateBatch(sqlExecuteLogs);
     }
 
     /**
