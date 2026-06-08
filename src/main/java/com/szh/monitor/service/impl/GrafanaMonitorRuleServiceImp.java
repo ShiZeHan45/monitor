@@ -149,10 +149,12 @@ public class GrafanaMonitorRuleServiceImp extends ServiceImpl<GrafanaMonitorRule
     @javax.annotation.Resource
     private GrafanaLogServiceImp grafanaLogServiceImp;
 
+    @javax.annotation.Resource
+    private GrafanaDataSourceServiceImp grafanaDataSourceServiceImp;
+
     private String getEnvironmentNameByRule(GrafanaMonitorRule rule) {
         try {
-            GrafanaDataSourceServiceImp dsService = SpringContextUtil.getBean(GrafanaDataSourceServiceImp.class);
-            com.szh.monitor.entity.GrafanaDataSource ds = dsService.getById(rule.getDataSourceId());
+            com.szh.monitor.entity.GrafanaDataSource ds = grafanaDataSourceServiceImp.getById(rule.getDataSourceId());
             return ds != null ? ds.getEnvironmentName() : null;
         } catch (Exception e) {
             return null;

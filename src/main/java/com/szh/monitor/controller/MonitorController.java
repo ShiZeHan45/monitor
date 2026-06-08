@@ -8,6 +8,7 @@ import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.entity.GrafanaDataSource;
+import com.szh.monitor.entity.GrafanaMonitorRule;
 import com.szh.monitor.entity.MsgSendLog;
 import com.szh.monitor.entity.SqlDataSource;
 import com.szh.monitor.entity.SqlExecuteLog;
@@ -279,9 +280,13 @@ public class MonitorController {
 
     @GetMapping("/environments")
     public ResponseEntity<List<String>> getEnvironments() {
-        List<LogCollectTimeInfo> infos = logCollectTimeInfoMapper.selectList(null);
-        List<String> envNames = infos.stream()
-                .map(LogCollectTimeInfo::getEnvironmentName)
+        List<GrafanaMonitorRule> rules = grafanaMonitorRuleService.list();
+        List<String> envNames = rules.stream()
+                .map(GrafanaMonitorRule::getDataSourceId)
+                .distinct()
+                .map(dsId -> grafanaDataSourceMapper.selectById(dsId))
+                .filter(Objects::nonNull)
+                .map(GrafanaDataSource::getEnvironmentName)
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
