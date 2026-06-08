@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -220,6 +222,30 @@ public class GrafanaController {
             logger.error("刷新配置失败", e);
             result.put("success", false);
             result.put("message", "刷新失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    @PutMapping("/rules/{id}/last-ts")
+    @OperationLog(module = "Grafana规则", operationType = "EDIT", description = "修改采集起始时间")
+    public ResponseEntity<Map<String, Object>> updateRuleLastTs(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String dateTimeStr = request.get("lastTime");
+            if (dateTimeStr == null || dateTimeStr.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "lastTime 不能为空");
+                return ResponseEntity.badRequest().body(result);
+            }
+            LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            ruleService.updateLastTs(id, dateTime);
+            result.put("success", true);
+            result.put("message", "更新成功");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("更新采集起始时间失败", e);
+            result.put("success", false);
+            result.put("message", "更新失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(result);
         }
     }

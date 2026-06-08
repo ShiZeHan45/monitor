@@ -72,10 +72,20 @@ CREATE TABLE IF NOT EXISTS grafana_monitor_rule (
                                                enabled INTEGER DEFAULT 1, -- 是否启用 1启用 0禁用
                                                create_time TIMESTAMP, -- 创建时间
                                                update_time TIMESTAMP, -- 更新时间
+                                               last_ts BIGINT, -- 最后采集时间戳
+                                               last_time TIMESTAMP, -- 最后采集时间
+                                               total_collect_count BIGINT DEFAULT 0, -- 累计采集数
+                                               daily_collect_count BIGINT DEFAULT 0, -- 日累计采集数
+                                               collect_date TEXT, -- 采集日期
                                                FOREIGN KEY(data_source_id) REFERENCES grafana_data_source(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_rule_data_source_id
     ON grafana_monitor_rule(data_source_id);
+
+-- 迁移已有数据（从 log_collect_time_info 按 rule_name 匹配）
+UPDATE grafana_monitor_rule SET
+    last_ts = COALESCE((SELECT last_ts FROM log_collect_time_info WHERE rule_name = grafana_monitor_rule.name), 0),
+    last_time = (SELECT last_time FROM log_collect_time_info WHERE rule_name = grafana_monitor_rule.name);
 
 CREATE TABLE IF NOT EXISTS sql_data_source (
                                                id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键

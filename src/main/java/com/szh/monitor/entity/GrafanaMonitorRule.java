@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -44,4 +45,19 @@ public class GrafanaMonitorRule {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    @TableField("last_ts")
+    private Long lastTs;
+
+    @TableField("last_time")
+    private LocalDateTime lastTime;
+
+    @TableField("total_collect_count")
+    private Long totalCollectCount;
+
+    @TableField("daily_collect_count")
+    private Long dailyCollectCount;
+
+    @TableField("collect_date")
+    private LocalDate collectDate;
 }

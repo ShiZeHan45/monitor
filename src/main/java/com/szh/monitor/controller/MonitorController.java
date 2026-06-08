@@ -8,17 +8,16 @@ import com.szh.monitor.config.SQLConfig;
 import com.szh.monitor.context.ExecuteJDBCContext;
 import com.szh.monitor.context.SpringContextUtil;
 import com.szh.monitor.entity.GrafanaDataSource;
-import com.szh.monitor.entity.LogCollectTimeInfo;
 import com.szh.monitor.entity.MsgSendLog;
 import com.szh.monitor.entity.SqlDataSource;
 import com.szh.monitor.entity.SqlExecuteLog;
 import com.szh.monitor.entity.SqlExecuteRule;
 import com.szh.monitor.mapper.GrafanaDataSourceMapper;
-import com.szh.monitor.mapper.LogCollectTimeInfoMapper;
 import com.szh.monitor.mapper.MsgSendLogMapper;
 import com.szh.monitor.mapper.SqlDataSourceMapper;
 import com.szh.monitor.mapper.SqlExecuteLogMapper;
 import com.szh.monitor.mapper.SqlExecuteRuleMapper;
+import com.szh.monitor.service.GrafanaMonitorRuleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,9 +54,6 @@ public class MonitorController {
     private SqlExecuteRuleMapper sqlExecuteRuleMapper;
 
     @Autowired
-    private LogCollectTimeInfoMapper logCollectTimeInfoMapper;
-
-    @Autowired
     private ExecuteJDBCContext executeJDBCContext;
 
     @Autowired
@@ -68,6 +64,9 @@ public class MonitorController {
 
     @Autowired
     private SqlDataSourceMapper sqlDataSourceMapper;
+
+    @Autowired
+    private GrafanaMonitorRuleService grafanaMonitorRuleService;
 
     @GetMapping("/stats/today")
     public ResponseEntity<Map<String, Object>> getTodayStats() {
@@ -646,11 +645,11 @@ public class MonitorController {
 
     @GetMapping("/stats/log-collect")
     public ResponseEntity<List<Map<String, Object>>> getLogCollectStats() {
-        List<Map<String, Object>> totalStats = logCollectTimeInfoMapper.getEnvironmentCollectStats();
-        List<Map<String, Object>> dailyStats = logCollectTimeInfoMapper.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
-        
+        List<Map<String, Object>> totalStats = grafanaMonitorRuleService.getEnvironmentCollectStats();
+        List<Map<String, Object>> dailyStats = grafanaMonitorRuleService.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
+
         Map<String, Map<String, Object>> mergedStats = new java.util.LinkedHashMap<>();
-        
+
         for (Map<String, Object> stat : totalStats) {
             String envName = (String) stat.get("environmentName");
             Map<String, Object> merged = new java.util.HashMap<>();
@@ -659,7 +658,7 @@ public class MonitorController {
             merged.put("dailyCollectCount", 0L);
             mergedStats.put(envName, merged);
         }
-        
+
         for (Map<String, Object> stat : dailyStats) {
             String envName = (String) stat.get("environmentName");
             Map<String, Object> merged = mergedStats.get(envName);
@@ -671,13 +670,13 @@ public class MonitorController {
             }
             merged.put("dailyCollectCount", stat.get("dailyCollectCount"));
         }
-        
+
         return ResponseEntity.ok(new java.util.ArrayList<>(mergedStats.values()));
     }
 
     @GetMapping("/stats/log-collect/daily")
     public ResponseEntity<List<Map<String, Object>>> getDailyLogCollectStats() {
-        List<Map<String, Object>> stats = logCollectTimeInfoMapper.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
+        List<Map<String, Object>> stats = grafanaMonitorRuleService.getEnvironmentDailyCollectStats(java.time.LocalDate.now());
         return ResponseEntity.ok(stats);
     }
 

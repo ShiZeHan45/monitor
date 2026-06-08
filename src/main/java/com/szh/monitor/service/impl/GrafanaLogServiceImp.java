@@ -42,7 +42,6 @@ public class GrafanaLogServiceImp {
         return dataSourceInfoMap;
     }
     private final SendDispatchService sendDispatchService;
-    private final LogCollectTimeInfoService logCollectTimeInfoService;
     private final GrafanaDataSourceService dataSourceService;
     private final GrafanaMonitorRuleService ruleService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -53,11 +52,9 @@ public class GrafanaLogServiceImp {
     private HttpClient httpClient;
 
     public GrafanaLogServiceImp(SendDispatchService sendDispatchService,
-                               LogCollectTimeInfoService logCollectTimeInfoService,
                                GrafanaDataSourceService dataSourceService,
                                GrafanaMonitorRuleService ruleService) {
         this.sendDispatchService = sendDispatchService;
-        this.logCollectTimeInfoService = logCollectTimeInfoService;
         this.dataSourceService = dataSourceService;
         this.ruleService = ruleService;
 
@@ -121,6 +118,7 @@ public class GrafanaLogServiceImp {
                 List<MonitorRuleInfo> monitorRules = new ArrayList<>();
                 for (GrafanaMonitorRule rule : rules) {
                     MonitorRuleInfo mr = new MonitorRuleInfo();
+                    mr.setId(rule.getId());
                     mr.setName(rule.getName());
                     mr.setQueryExpr(rule.getQueryExpr());
                     mr.setKeywords(parseKeywords(rule.getKeywords()));
@@ -132,6 +130,9 @@ public class GrafanaLogServiceImp {
                 }
                 info.setMonitors(monitorRules);
                 dataSourceInfoMap.put(ds.getEnvironmentName(), info);
+            }
+            // 从规则表加载 lastTs 到内存
+            loadLastTsFromRules();
             }
             logger.info("webClient初始化完成 {}", webClientMap.keySet());
         }
@@ -175,6 +176,33 @@ public class GrafanaLogServiceImp {
 
     public void initLastTsMap(String key, Long lastTs) {
         lastTsMap.put(key, lastTs);
+    }
+
+    public void initLastTsMapForRule(Long dataSourceId, Long ruleId, Long lastTs) {
+        DataSourceInfo info = dataSourceInfoMap.values().stream()
+                .filter(ds -> ds.getId().equals(dataSourceId))
+                .findFirst().orElse(null);
+        if (info == null) return;
+        MonitorRuleInfo rule = info.getMonitors().stream()
+                .filter(r -> r.getId() != null && r.getId().equals(ruleId))
+                .findFirst().orElse(null);
+        if (rule == null) return;
+        lastTsMap.put(info.getEnvironmentName() + "_" + rule.getName(), lastTs);
+    }
+
+    private void loadLastTsFromRules() {
+        List<GrafanaMonitorRule> allRules = ruleService.list();
+        for (GrafanaMonitorRule rule : allRules) {
+            if (rule.getLastTs() != null && rule.getEnabled() == 1) {
+                DataSourceInfo ds = dataSourceInfoMap.values().stream()
+                        .filter(d -> d.getId().equals(rule.getDataSourceId()))
+                        .findFirst().orElse(null);
+                if (ds != null) {
+                    lastTsMap.put(ds.getEnvironmentName() + "_" + rule.getName(), rule.getLastTs());
+                }
+            }
+        }
+        logger.info("lastTsMap 初始化完成，共 {} 条", lastTsMap.size());
     }
 
     @Async("grafanaLog")
@@ -335,7 +363,8 @@ public class GrafanaLogServiceImp {
 
             if (batchMaxTs > lastTsMap.getOrDefault(info.getEnvironmentName() + "_" + item.getName(), globalStart)) {
                 lastTsMap.put(info.getEnvironmentName() + "_" + item.getName(), batchMaxTs);
-                logCollectTimeInfoService.updateOrSave(info.getEnvironmentName(), item.getName(), batchMaxTs, batchCount);
+                // 更新到 grafana_monitor_rule 表
+                ruleService.updateLastTs(item.getId(), info.getEnvironmentName(), info.getId(), batchMaxTs, batchCount);
             }
 
             if (!hitLogs.isEmpty()) {
@@ -399,6 +428,7 @@ public class GrafanaLogServiceImp {
     }
 
     public static class MonitorRuleInfo {
+        private Long id;
         private String name;
         private String queryExpr;
         private List<String> keywords;
@@ -407,6 +437,8 @@ public class GrafanaLogServiceImp {
         private String webhook;
         private boolean enabled = true;
 
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public String getQueryExpr() { return queryExpr; }
