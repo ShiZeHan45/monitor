@@ -199,6 +199,38 @@ public class SqlExecutorService implements ExecutorService {
     }
 
     @Override
+    public void executeSingle(String environmentName) {
+        String jdbcTemplateName = executeJDBCContext.getJBDCTemplate().get(environmentName);
+        if (jdbcTemplateName == null) {
+            logger.debug("环境 [{}] 无JdbcTemplate，跳过", environmentName);
+            return;
+        }
+        SqlDataSource dataSource = sqlDataSourceService.getByEnvironmentName(environmentName);
+        if (dataSource == null || dataSource.getIsOnline() == null || dataSource.getIsOnline() == 0) {
+            logger.debug("数据源 [{}] 离线，跳过SQL执行", environmentName);
+            return;
+        }
+        try {
+            executeSqlFiles(environmentName, jdbcTemplateName, null);
+            executeJDBCContext.clearFailedCount(environmentName);
+        } catch (SQLExecutorFailException e) {
+            int failedCount = executeJDBCContext.addFailedCount(environmentName, e.getFailSQLFiles());
+            if (failedCount > 0 && failedCount % 8 == 0) {
+                String webhook = dataSource.getWebhook();
+                sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行异常", environmentName).webhook(webhook), (StringBuilder appendMsg) -> {
+                    appendMsg.append(MessageFormat.format("执行失败{0}次 请检查网络环境", failedCount));
+                });
+            }
+            logger.error(MessageFormat.format("当前环境：{0} SQL任务执行失败 累计失败次数{1}", environmentName, failedCount), e);
+        } catch (Exception e) {
+            logger.error("数据脚本执行不可预见异常 请检查环境 ", e);
+            sendDispatchService.sendMsg(MsgForm.builder(MsgType.ERROR, "数据脚本执行不可预见异常", environmentName).webhook(dataSource.getWebhook()), (StringBuilder appendMsg) -> {
+                appendMsg.append("数据脚本执行不可预见异常 请检查环境");
+            });
+        }
+    }
+
+    @Override
     public void executeRetry() {
         execute((environmentName, jdbcTemplateName) -> {
             List<String> failFiles = executeJDBCContext.getFailFiles(environmentName);

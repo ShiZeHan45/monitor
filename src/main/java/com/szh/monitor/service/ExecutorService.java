@@ -8,4 +8,8 @@ public interface ExecutorService {
     void executeRetry();
 
     String getTitle();
+
+    default void executeSingle(String environmentName) {
+        execute();
+    }
 }
