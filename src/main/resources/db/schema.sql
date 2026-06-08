@@ -82,6 +82,12 @@ CREATE TABLE IF NOT EXISTS grafana_monitor_rule (
 CREATE INDEX IF NOT EXISTS idx_rule_data_source_id
     ON grafana_monitor_rule(data_source_id);
 
+-- 从 log_collect_time_info 迁移历史 last_ts/last_time 到 grafana_monitor_rule（未迁移的才迁）
+UPDATE grafana_monitor_rule SET
+    last_ts = COALESCE((SELECT last_ts FROM log_collect_time_info WHERE rule_name = grafana_monitor_rule.name AND last_ts IS NOT NULL AND last_ts > 0), last_ts),
+    last_time = COALESCE((SELECT last_time FROM log_collect_time_info WHERE rule_name = grafana_monitor_rule.name), last_time)
+WHERE EXISTS (SELECT 1 FROM log_collect_time_info WHERE rule_name = grafana_monitor_rule.name);
+
 
 CREATE TABLE IF NOT EXISTS sql_data_source (
                                                id INTEGER PRIMARY KEY AUTOINCREMENT, -- 主键
