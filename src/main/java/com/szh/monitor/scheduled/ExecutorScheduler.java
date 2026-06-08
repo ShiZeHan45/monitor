@@ -34,7 +34,6 @@ public class ExecutorScheduler {
 
     @Async("executorSQL")
     @Scheduled(fixedRate=240_000)
-    @Transactional("primaryTransactionManager")
     public void executor() {
         Set<String> environmentNameList = executeJDBCContext.getJBDCTemplate().keySet();
         for (String environmentName : environmentNameList) {
