@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -165,6 +167,36 @@ public class SqlExecutorService implements ExecutorService {
                 return;
             }
 
+            // 检查是否在配置的执行星期内
+            int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+            if (dataSource.getWeek() != null && !dataSource.getWeek().isEmpty()) {
+                try {
+                    List<Integer> week = objectMapper.readValue(dataSource.getWeek(), new com.fasterxml.jackson.core.type.TypeReference<List<Integer>>() {});
+                    if (!week.contains(dayOfWeek)) {
+                        logger.debug("数据源 [{}] 不在配置的执行星期内，跳过SQL执行", environmentName);
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.warn("解析数据源 [{}] 的星期配置失败", environmentName);
+                }
+            }
+
+            // 检查是否在配置的执行时间段内
+            LocalTime now = LocalTime.now();
+            if (dataSource.getStartTime() != null && !dataSource.getStartTime().isEmpty()
+                    && dataSource.getEndTime() != null && !dataSource.getEndTime().isEmpty()) {
+                try {
+                    LocalTime start = LocalTime.parse(dataSource.getStartTime());
+                    LocalTime end = LocalTime.parse(dataSource.getEndTime());
+                    if (now.isBefore(start) || now.isAfter(end)) {
+                        logger.debug("数据源 [{}] 不在配置的执行时间段内，跳过SQL执行", environmentName);
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.warn("解析数据源 [{}] 的时间段配置失败", environmentName);
+                }
+            }
+
             // 获取数据源级webhook（可能为空，为空时推送使用全局webhook）
             String webhook = dataSource.getWebhook();
 
@@ -210,6 +242,37 @@ public class SqlExecutorService implements ExecutorService {
             logger.debug("数据源 [{}] 离线，跳过SQL执行", environmentName);
             return;
         }
+
+        // 检查是否在配置的执行星期内
+        int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+        if (dataSource.getWeek() != null && !dataSource.getWeek().isEmpty()) {
+            try {
+                List<Integer> week = objectMapper.readValue(dataSource.getWeek(), new com.fasterxml.jackson.core.type.TypeReference<List<Integer>>() {});
+                if (!week.contains(dayOfWeek)) {
+                    logger.debug("数据源 [{}] 不在配置的执行星期内，跳过SQL执行", environmentName);
+                    return;
+                }
+            } catch (Exception e) {
+                logger.warn("解析数据源 [{}] 的星期配置失败", environmentName);
+            }
+        }
+
+        // 检查是否在配置的执行时间段内
+        LocalTime now = LocalTime.now();
+        if (dataSource.getStartTime() != null && !dataSource.getStartTime().isEmpty()
+                && dataSource.getEndTime() != null && !dataSource.getEndTime().isEmpty()) {
+            try {
+                LocalTime start = LocalTime.parse(dataSource.getStartTime());
+                LocalTime end = LocalTime.parse(dataSource.getEndTime());
+                if (now.isBefore(start) || now.isAfter(end)) {
+                    logger.debug("数据源 [{}] 不在配置的执行时间段内，跳过SQL执行", environmentName);
+                    return;
+                }
+            } catch (Exception e) {
+                logger.warn("解析数据源 [{}] 的时间段配置失败", environmentName);
+            }
+        }
+
         try {
             executeSqlFiles(environmentName, jdbcTemplateName, null);
             executeJDBCContext.clearFailedCount(environmentName);
