@@ -239,6 +239,19 @@ public class GrafanaController {
             }
             LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             ruleService.updateLastTs(id, dateTime);
+
+            // 直接刷新内存中的 lastTsMap，不依赖 dataSourceInfoMap 缓存
+            GrafanaMonitorRule rule = ruleService.getById(id);
+            if (rule != null && rule.getDataSourceId() != null && rule.getLastTs() != null) {
+                GrafanaDataSource ds = dataSourceService.getById(rule.getDataSourceId());
+                if (ds != null) {
+                    grafanaLogService.initLastTsMap(
+                        ds.getEnvironmentName() + "_" + rule.getName(),
+                        rule.getLastTs()
+                    );
+                }
+            }
+
             result.put("success", true);
             result.put("message", "更新成功");
             return ResponseEntity.ok(result);
