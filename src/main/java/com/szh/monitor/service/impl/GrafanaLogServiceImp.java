@@ -252,9 +252,6 @@ public class GrafanaLogServiceImp {
 
         LocalDateTime globalStartTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
         LocalDateTime globalEndTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault());
-        if (globalStartTime.plusMinutes(TIME).isBefore(globalEndTime)) {
-            globalEndTime = globalStartTime.plusMinutes(TIME);
-        }
         logger.debug("环境：[{}] 微服务：[{}] 开始获取时间区间[{}~{}]内产生的日志进行分析", info.getEnvironmentName(), item.getName(),
                 globalStartTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 globalEndTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
