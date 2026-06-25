@@ -244,10 +244,20 @@ public class GrafanaLogServiceImp {
                 .atZone(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli();
-        long globalStart = lastTsMap.getOrDefault(info.getEnvironmentName() + "_" + item.getName(), LocalDateTime.now().minusMinutes(TIME)
+
+        // 先从缓存取 lastTs，取不到直接从 DB 查，兜底再用当前时间-30分钟
+        Long cachedTs = lastTsMap.get(info.getEnvironmentName() + "_" + item.getName());
+        if (cachedTs == null) {
+            GrafanaMonitorRule ruleRecord = ruleService.getById(item.getId());
+            if (ruleRecord != null && ruleRecord.getLastTs() != null) {
+                cachedTs = ruleRecord.getLastTs();
+                lastTsMap.put(info.getEnvironmentName() + "_" + item.getName(), cachedTs);
+            }
+        }
+        long globalStart = cachedTs != null ? cachedTs : LocalDateTime.now().minusMinutes(TIME)
                 .atZone(ZoneId.systemDefault())
                 .toInstant()
-                .toEpochMilli());
+                .toEpochMilli();
 
         LocalDateTime globalStartTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(globalStart), ZoneId.systemDefault());
         LocalDateTime globalEndTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), ZoneId.systemDefault());
