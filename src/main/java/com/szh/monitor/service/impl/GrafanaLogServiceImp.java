@@ -201,7 +201,6 @@ public class GrafanaLogServiceImp {
         logger.info("lastTsMap 初始化完成，共 {} 条", lastTsMap.size());
     }
 
-    @Async("grafanaLog")
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
         synchronized (webClientMap) {
