@@ -602,11 +602,10 @@
                 const response = await fetch(`/api/push-records?page=1&size=100&date=${today}`);
                 const data = await response.json();
 
-                const keyword = type === 'sql' ? 'sql' : '日志';
+                const keyword = type === 'sql' ? 'text' : 'markdown';
                 const filteredRecords = (data.records || []).filter(record => {
-                    const content = (record.content || '').toLowerCase();
                     const matchesEnv = record.environmentName === envName;
-                    const matchesType = type === 'sql' ? content.includes('sql') : content.includes('日志');
+                    const matchesType = record.msgType === keyword;
                     return matchesEnv && matchesType;
                 });
 

@@ -189,12 +189,11 @@ public class MonitorController {
                 envMap.put(env, stats);
             }
 
-            String content = log.getContent() != null ? log.getContent().toLowerCase() : "";
-            if (content.contains("sql")) {
-                stats.merge("sqlPushCount", 1L, (a, b) -> (Long) a + (Long) b);
-            }
-            if (content.contains("日志")) {
+            // 使用 msgType 区分：text=SQL推送，markdown=日志推送
+            if ("markdown".equals(log.getMsgType())) {
                 stats.merge("logPushCount", 1L, (a, b) -> (Long) a + (Long) b);
+            } else {
+                stats.merge("sqlPushCount", 1L, (a, b) -> (Long) a + (Long) b);
             }
         }
 
@@ -607,12 +606,10 @@ public class MonitorController {
         long sqlExceptionCount = 0;
         long logExceptionCount = 0;
         for (MsgSendLog log : todayLogs) {
-            String content = log.getContent() != null ? log.getContent().toLowerCase() : "";
-            if (content.contains("sql")) {
-                sqlExceptionCount++;
-            }
-            if (content.contains("日志")) {
+            if ("markdown".equals(log.getMsgType())) {
                 logExceptionCount++;
+            } else {
+                sqlExceptionCount++;
             }
         }
         result.put("todaySqlExceptionCount", sqlExceptionCount);
