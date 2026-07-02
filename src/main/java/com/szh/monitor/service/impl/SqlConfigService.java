@@ -72,14 +72,14 @@ public class SqlConfigService {
 
                     // 配置HikariCP自动重连
                     config.setInitializationFailTimeout(-1);
-                    config.setConnectionTimeout(30000);
+                    config.setConnectionTimeout(10000);
                     config.setValidationTimeout(5000);
                     config.setConnectionTestQuery("SELECT 1");
-                    config.setMaxLifetime(120000);
+                    config.setMaxLifetime(60000);
                     config.setIdleTimeout(30000);
                     config.setMinimumIdle(0);
-                    config.setMaximumPoolSize(1);
-                    config.setKeepaliveTime(30000);
+                    config.setMaximumPoolSize(2);
+                    config.setKeepaliveTime(15000);
 
                     HikariDataSource dataSource = new HikariDataSource(config);
                     dataSourceMap.put(ds.getEnvironmentName(), dataSource);
