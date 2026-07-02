@@ -80,6 +80,7 @@ public class SqlDataSourceHealthChecker {
             dataSourceService.updateOnlineStatus(ds.getId(), true);
 
         } catch (Exception e) {
+            logger.error("数据源 [{}] 健康检查异常: {}", environmentName, e.getMessage());
             dataSourceService.updateOnlineStatus(ds.getId(), false);
         }
     }
