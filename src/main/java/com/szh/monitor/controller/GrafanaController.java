@@ -171,6 +171,7 @@ public class GrafanaController {
             if (success) {
                 result.put("success", true);
                 result.put("message", "更新成功");
+                grafanaLogService.refreshConfig();
                 return ResponseEntity.ok(result);
             } else {
                 result.put("success", false);
