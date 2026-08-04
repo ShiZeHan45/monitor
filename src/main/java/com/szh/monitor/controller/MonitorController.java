@@ -279,18 +279,26 @@ public class MonitorController {
 
     @GetMapping("/environments")
     public ResponseEntity<List<String>> getEnvironments() {
+        Set<String> envNames = new TreeSet<>();
+
+        // Grafana 监控规则关联的环境
         List<GrafanaMonitorRule> rules = grafanaMonitorRuleService.list();
-        List<String> envNames = rules.stream()
+        rules.stream()
                 .map(GrafanaMonitorRule::getDataSourceId)
                 .distinct()
                 .map(dsId -> grafanaDataSourceMapper.selectById(dsId))
                 .filter(Objects::nonNull)
                 .map(GrafanaDataSource::getEnvironmentName)
                 .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(envNames);
+                .forEach(envNames::add);
+
+        // SQL 数据源的环境
+        sqlDataSourceMapper.selectList(null).stream()
+                .map(SqlDataSource::getEnvironmentName)
+                .filter(Objects::nonNull)
+                .forEach(envNames::add);
+
+        return ResponseEntity.ok(new ArrayList<>(envNames));
     }
 
     @GetMapping("/sql-rules/check-unique")
