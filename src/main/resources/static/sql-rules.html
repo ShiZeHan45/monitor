@@ -152,7 +152,7 @@
 
         async function loadEnvironments() {
             try {
-                const response = await fetch('/api/environments');
+                const response = await fetch('/api/sql/environments');
                 environments = await response.json();
                 updateEnvironmentSelect('environmentName', environments);
                 updateEnvironmentFilter(environments);

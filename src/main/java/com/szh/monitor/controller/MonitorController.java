@@ -301,6 +301,16 @@ public class MonitorController {
         return ResponseEntity.ok(new ArrayList<>(envNames));
     }
 
+    @GetMapping("/sql/environments")
+    public ResponseEntity<List<String>> getSqlEnvironments() {
+        return ResponseEntity.ok(sqlDataSourceMapper.selectList(null).stream()
+                .map(SqlDataSource::getEnvironmentName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList()));
+    }
+
     @GetMapping("/sql-rules/check-unique")
     public ResponseEntity<Map<String, Object>> checkRuleUnique(
             @RequestParam String environmentName,
