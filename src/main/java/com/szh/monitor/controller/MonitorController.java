@@ -223,10 +223,6 @@ public class MonitorController {
 
         query.orderByDesc(MsgSendLog::getCreateTime);
         IPage<MsgSendLog> result = msgSendLogMapper.selectPage(pageRequest, query);
-        
-        long total = msgSendLogService.countLogs(date, environment);
-        result.setTotal(total);
-        result.setPages((total + size - 1) / size);
 
         return ResponseEntity.ok(result);
     }

@@ -1,5 +1,6 @@
 package com.szh.monitor.config;
 
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -32,12 +33,15 @@ public class SQLiteDataSourceConfig {
     }
 
     @Bean(name = "sqliteSqlSessionFactory")
-    public SqlSessionFactory sqliteSqlSessionFactory(@Qualifier("sqliteDataSource") DataSource dataSource) throws Exception {
+    public SqlSessionFactory sqliteSqlSessionFactory(@Qualifier("sqliteDataSource") DataSource dataSource,
+                                                     MybatisPlusInterceptor mybatisPlusInterceptor) throws Exception {
         MybatisSqlSessionFactoryBean bean = new MybatisSqlSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setMapperLocations(
                 new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/*.xml")
         );
+        // 手动创建SqlSessionFactory时不会自动挂载分页插件，需显式设置
+        bean.setPlugins(mybatisPlusInterceptor);
         return bean.getObject();
     }
 
