@@ -148,8 +148,16 @@
                             <input type="text" id="dsEndTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="20:00">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">星期 (逗号分隔)</label>
-                            <input type="text" id="dsWeek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="1,2,3,4,5,6,7">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">星期</label>
+                            <div id="dsWeekPicker" class="flex items-center space-x-2">
+                                <button type="button" data-week="1" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">一</button>
+                                <button type="button" data-week="2" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">二</button>
+                                <button type="button" data-week="3" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">三</button>
+                                <button type="button" data-week="4" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">四</button>
+                                <button type="button" data-week="5" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">五</button>
+                                <button type="button" data-week="6" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">六</button>
+                                <button type="button" data-week="7" class="week-option w-9 h-9 rounded-full bg-gray-200 text-white text-sm font-medium hover:bg-gray-300 transition-colors">日</button>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">是否启用</label>
@@ -437,9 +445,9 @@
                 document.getElementById('dsEndTime').value = ds.endTime || '';
                 try {
                     const weekArray = JSON.parse(ds.week);
-                    document.getElementById('dsWeek').value = Array.isArray(weekArray) ? weekArray.join(',') : '1,2,3,4,5,6,7';
+                    setWeekPicker(Array.isArray(weekArray) ? weekArray : [1,2,3,4,5,6,7]);
                 } catch (e) {
-                    document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
+                    setWeekPicker([1,2,3,4,5,6,7]);
                 }
                 document.getElementById('dsEnabled').value = ds.enabled;
                 document.getElementById('dataSourceModal').classList.remove('hidden');
@@ -513,11 +521,29 @@
             document.getElementById('dsWebhook').value = '';
             document.getElementById('dsStartTime').value = '';
             document.getElementById('dsEndTime').value = '';
-            document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
+            setWeekPicker([1,2,3,4,5,6,7]);
             document.getElementById('dsEnabled').value = '1';
             // 重置数据源ID的状态（红边/图标）
             resetDsIdStatus();
             document.getElementById('dataSourceModal').classList.remove('hidden');
+        }
+
+        // 星期多选组件
+        function setWeekPicker(weekArray) {
+            document.querySelectorAll('#dsWeekPicker .week-option').forEach(btn => {
+                const week = parseInt(btn.dataset.week);
+                const selected = weekArray.includes(week);
+                btn.classList.toggle('bg-blue-600', selected);
+                btn.classList.toggle('bg-gray-200', !selected);
+            });
+        }
+
+        function getWeekPickerValue() {
+            const weeks = [];
+            document.querySelectorAll('#dsWeekPicker .week-option.bg-blue-600').forEach(btn => {
+                weeks.push(parseInt(btn.dataset.week));
+            });
+            return weeks.length > 0 ? weeks : [1,2,3,4,5,6,7];
         }
 
         function resetDsIdStatus() {
@@ -602,8 +628,7 @@
 
         async function saveDataSource() {
             const id = document.getElementById('dsId').value;
-            const weekValue = document.getElementById('dsWeek').value;
-            const weekArray = weekValue ? weekValue.split(',').map(w => parseInt(w.trim())).filter(w => !isNaN(w)) : [1,2,3,4,5,6,7];
+            const weekArray = getWeekPickerValue();
             
             const data = {
                 id: id ? parseInt(id) : null,
@@ -795,6 +820,15 @@
                 alert('刷新失败');
             }
         }
+
+        // 星期多选点击切换
+        document.querySelectorAll('#dsWeekPicker .week-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const selected = btn.classList.contains('bg-blue-600');
+                btn.classList.toggle('bg-blue-600', !selected);
+                btn.classList.toggle('bg-gray-200', selected);
+            });
+        });
 
         loadDataSources();
     </script>
