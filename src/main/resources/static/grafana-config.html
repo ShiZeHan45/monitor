@@ -523,7 +523,9 @@
         function resetDsIdStatus() {
             const dsIdEl = document.getElementById('dsDatasourceId');
             dsIdEl.classList.remove('border-red-400', 'border-green-500');
-            document.getElementById('dsIdStatus').innerHTML = '';
+            const statusEl = document.getElementById('dsIdStatus');
+            statusEl.innerHTML = '';
+            statusEl.title = '';
         }
 
         function closeDataSourceModal() {
@@ -569,7 +571,8 @@
                     dsIdEl.title = `已获取: ${escapeHtml(result.name || 'loki')}`;
                 } else {
                     dsIdEl.value = '';
-                    statusEl.innerHTML = `<i class="fa fa-exclamation-circle text-red-500" title="${escapeHtml(result.message || '获取失败')}"></i>`;
+                    statusEl.innerHTML = '<i class="fa fa-exclamation-circle text-red-500"></i>';
+                    statusEl.title = escapeHtml(result.message || '获取失败');
                     dsIdEl.classList.add('border-red-400');
                     dsIdEl.classList.remove('border-green-500');
                     showToast(result.message || '获取Loki数据源ID失败', 'error');
@@ -577,7 +580,8 @@
             } catch (error) {
                 console.error('获取数据源ID失败:', error);
                 dsIdEl.value = '';
-                statusEl.innerHTML = `<i class="fa fa-exclamation-circle text-red-500" title="获取失败"></i>`;
+                statusEl.innerHTML = '<i class="fa fa-exclamation-circle text-red-500"></i>';
+                statusEl.title = '获取失败';
                 dsIdEl.classList.add('border-red-400');
                 dsIdEl.classList.remove('border-green-500');
                 showToast('获取Loki数据源ID失败，请检查网络或配置', 'error');
