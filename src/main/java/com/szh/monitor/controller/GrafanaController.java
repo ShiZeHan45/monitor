@@ -13,6 +13,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -93,6 +94,26 @@ public class GrafanaController {
             result.put("datasourceId", lokiDs.get("id"));
             result.put("name", lokiDs.get("name"));
             result.put("type", lokiDs.get("type"));
+            return ResponseEntity.ok(result);
+        } catch (HttpClientErrorException e) {
+            logger.error("获取Loki数据源ID失败: HTTP {}", e.getStatusCode());
+            // 解析Grafana返回的错误JSON，只提取message字段，避免带上<EOL>等网关标记
+            String errorMsg = "HTTP " + e.getStatusCode().value();
+            try {
+                String body = e.getResponseBodyAsString();
+                if (body != null && !body.isEmpty()) {
+                    Map<String, Object> errBody = new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readValue(body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                    Object m = errBody.get("message");
+                    if (m != null) {
+                        errorMsg = m.toString();
+                    }
+                }
+            } catch (Exception ignore) {
+                // 解析失败则退化为HTTP状态码提示
+            }
+            result.put("success", false);
+            result.put("message", "获取失败: " + errorMsg);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             logger.error("获取Loki数据源ID失败", e);
