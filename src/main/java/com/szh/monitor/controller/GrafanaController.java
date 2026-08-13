@@ -9,8 +9,11 @@ import com.szh.monitor.service.GrafanaMonitorRuleService;
 import com.szh.monitor.service.impl.GrafanaLogServiceImp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
+import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,16 +30,76 @@ public class GrafanaController {
     private final GrafanaDataSourceService dataSourceService;
     private final GrafanaMonitorRuleService ruleService;
     private final GrafanaLogServiceImp grafanaLogService;
+    private final RestTemplate restTemplate;
 
-    public GrafanaController(GrafanaDataSourceService dataSourceService, GrafanaMonitorRuleService ruleService, GrafanaLogServiceImp grafanaLogService) {
+    public GrafanaController(GrafanaDataSourceService dataSourceService, GrafanaMonitorRuleService ruleService, GrafanaLogServiceImp grafanaLogService, RestTemplate restTemplate) {
         this.dataSourceService = dataSourceService;
         this.ruleService = ruleService;
         this.grafanaLogService = grafanaLogService;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping("/datasources")
     public ResponseEntity<List<GrafanaDataSource>> listDataSources() {
         return ResponseEntity.ok(dataSourceService.list());
+    }
+
+    @GetMapping("/datasources/loki-id")
+    public ResponseEntity<Map<String, Object>> getLokiDataSourceId(
+            @RequestParam String url,
+            @RequestParam String username,
+            @RequestParam String password) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String baseUrl = url;
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBasicAuth(username, password);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            List<Map<String, Object>> datasources = restTemplate.exchange(
+                    baseUrl + "/api/datasources",
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            ).getBody();
+
+            if (datasources == null || datasources.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "未获取到数据源列表");
+                return ResponseEntity.ok(result);
+            }
+
+            // 匹配 type=loki 或 name 包含 loki 的数据源
+            Map<String, Object> lokiDs = datasources.stream()
+                    .filter(ds -> {
+                        Object type = ds.get("type");
+                        Object name = ds.get("name");
+                        boolean typeLoki = type != null && type.toString().toLowerCase().contains("loki");
+                        boolean nameLoki = name != null && name.toString().toLowerCase().contains("loki");
+                        return typeLoki || nameLoki;
+                    })
+                    .findFirst().orElse(null);
+
+            if (lokiDs == null) {
+                result.put("success", false);
+                result.put("message", "未找到type或name为loki的数据源，请确认Grafana已配置Loki数据源");
+                return ResponseEntity.ok(result);
+            }
+
+            result.put("success", true);
+            result.put("datasourceId", lokiDs.get("id"));
+            result.put("name", lokiDs.get("name"));
+            result.put("type", lokiDs.get("type"));
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("获取Loki数据源ID失败", e);
+            result.put("success", false);
+            result.put("message", "获取失败: " + e.getMessage());
+            return ResponseEntity.ok(result);
+        }
     }
 
     @GetMapping("/datasources/{id}")
