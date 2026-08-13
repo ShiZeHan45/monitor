@@ -443,8 +443,8 @@
                 }
                 document.getElementById('dsEnabled').value = ds.enabled;
                 document.getElementById('dataSourceModal').classList.remove('hidden');
-                // 编辑模式：保留原ID，不自动覆盖
-                document.getElementById('dsIdStatus').innerHTML = '';
+                // 编辑模式：保留原ID，重置红边/图标状态，不自动覆盖
+                resetDsIdStatus();
                 if (ds.datasourceId) {
                     document.getElementById('dsDatasourceId').value = ds.datasourceId;
                 }
@@ -515,7 +515,15 @@
             document.getElementById('dsEndTime').value = '';
             document.getElementById('dsWeek').value = '1,2,3,4,5,6,7';
             document.getElementById('dsEnabled').value = '1';
+            // 重置数据源ID的状态（红边/图标）
+            resetDsIdStatus();
             document.getElementById('dataSourceModal').classList.remove('hidden');
+        }
+
+        function resetDsIdStatus() {
+            const dsIdEl = document.getElementById('dsDatasourceId');
+            dsIdEl.classList.remove('border-red-400', 'border-green-500');
+            document.getElementById('dsIdStatus').innerHTML = '';
         }
 
         function closeDataSourceModal() {
