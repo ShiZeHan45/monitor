@@ -59,9 +59,14 @@
                             <option value="">全部环境</option>
                         </select>
                     </div>
-                    <button onclick="showAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
-                        <i class="fa fa-plus mr-2"></i>添加规则
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="showCopyModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center">
+                            <i class="fa fa-copy mr-2"></i>批量复制规则
+                        </button>
+                        <button onclick="showAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                            <i class="fa fa-plus mr-2"></i>添加规则
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -142,6 +147,44 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800">批量复制规则</h3>
+                <button onclick="closeCopyModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">源环境（复制来源）*</label>
+                        <select id="copySourceEnv" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">请选择源环境</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">目标环境（复制到）*</label>
+                        <select id="copyTargetEnv" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">请选择目标环境</option>
+                        </select>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        <i class="fa fa-info-circle mr-1"></i>目标环境已存在的规则将自动跳过，不会重复。
+                    </p>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" onclick="closeCopyModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        取消
+                    </button>
+                    <button onclick="copyRules()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        开始复制
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -295,6 +338,61 @@
 
         function closeModal() {
             document.getElementById('modal').classList.add('hidden');
+        }
+
+        function showCopyModal() {
+            // 重新填充源/目标环境下拉
+            const source = document.getElementById('copySourceEnv');
+            const target = document.getElementById('copyTargetEnv');
+            source.innerHTML = '<option value="">请选择源环境</option>';
+            target.innerHTML = '<option value="">请选择目标环境</option>';
+            environments.forEach(env => {
+                source.appendChild(new Option(env, env));
+                target.appendChild(new Option(env, env));
+            });
+            document.getElementById('copyModal').classList.remove('hidden');
+        }
+
+        function closeCopyModal() {
+            document.getElementById('copyModal').classList.add('hidden');
+        }
+
+        async function copyRules() {
+            const sourceEnvironment = document.getElementById('copySourceEnv').value;
+            const targetEnvironment = document.getElementById('copyTargetEnv').value;
+            if (!sourceEnvironment || !targetEnvironment) {
+                alert('请选择源环境和目标环境');
+                return;
+            }
+            if (sourceEnvironment === targetEnvironment) {
+                alert('源环境和目标环境不能相同');
+                return;
+            }
+            if (!confirm(`确定将环境【${sourceEnvironment}】的全部规则复制到【${targetEnvironment}】吗？`)) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/sql-rules/copy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sourceEnvironment, targetEnvironment })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    closeCopyModal();
+                    // 若筛选的是目标环境则刷新列表
+                    const filter = document.getElementById('envFilter');
+                    if (!filter.value || filter.value === targetEnvironment) {
+                        loadRules();
+                    }
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('复制规则失败:', error);
+                alert('复制失败');
+            }
         }
 
         document.getElementById('ruleForm').addEventListener('submit', async (e) => {

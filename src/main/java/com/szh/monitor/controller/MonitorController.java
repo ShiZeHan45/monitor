@@ -329,6 +329,70 @@ public class MonitorController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/sql-rules/copy")
+    @OperationLog(module = "SQL规则", operationType = "CREATE", description = "批量复制规则到新环境")
+    public ResponseEntity<Map<String, Object>> copySqlRules(@RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+        String sourceEnvironment = request.get("sourceEnvironment");
+        String targetEnvironment = request.get("targetEnvironment");
+
+        if (sourceEnvironment == null || sourceEnvironment.isEmpty()
+                || targetEnvironment == null || targetEnvironment.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "源环境和目标环境不能为空");
+            return ResponseEntity.badRequest().body(result);
+        }
+        if (sourceEnvironment.equals(targetEnvironment)) {
+            result.put("success", false);
+            result.put("message", "源环境和目标环境不能相同");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        // 查源环境的全部规则
+        List<SqlExecuteRule> sourceRules = sqlExecuteRuleMapper.selectList(
+                new LambdaQueryWrapper<SqlExecuteRule>()
+                        .eq(SqlExecuteRule::getEnvironmentName, sourceEnvironment));
+
+        if (sourceRules.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "源环境 [" + sourceEnvironment + "] 没有规则可复制");
+            return ResponseEntity.ok(result);
+        }
+
+        // 查目标环境已存在的规则（environment_name + sql_file_name 防重）
+        List<SqlExecuteRule> targetRules = sqlExecuteRuleMapper.selectList(
+                new LambdaQueryWrapper<SqlExecuteRule>()
+                        .eq(SqlExecuteRule::getEnvironmentName, targetEnvironment));
+        Set<String> existingKeys = targetRules.stream()
+                .map(r -> r.getEnvironmentName() + "|" + r.getSqlFileName())
+                .collect(Collectors.toSet());
+
+        int insertCount = 0;
+        int skipCount = 0;
+        for (SqlExecuteRule sourceRule : sourceRules) {
+            String key = targetEnvironment + "|" + sourceRule.getSqlFileName();
+            if (existingKeys.contains(key)) {
+                skipCount++;
+                continue;
+            }
+            SqlExecuteRule newRule = new SqlExecuteRule();
+            newRule.setEnvironmentName(targetEnvironment);
+            newRule.setSqlFileName(sourceRule.getSqlFileName());
+            newRule.setExecuteLimit(sourceRule.getExecuteLimit());
+            newRule.setExecuteStartTime(sourceRule.getExecuteStartTime());
+            newRule.setExecuteEndTime(sourceRule.getExecuteEndTime());
+            newRule.setExecuteFrequency(sourceRule.getExecuteFrequency());
+            sqlExecuteRuleMapper.insert(newRule);
+            insertCount++;
+        }
+
+        result.put("success", true);
+        result.put("message", "复制完成：新增 " + insertCount + " 条，跳过重复 " + skipCount + " 条");
+        result.put("insertCount", insertCount);
+        result.put("skipCount", skipCount);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/sql-files")
     public ResponseEntity<List<String>> getSqlFiles() {
         File directory = null;
