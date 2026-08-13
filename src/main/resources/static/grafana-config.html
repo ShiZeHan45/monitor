@@ -441,8 +441,8 @@
                 document.getElementById('dsUsername').value = ds.username || '';
                 document.getElementById('dsPassword').value = ds.password || '';
                 document.getElementById('dsWebhook').value = ds.webhook || '';
-                document.getElementById('dsStartTime').value = ds.startTime || '';
-                document.getElementById('dsEndTime').value = ds.endTime || '';
+                document.getElementById('dsStartTime').value = ds.startTime || '08:00';
+                document.getElementById('dsEndTime').value = ds.endTime || '20:00';
                 try {
                     const weekArray = JSON.parse(ds.week);
                     setWeekPicker(Array.isArray(weekArray) ? weekArray : [1,2,3,4,5,6,7]);
