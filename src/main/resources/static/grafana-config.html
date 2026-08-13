@@ -558,10 +558,10 @@
                     statusEl.innerHTML = `<i class="fa fa-check-circle text-green-500"></i>`;
                     dsIdEl.classList.remove('border-red-400');
                     dsIdEl.classList.add('border-green-500');
-                    dsIdEl.title = `已获取: ${result.name || 'loki'}`;
+                    dsIdEl.title = `已获取: ${escapeHtml(result.name || 'loki')}`;
                 } else {
                     dsIdEl.value = '';
-                    statusEl.innerHTML = `<i class="fa fa-exclamation-circle text-red-500" title="${result.message || '获取失败'}"></i>`;
+                    statusEl.innerHTML = `<i class="fa fa-exclamation-circle text-red-500" title="${escapeHtml(result.message || '获取失败')}"></i>`;
                     dsIdEl.classList.add('border-red-400');
                     dsIdEl.classList.remove('border-green-500');
                     showToast(result.message || '获取Loki数据源ID失败', 'error');
