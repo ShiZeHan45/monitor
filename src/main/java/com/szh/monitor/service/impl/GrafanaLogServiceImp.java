@@ -203,36 +203,40 @@ public class GrafanaLogServiceImp {
 
     @Scheduled(initialDelay = 10_000, fixedRate = 30_000)
     public void supplement() {
+        // 锁内只做快照，网络调用放到锁外执行，避免长时间占用webClientMap锁
+        // 阻塞refreshConfig()（如编辑规则保存时的配置刷新）
+        List<Map.Entry<String, WebClient>> snapshot;
         synchronized (webClientMap) {
-            for (Map.Entry<String, WebClient> entry : webClientMap.descendingMap().entrySet()) {
-                String environmentName = entry.getKey();
-                //检查数据源是否在线
-                GrafanaDataSource dataSource = dataSourceService.getByEnvironmentName(environmentName);
-                if (dataSource == null || dataSource.getIsOnline() == null || dataSource.getIsOnline() == 0) {
-                    logger.debug("数据源 [{}] 离线，跳过日志采集", environmentName);
-                    continue;
-                }
+            snapshot = new ArrayList<>(webClientMap.descendingMap().entrySet());
+        }
+        for (Map.Entry<String, WebClient> entry : snapshot) {
+            String environmentName = entry.getKey();
+            //检查数据源是否在线
+            GrafanaDataSource dataSource = dataSourceService.getByEnvironmentName(environmentName);
+            if (dataSource == null || dataSource.getIsOnline() == null || dataSource.getIsOnline() == 0) {
+                logger.debug("数据源 [{}] 离线，跳过日志采集", environmentName);
+                continue;
+            }
 
-                DataSourceInfo info = dataSourceInfoMap.get(entry.getKey());
-                if (info == null || info.getMonitors() == null) {
+            DataSourceInfo info = dataSourceInfoMap.get(entry.getKey());
+            if (info == null || info.getMonitors() == null) {
+                continue;
+            }
+            for (MonitorRuleInfo item : info.getMonitors()) {
+                if (!item.isEnabled()) {
                     continue;
                 }
-                for (MonitorRuleInfo item : info.getMonitors()) {
-                    if (!item.isEnabled()) {
-                        continue;
-                    }
-                    int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
-                    if (info.getWeek() != null && !info.getWeek().contains(dayOfWeek)) {
-                        continue;
-                    }
-                    if (info.getStartTime() != null && (LocalTime.now().isBefore(info.getStartTime()) || LocalTime.now().isAfter(info.getEndTime()))) {
-                        continue;
-                    }
-                    try {
-                        processMonitor(item, entry.getValue(), info);
-                    } catch (Exception e) {
-                        logger.error("Monitor {} error", item.getName(), e);
-                    }
+                int dayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+                if (info.getWeek() != null && !info.getWeek().contains(dayOfWeek)) {
+                    continue;
+                }
+                if (info.getStartTime() != null && (LocalTime.now().isBefore(info.getStartTime()) || LocalTime.now().isAfter(info.getEndTime()))) {
+                    continue;
+                }
+                try {
+                    processMonitor(item, entry.getValue(), info);
+                } catch (Exception e) {
+                    logger.error("Monitor {} error", item.getName(), e);
                 }
             }
         }
