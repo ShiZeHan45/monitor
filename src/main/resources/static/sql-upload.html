@@ -115,13 +115,18 @@
                     <textarea id="editContent" class="w-full h-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm resize-none"></textarea>
                 </div>
             </div>
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
-                <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    取消
+            <div class="p-6 border-t border-gray-200 flex items-center justify-between">
+                <button onclick="runDebugFromEdit()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                    <i class="fa fa-play mr-2"></i>运行调试
                 </button>
-                <button onclick="saveFileContent()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    保存
-                </button>
+                <div class="flex space-x-4">
+                    <button onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        取消
+                    </button>
+                    <button onclick="saveFileContent()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        保存
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -470,6 +475,27 @@
             document.getElementById('editModal').classList.add('hidden');
             document.getElementById('editContent').value = '';
             currentEditingFile = '';
+        }
+
+        async function runDebugFromEdit() {
+            const content = document.getElementById('editContent').value;
+            if (!content.trim()) {
+                alert('内容不能为空，请先输入SQL语句');
+                return;
+            }
+            if (!currentEditingFile) {
+                alert('文件信息缺失，请重新打开编辑');
+                return;
+            }
+
+            await loadDataSources();
+            document.getElementById('debugSql').value = content;
+            document.getElementById('debugDataSource').value = '';
+            document.getElementById('debugFileName').value = currentEditingFile;
+            document.getElementById('debugFileDisplay').textContent = currentEditingFile;
+            document.getElementById('debugResult').classList.add('hidden');
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('debugModal').classList.remove('hidden');
         }
 
         async function saveFileContent() {

@@ -12,8 +12,7 @@
 - **jar 包存放路径**: `/soft/actuator`
 
 ### 开发工作目录
-- **开发工作项目位置**: `Z:\monitor`
-- **部署构建项目位置**: `D:\SZH\projects\AI`
+- **部署构建项目位置**: `D:\SZH\projects\AI\monitor`
 
 ---
 
@@ -22,7 +21,11 @@
 ### 2.1 纯前端代码改动
 1. 编写提交描述
 2. 推送代码到远程仓库
-3. 结束工作
+3. **上传到服务器**
+```bash
+scp src/main/resources/static/*.html root@192.168.199.85:/soft/claude/monitor/front-end/
+```
+
 
 ### 2.2 含后端代码改动
 
@@ -30,7 +33,7 @@
 
 1. **提交代码**
    ```bash
-   cd Z:\monitor
+   cd D:\SZH\projects\AI\monitor
    git add .
    git commit -m "提交描述"
    git push origin f_claude
@@ -38,16 +41,16 @@
 
 2. **拉取打包（编译检查 + 构建）**
    ```bash
-   cd D:\SZH\projects\AI
+   cd D:\SZH\projects\AI\monitor
    git pull origin f_claude
    mvn clean install -D"maven.test.skip"=true
    ```
-   - **编译必须通过**，不通过则：
-     - 回到 `Z:\monitor` 修改代码 → `git add . && git commit && git push`
-     - 回到本步骤（`git pull + mvn install`）重新尝试
-     - **循环直至编译通过**
-   - 如有新页面产生，注意老页面访问时新页面入口要能正常显示，路由问题要处理好
-   - 产物: `target/actuator.jar`
+    - **编译必须通过**，不通过则：
+        -  `D:\SZH\projects\AI\monitor` 修改代码 → `git add . && git commit && git push`
+        - 回到本步骤（`git pull + mvn install`）重新尝试
+        - **循环直至编译通过**
+    - 如有新页面产生，注意老页面访问时新页面入口要能正常显示，路由问题要处理好
+    - 产物: `target/actuator.jar`
 
 3. **上传到服务器**
    ```bash
@@ -64,7 +67,7 @@
    ```bash
    ssh root@192.168.199.85 "systemctl status actuator"
    ```
-   - 日志路径 /soft/actuator/app.log
+    - 日志路径 /soft/actuator/app.log
 
 ---
 
