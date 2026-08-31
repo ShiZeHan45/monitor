@@ -124,27 +124,29 @@ public class GrafanaDataSourceHealthChecker {
                         .bodyToMono(Map.class)
                         .onErrorResume(WebClientResponseException.class, e -> {
                             if (currentRetry < maxRetries) {
-                                logger.warn("数据源 [{}] 访问失败 ({}次重试): {} - {}", 
+                                logger.warn("数据源 [{}] 访问失败 ({}次重试): {} - {}",
                                         environmentName, currentRetry + 1, e.getStatusCode(), e.getMessage());
                             } else {
-                                logger.warn("数据源 [{}] 访问失败 (已达最大重试次数): {} - {}", 
+                                logger.warn("数据源 [{}] 访问失败 (已达最大重试次数): {} - {}",
                                         environmentName, e.getStatusCode(), e.getMessage());
                             }
                             return Mono.empty();
                         })
                         .onErrorResume(Exception.class, e -> {
                             if (currentRetry < maxRetries) {
-                                logger.warn("数据源 [{}] 访问异常 ({}次重试): {}", 
+                                logger.warn("数据源 [{}] 访问异常 ({}次重试): {}",
                                         environmentName, currentRetry + 1, e.getMessage());
                             } else {
-                                logger.warn("数据源 [{}] 访问异常 (已达最大重试次数): {}", 
+                                logger.warn("数据源 [{}] 访问异常 (已达最大重试次数): {}",
                                         environmentName, e.getMessage());
                             }
                             return Mono.empty();
                         })
                         .block();
 
-                isOnline = response != null && !response.isEmpty();
+                // 只要成功收到响应（HTTP 200）就算在线，不依赖响应体是否非空。
+                // 部分Grafana的/api/org返回空body，isEmpty()会误判离线。
+                isOnline = response != null;
                 if (isOnline) {
                     logger.debug("数据源 [{}] 健康检查通过{}", environmentName, retryCount > 0 ? " (重试" + retryCount + "次后)" : "");
                     break;
