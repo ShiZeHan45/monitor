@@ -243,7 +243,11 @@
                 
                 if (result.success) {
                     document.getElementById('debugSql').value = result.content;
-                    document.getElementById('debugDataSource').value = '';
+                    const dsSelect = document.getElementById('debugDataSource');
+                    dsSelect.value = '';
+                    if (dsSelect.options.length > 1) {
+                        dsSelect.selectedIndex = 1;
+                    }
                     document.getElementById('debugFileName').value = filename;
                     document.getElementById('debugFileDisplay').textContent = filename;
                     document.getElementById('debugResult').classList.add('hidden');
@@ -490,7 +494,11 @@
 
             await loadDataSources();
             document.getElementById('debugSql').value = content;
-            document.getElementById('debugDataSource').value = '';
+            const dsSelect = document.getElementById('debugDataSource');
+            dsSelect.value = '';
+            if (dsSelect.options.length > 1) {
+                dsSelect.selectedIndex = 1;
+            }
             document.getElementById('debugFileName').value = currentEditingFile;
             document.getElementById('debugFileDisplay').textContent = currentEditingFile;
             document.getElementById('debugResult').classList.add('hidden');
