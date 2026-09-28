@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志下载 - 监控系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="w-64 bg-blue-900 text-white fixed left-0 top-0 min-h-screen">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-xl font-bold flex items-center">
+                    <i class="fa fa-monitor mr-2"></i>监控系统
+                </h1>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="/" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-home mr-3"></i>首页统计
+                    </a>
+                    <a href="/push-records.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-bell mr-3"></i>推送记录
+                    </a>
+                    <a href="/sql-rules.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-list-alt mr-3"></i>SQL规则管理
+                    </a>
+                    <a href="/sql-upload.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-folder-open mr-3"></i>SQL文件维护
+                    </a>
+                    <a href="/sql-config.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-database mr-3"></i>SQL数据源配置
+                    </a>
+                    <a href="/grafana-config.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-cloud mr-3"></i>远程日志采集配置
+                    </a>
+                    <a href="/log-download.html" class="block px-4 py-3 rounded-lg bg-blue-800 flex items-center">
+                        <i class="fa fa-download mr-3"></i>日志下载
+                    </a>
+                    <a href="/operation-logs.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-history mr-3"></i>操作日志
+                    </a>
+                    <a href="/system-config.html" class="block px-4 py-3 rounded-lg hover:bg-blue-800 flex items-center">
+                        <i class="fa fa-cog mr-3"></i>推送配置
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="ml-64 p-8 flex-1">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">日志下载</h2>
+                <p class="text-gray-500 mt-1">按服务与时间范围从 Loki 导出全量原始日志（异步任务，文件保留 30 分钟）</p>
+            </div>
+
+            <!-- 查询条件 -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-6">
+                    <i class="fa fa-filter mr-2"></i>查询条件
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">环境 *</label>
+                        <select id="envSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">加载中...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">服务 *</label>
+                        <select id="serviceSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">请先选择环境</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">开始时间 *</label>
+                        <input type="text" id="startTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="yyyy-MM-dd HH:mm:ss" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">结束时间 *</label>
+                        <input type="text" id="endTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="yyyy-MM-dd HH:mm:ss" readonly>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 mt-3">
+                    <span class="text-sm text-gray-500">快捷范围：</span>
+                    <button type="button" onclick="applyQuickRange(1)" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">近1小时</button>
+                    <button type="button" onclick="applyQuickRange(24)" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">近24小时</button>
+                    <button type="button" onclick="applyQuickRange(168)" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">近7天</button>
+                    <span class="text-xs text-gray-400">（也可点击输入框自定义时间）</span>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">包含关键词（逗号分隔，任一命中则保留，留空表示全部）</label>
+                        <input type="text" id="includeKeywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="如：ERROR,Exception">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">排除关键词（逗号分隔，任一命中则跳过）</label>
+                        <input type="text" id="excludeKeywords" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="如：health-check,心跳">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mt-6">
+                    <button id="previewBtn" onclick="previewLogs()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i class="fa fa-search mr-2"></i>执行查询（预览前100条）
+                    </button>
+                    <button id="downloadBtn" onclick="submitDownload()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <i class="fa fa-download mr-2"></i>下载日志
+                    </button>
+                </div>
+            </div>
+
+            <!-- 下载任务 -->
+            <div id="taskPanel" class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fa fa-tasks mr-2"></i>下载任务
+                </h3>
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center gap-4">
+                        <span id="taskStatusBadge" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">排队中</span>
+                        <div class="text-sm text-gray-600">
+                            <div>任务ID：<span id="taskTaskId" class="font-mono">-</span></div>
+                            <div class="mt-1">已处理 <span id="taskProcessedLines" class="font-semibold text-blue-600">0</span> 行</div>
+                            <div id="taskError" class="mt-1 text-red-600 hidden"></div>
+                            <div id="taskTruncated" class="mt-1 text-yellow-600 hidden">
+                                <i class="fa fa-exclamation-triangle mr-1"></i>日志量已达上限被截断（100万行 / 500MB）
+                            </div>
+                        </div>
+                    </div>
+                    <div id="taskActions" class="flex items-center gap-3"></div>
+                </div>
+            </div>
+
+            <!-- 预览结果 -->
+            <div id="previewPanel" class="bg-white rounded-xl shadow-sm p-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fa fa-terminal mr-2"></i>预览结果
+                    </h3>
+                    <span class="text-sm text-gray-500">共 <span id="previewCount">0</span> 条</span>
+                </div>
+                <pre id="previewBox" class="bg-gray-900 text-gray-100 text-xs font-mono p-4 rounded-lg overflow-auto max-h-96 whitespace-pre"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toastContainer" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] space-y-2 pointer-events-none"></div>
+
+    <script>
+        let startFp = null;
+        let endFp = null;
+        let pollTimer = null;
+        let currentTaskId = null;
+
+        function formatTime(d) {
+            if (!d) return '';
+            const p = n => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+                + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+        }
+
+        // 从 flatpickr 实例读取并规范时间为 yyyy-MM-dd HH:mm:ss（固定补齐秒位两位）
+        function fpTime(fp, inputId) {
+            if (fp && fp.selectedDates && fp.selectedDates.length) {
+                return formatTime(fp.selectedDates[0]);
+            }
+            const raw = document.getElementById(inputId) ? document.getElementById(inputId).value : '';
+            if (!raw) return '';
+            const m = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{1,2}))?$/);
+            if (m) {
+                const sec = m[6] ? String(m[6]).padStart(2, '0') : '00';
+                return m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + sec;
+            }
+            return raw;
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const isError = type === 'error';
+            toast.className = `px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white flex items-center max-w-md pointer-events-auto ${
+                isError ? 'bg-red-500' : 'bg-green-500'
+            }`;
+            toast.innerHTML = `<i class="fa ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} mr-2"></i>${escapeHtml(message)}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
+
+        function initPickers() {
+            const config = {
+                enableTime: true,
+                enableSeconds: true,
+                time_24hr: true,
+                locale: "zh",
+                dateFormat: "Y-m-d H:i:S",
+                minuteIncrement: 1,
+                onReady: function(selectedDates) { if (selectedDates[0]) this.input.value = formatTime(selectedDates[0]); },
+                onChange: function(selectedDates) { if (selectedDates[0]) this.input.value = formatTime(selectedDates[0]); }
+            };
+            startFp = flatpickr("#startTime", config);
+            endFp = flatpickr("#endTime", config);
+            applyQuickRange(1);
+        }
+
+        function applyQuickRange(hours) {
+            const end = new Date();
+            const start = new Date(Date.now() - hours * 3600 * 1000);
+            startFp.setDate(start, false);
+            endFp.setDate(end, false);
+            startFp.input.value = formatTime(start);
+            endFp.input.value = formatTime(end);
+        }
+
+        async function loadEnvironments() {
+            try {
+                const response = await fetch('/api/grafana/datasources');
+                const dataSources = await response.json();
+                const envSelect = document.getElementById('envSelect');
+                const envs = [];
+                (dataSources || []).forEach(ds => {
+                    if (ds.environmentName && envs.indexOf(ds.environmentName) === -1) {
+                        envs.push(ds.environmentName);
+                    }
+                });
+                if (envs.length === 0) {
+                    envSelect.innerHTML = '<option value="">暂无环境（请先配置数据源）</option>';
+                    return;
+                }
+                envSelect.innerHTML = envs.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+                envSelect.onchange = loadServices;
+                await loadServices();
+            } catch (error) {
+                console.error('加载环境失败:', error);
+                showToast('加载环境列表失败', 'error');
+            }
+        }
+
+        async function loadServices() {
+            const env = document.getElementById('envSelect').value;
+            const serviceSelect = document.getElementById('serviceSelect');
+            if (!env) {
+                serviceSelect.innerHTML = '<option value="">请先选择环境</option>';
+                return;
+            }
+            serviceSelect.innerHTML = '<option value="">加载中...</option>';
+            try {
+                const response = await fetch('/api/logs/download/services?env=' + encodeURIComponent(env));
+                if (!response.ok) {
+                    let message = '服务列表加载失败';
+                    try {
+                        const err = await response.json();
+                        if (err && err.message) message = err.message;
+                    } catch (e) { /* ignore */ }
+                    serviceSelect.innerHTML = `<option value="">${escapeHtml(message)}</option>`;
+                    return;
+                }
+                const services = await response.json();
+                if (!services || services.length === 0) {
+                    serviceSelect.innerHTML = '<option value="">该环境暂无可下载服务</option>';
+                    return;
+                }
+                serviceSelect.innerHTML = services.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+            } catch (error) {
+                console.error('加载服务失败:', error);
+                serviceSelect.innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        function buildRequest() {
+            const env = document.getElementById('envSelect').value;
+            const service = document.getElementById('serviceSelect').value;
+            const startTime = fpTime(startFp, 'startTime');
+            const endTime = fpTime(endFp, 'endTime');
+            if (!env) { showToast('请选择环境', 'error'); return null; }
+            if (!service) { showToast('请选择服务（若列表为空请先在远程日志采集配置中添加监控规则）', 'error'); return null; }
+            if (!startTime || !endTime) { showToast('请选择时间范围', 'error'); return null; }
+            const startMs = new Date(startTime.replace(/-/g, '/')).getTime();
+            const endMs = new Date(endTime.replace(/-/g, '/')).getTime();
+            if (isNaN(startMs) || isNaN(endMs)) { showToast('时间格式不正确', 'error'); return null; }
+            if (startMs >= endMs) { showToast('开始时间必须早于结束时间', 'error'); return null; }
+            return {
+                env: env,
+                service: service,
+                startTime: startTime,
+                endTime: endTime,
+                includeKeywords: document.getElementById('includeKeywords').value.trim(),
+                excludeKeywords: document.getElementById('excludeKeywords').value.trim()
+            };
+        }
+
+        async function previewLogs() {
+            const request = buildRequest();
+            if (!request) return;
+            const btn = document.getElementById('previewBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>查询中...';
+            try {
+                const response = await fetch('/api/logs/download/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    showToast(result.message || '预览失败', 'error');
+                    return;
+                }
+                const panel = document.getElementById('previewPanel');
+                const box = document.getElementById('previewBox');
+                document.getElementById('previewCount').textContent = result.count;
+                if (!result.lines || result.lines.length === 0) {
+                    box.textContent = '（该条件下无匹配日志）';
+                } else {
+                    box.textContent = result.lines.join('\n');
+                }
+                panel.classList.remove('hidden');
+                showToast('预览完成，共 ' + result.count + ' 条');
+            } catch (error) {
+                console.error('预览失败:', error);
+                showToast('预览失败: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-search mr-2"></i>执行查询（预览前100条）';
+            }
+        }
+
+        async function submitDownload() {
+            const request = buildRequest();
+            if (!request) return;
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>提交中...';
+            try {
+                const response = await fetch('/api/logs/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    showToast(result.message || '任务提交失败', 'error');
+                    return;
+                }
+                currentTaskId = result.taskId;
+                stopPolling();
+                updateTaskPanel({ taskId: result.taskId, status: 'QUEUED', processedLines: 0 });
+                document.getElementById('taskPanel').classList.remove('hidden');
+                startPolling(result.taskId);
+                showToast('任务已提交，正在下载...');
+            } catch (error) {
+                console.error('提交下载任务失败:', error);
+                showToast('提交失败: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-download mr-2"></i>下载日志';
+            }
+        }
+
+        function startPolling(taskId) {
+            pollTimer = setInterval(pollProgress, 1500);
+            pollProgress();
+        }
+
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+        }
+
+        async function pollProgress() {
+            if (!currentTaskId) { stopPolling(); return; }
+            try {
+                const response = await fetch('/api/logs/download/progress?taskId=' + encodeURIComponent(currentTaskId));
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    stopPolling();
+                    showToast(result.message || '进度查询失败', 'error');
+                    return;
+                }
+                updateTaskPanel(result);
+                if (result.status === 'SUCCESS' || result.status === 'FAILED' || result.status === 'EXPIRED') {
+                    stopPolling();
+                    if (result.status === 'SUCCESS') {
+                        showToast('日志下载完成，可保存文件');
+                    } else if (result.status === 'FAILED') {
+                        showToast('日志下载失败：' + (result.error || '未知错误'), 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('轮询进度失败:', error);
+            }
+        }
+
+        function updateTaskPanel(task) {
+            const badge = document.getElementById('taskStatusBadge');
+            const statusMap = {
+                'QUEUED': { text: '排队中', cls: 'bg-gray-100 text-gray-600' },
+                'RUNNING': { text: '下载中', cls: 'bg-blue-100 text-blue-600' },
+                'SUCCESS': { text: '已完成', cls: 'bg-green-100 text-green-600' },
+                'FAILED': { text: '失败', cls: 'bg-red-100 text-red-600' },
+                'EXPIRED': { text: '已过期', cls: 'bg-gray-100 text-gray-500' }
+            };
+            const st = statusMap[task.status] || statusMap['QUEUED'];
+            badge.textContent = st.text + (task.status === 'QUEUED' ? '（并发已满，等待执行）' : '');
+            badge.className = 'px-3 py-1 rounded-full text-sm font-medium ' + st.cls;
+
+            document.getElementById('taskTaskId').textContent = task.taskId || '-';
+            document.getElementById('taskProcessedLines').textContent = task.processedLines || 0;
+
+            const errorEl = document.getElementById('taskError');
+            if (task.error) {
+                errorEl.textContent = '错误：' + task.error;
+                errorEl.classList.remove('hidden');
+            } else {
+                errorEl.classList.add('hidden');
+            }
+
+            const truncatedEl = document.getElementById('taskTruncated');
+            if (task.truncated) {
+                truncatedEl.classList.remove('hidden');
+            } else {
+                truncatedEl.classList.add('hidden');
+            }
+
+            const actions = document.getElementById('taskActions');
+            if (task.status === 'SUCCESS') {
+                actions.innerHTML = `
+                    <button onclick="downloadFile()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <i class="fa fa-save mr-2"></i>保存文件${task.fileName ? '（' + escapeHtml(task.fileName) + '）' : ''}
+                    </button>
+                `;
+            } else if (task.status === 'EXPIRED') {
+                actions.innerHTML = '<span class="text-sm text-gray-500">文件已过保留期（30分钟），请重新提交下载任务</span>';
+            } else if (task.status === 'FAILED') {
+                actions.innerHTML = '';
+            } else {
+                actions.innerHTML = '<i class="fa fa-spinner fa-spin text-blue-500 text-xl"></i>';
+            }
+        }
+
+        function downloadFile() {
+            if (!currentTaskId) return;
+            const a = document.createElement('a');
+            a.href = '/api/logs/download/file?taskId=' + encodeURIComponent(currentTaskId);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPickers();
+            loadEnvironments();
+        });
+    </script>
+</body>
+</html>

@@ -1,8 +1,9 @@
 package com.szh.monitor.service.impl;
 
-import com.szh.monitor.config.GrafanaConfig;
-import com.szh.monitor.config.MonitorRules;
-import com.szh.monitor.service.LogCollectTimeInfoService;
+import com.szh.monitor.entity.GrafanaDataSource;
+import com.szh.monitor.entity.GrafanaMonitorRule;
+import com.szh.monitor.service.GrafanaDataSourceService;
+import com.szh.monitor.service.GrafanaMonitorRuleService;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -12,34 +13,41 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * GrafanaLogServiceImp 单元测试（基于数据库配置驱动的实现）。
+ * 通过 MockWebServer 模拟 Loki query_range 接口，经 refreshConfig()+supplement() 公共链路驱动。
+ */
 @ExtendWith(MockitoExtension.class)
 class GrafanaLogServiceImpTest {
 
     @Mock
-    private GrafanaConfig grafanaConfig;
-    @Mock
     private SendDispatchService sendDispatchService;
     @Mock
-    private LogCollectTimeInfoService logCollectTimeInfoService;
+    private GrafanaDataSourceService dataSourceService;
+    @Mock
+    private GrafanaMonitorRuleService ruleService;
 
     private GrafanaLogServiceImp service;
-    private GrafanaConfig.GrafanaInfo grafanaInfo;
-    private MonitorRules monitorRule;
+    private GrafanaDataSource dataSource;
+    private GrafanaMonitorRule rule;
     private MockWebServer mockServer;
     private static final long NOW_MS = System.currentTimeMillis();
 
-    /** Return a Loki nanosecond-epoch timestamp for a log N seconds ago. */
-    /** Create a Map.Entry with epoch-millis key (used for lastTs checking). */
+    /** Create a log entry whose Loki ms-timestamp corresponds to N seconds ago. */
     private static Map.Entry<Long, String> entry(int secondsAgo, String log) {
         return new AbstractMap.SimpleEntry<>(NOW_MS - secondsAgo * 1000L, log);
     }
@@ -49,25 +57,33 @@ class GrafanaLogServiceImpTest {
         mockServer = new MockWebServer();
         mockServer.start();
 
-        monitorRule = new MonitorRules();
-        monitorRule.setName("test-app");
-        monitorRule.setQueryExpr("{service=\"test\"}");
-        monitorRule.setKeywords(Collections.singletonList("ERROR"));
-        monitorRule.setExclusionKeywords(Collections.singletonList("ignore-this"));
-        monitorRule.setContextLines(3);
-        monitorRule.setEnabled(true);
+        rule = new GrafanaMonitorRule();
+        rule.setId(10L);
+        rule.setDataSourceId(1L);
+        rule.setName("test-app");
+        rule.setQueryExpr("{service=\"test\"}");
+        rule.setKeywords("[\"ERROR\"]");
+        rule.setExclusionKeywords("[\"ignore-this\"]");
+        rule.setContextLines(3);
+        rule.setEnabled(1);
+        rule.setLastTs(NOW_MS - 999_000L);
 
-        grafanaInfo = new GrafanaConfig.GrafanaInfo();
-        grafanaInfo.setEnvironmentName("test-env");
-        grafanaInfo.setUrl(String.format("http://localhost:%s", mockServer.getPort()));
-        grafanaInfo.setDatasourceId("1");
-        grafanaInfo.setUsername("user");
-        grafanaInfo.setPassword("pass");
-        grafanaInfo.setMonitors(Collections.singletonList(monitorRule));
+        dataSource = new GrafanaDataSource();
+        dataSource.setId(1L);
+        dataSource.setEnvironmentName("test-env");
+        dataSource.setUrl(String.format("http://localhost:%s", mockServer.getPort()));
+        dataSource.setDatasourceId("1");
+        dataSource.setUsername("user");
+        dataSource.setPassword("pass");
+        dataSource.setWebhook("https://hook.test");
+        dataSource.setIsOnline(1);
 
-        lenient().when(grafanaConfig.getList()).thenReturn(Collections.singletonList(grafanaInfo));
+        lenient().when(dataSourceService.listEnabled()).thenReturn(Collections.singletonList(dataSource));
+        lenient().when(ruleService.listEnabledByDataSourceId(1L)).thenReturn(Collections.singletonList(rule));
+        lenient().when(ruleService.list()).thenReturn(Collections.singletonList(rule));
+        lenient().when(dataSourceService.getByEnvironmentName("test-env")).thenReturn(dataSource);
 
-        service = new GrafanaLogServiceImp(grafanaConfig, sendDispatchService, logCollectTimeInfoService);
+        service = new GrafanaLogServiceImp(sendDispatchService, dataSourceService, ruleService);
     }
 
     @AfterEach
@@ -75,203 +91,204 @@ class GrafanaLogServiceImpTest {
         mockServer.shutdown();
     }
 
-    // ==================== Constructor tests ====================
-
-    @Test
-    void shouldPopulateGrafanaInfoMapOnConstruction() {
-        Map<String, GrafanaConfig.GrafanaInfo> infoMap = service.getGrafanaInfoMap();
-        assertEquals(1, infoMap.size());
-        assertTrue(infoMap.containsKey("test-env"));
+    /** Refresh config from mocked services, then run one collection cycle. */
+    private void runCycle() {
+        service.refreshConfig();
+        service.supplement();
     }
 
+    // ==================== refreshConfig ====================
+
     @Test
-    void shouldInitLastTsMap() {
-        service.initLastTsMap("test-env_test-app", 1000L);
-        service.initLastTsMap("test-env_other-app", 2000L);
+    void shouldPopulateDataSourceInfoMapOnRefresh() {
+        service.refreshConfig();
+
+        Map<String, GrafanaLogServiceImp.DataSourceInfo> infoMap = service.getDataSourceInfoMap();
+        assertEquals(1, infoMap.size());
+        assertTrue(infoMap.containsKey("test-env"));
+
+        GrafanaLogServiceImp.DataSourceInfo info = infoMap.get("test-env");
+        assertEquals(String.format("http://localhost:%s", mockServer.getPort()), info.getUrl());
+        assertEquals(1, info.getMonitors().size());
+
+        GrafanaLogServiceImp.MonitorRuleInfo mr = info.getMonitors().get(0);
+        assertEquals("test-app", mr.getName());
+        assertEquals("{service=\"test\"}", mr.getQueryExpr());
+        assertEquals(Collections.singletonList("ERROR"), mr.getKeywords());
+        assertEquals(Collections.singletonList("ignore-this"), mr.getExclusionKeywords());
+        assertTrue(mr.isEnabled());
     }
 
     @Test
     void shouldHandleMultipleEnvironments() {
-        reset(grafanaConfig);
-        GrafanaConfig.GrafanaInfo env1 = createGrafanaInfo("env1", "http://host1:3000");
-        GrafanaConfig.GrafanaInfo env2 = createGrafanaInfo("env2", "http://host2:3000");
-        when(grafanaConfig.getList()).thenReturn(Arrays.asList(env1, env2));
+        GrafanaDataSource ds2 = new GrafanaDataSource();
+        ds2.setId(2L);
+        ds2.setEnvironmentName("env2");
+        ds2.setUrl("http://host2:3000");
+        ds2.setDatasourceId("2");
+        ds2.setIsOnline(1);
+        when(ruleService.listEnabledByDataSourceId(2L)).thenReturn(Collections.emptyList());
+        when(dataSourceService.listEnabled()).thenReturn(Arrays.asList(dataSource, ds2));
 
-        GrafanaLogServiceImp multiService = new GrafanaLogServiceImp(grafanaConfig, sendDispatchService, logCollectTimeInfoService);
-        assertEquals(2, multiService.getGrafanaInfoMap().size());
+        service.refreshConfig();
+        assertEquals(2, service.getDataSourceInfoMap().size());
     }
 
-    // ==================== supplement() filtering tests ====================
+    // ==================== supplement() guard clauses ====================
 
     @Test
     void shouldSkipDisabledMonitor() {
-        monitorRule.setEnabled(false);
-        service.supplement();
+        rule.setEnabled(0);
+        runCycle();
         verifyNoInteractions(sendDispatchService);
+        assertEquals(0, mockServer.getRequestCount());
     }
 
     @Test
     void shouldSkipWhenNotInActiveWeekDays() {
-        int today = java.time.LocalDate.now().getDayOfWeek().getValue();
+        int today = LocalDate.now().getDayOfWeek().getValue();
         List<Integer> excludeToday = new ArrayList<>();
         for (int i = 1; i <= 7; i++) {
             if (i != today) excludeToday.add(i);
         }
-        grafanaInfo.setWeek(excludeToday);
-        service.supplement();
+        dataSource.setWeek(toJson(excludeToday));
+        runCycle();
         verifyNoInteractions(sendDispatchService);
+        assertEquals(0, mockServer.getRequestCount());
     }
 
     @Test
     void shouldSkipWhenBeforeStartTime() {
-        grafanaInfo.setStartTime(LocalTime.of(23, 0));
-        grafanaInfo.setEndTime(LocalTime.of(23, 59));
-        service.supplement();
+        LocalTime start = LocalTime.now().plusMinutes(1);
+        dataSource.setStartTime(start.toString());
+        dataSource.setEndTime(start.plusHours(1).toString());
+        runCycle();
         verifyNoInteractions(sendDispatchService);
+        assertEquals(0, mockServer.getRequestCount());
     }
 
     @Test
     void shouldSkipWhenAfterEndTime() {
-        grafanaInfo.setStartTime(LocalTime.of(0, 0));
-        grafanaInfo.setEndTime(LocalTime.of(0, 1));
-        service.supplement();
+        LocalTime end = LocalTime.now().minusMinutes(1);
+        dataSource.setEndTime(end.toString());
+        dataSource.setStartTime(end.minusHours(1).toString());
+        runCycle();
         verifyNoInteractions(sendDispatchService);
+        assertEquals(0, mockServer.getRequestCount());
     }
 
-    // ==================== processMonitor - keyword matching ====================
+    @Test
+    void shouldSkipWhenDataSourceOffline() {
+        dataSource.setIsOnline(0);
+        runCycle();
+        verifyNoInteractions(sendDispatchService);
+        assertEquals(0, mockServer.getRequestCount());
+    }
+
+    // ==================== keyword matching / push ====================
 
     @Test
-    void shouldDetectKeywordAndSendMessage() throws Exception {
+    void shouldDetectKeywordAndSendMessage() {
         enqueueLokiResponse(
                 entry(120, "some ERROR happened here"),
                 entry(180, "normal log line")
         );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService).sendSimpleMarkDownMsg(contains("ERROR"));
+        runCycle();
+        verify(sendDispatchService).sendSimpleMarkDownMsg(contains("ERROR"), eq("test-env"), eq("https://hook.test"));
     }
 
     @Test
-    void shouldNotSendWhenNoKeywordMatch() throws Exception {
+    void shouldNotSendWhenNoKeywordMatch() {
         enqueueLokiResponse(
                 entry(120, "normal log line"),
                 entry(180, "another normal line")
         );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        runCycle();
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
     @Test
-    void shouldExcludeKeywordMatch() throws Exception {
+    void shouldExcludeKeywordMatch() {
         enqueueLokiResponse(
                 entry(120, "ERROR but ignore-this should be excluded"),
                 entry(180, "normal line")
         );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        runCycle();
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
     @Test
-    void shouldCaptureContextLines() throws Exception {
-        monitorRule.setContextLines(3);
-        monitorRule.setExclusionKeywords(Collections.emptyList());
-
+    void shouldCaptureContextLines() {
         enqueueLokiResponse(
                 entry(60, "ERROR at service layer"),
                 entry(61, "context line 1"),
                 entry(62, "context line 2"),
                 entry(63, "context line 3")
         );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
+        runCycle();
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture());
+        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture(), eq("test-env"), eq("https://hook.test"));
         assertTrue(captor.getValue().contains("context line 1"));
     }
 
     @Test
-    void shouldTruncateLongContent() throws Exception {
-        monitorRule.setExclusionKeywords(Collections.emptyList());
+    void shouldTruncateLongContent() {
         StringBuilder sb = new StringBuilder("ERROR ");
         for (int i = 0; i < 200; i++) {
             sb.append("very-long-log-message-that-repeats-");
         }
-
         enqueueLokiResponse(entry(120, sb.toString()));
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
+        runCycle();
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture());
+        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture(), eq("test-env"), eq("https://hook.test"));
         assertTrue(captor.getValue().length() <= 1550);
         assertTrue(captor.getValue().contains("内容过长已截断"));
     }
 
-    // ==================== processMonitor - timestamp handling ====================
+    // ==================== lastTs handling ====================
 
     @Test
-    void shouldSkipLogsBeforeLastTimestamp() throws Exception {
-        service.initLastTsMap("test-env_test-app", NOW_MS + 999_000L);
-
+    void shouldSkipLogsBeforeLastTimestamp() {
+        rule.setLastTs(NOW_MS + 999_000L);
         enqueueLokiResponse(
                 entry(120, "ERROR old log"),
                 entry(180, "ERROR old log too")
         );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        runCycle();
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
     @Test
-    void shouldProcessLogsAfterLastTimestamp() throws Exception {
-        service.initLastTsMap("test-env_test-app", NOW_MS - 999_000L);
-
-        enqueueLokiResponse(
-                entry(120, "ERROR new log"),
-                entry(180, "normal log")
-        );
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService).sendSimpleMarkDownMsg(anyString());
+    void shouldProcessLogsAfterLastTimestamp() {
+        enqueueLokiResponse(entry(120, "ERROR new log"));
+        runCycle();
+        verify(sendDispatchService).sendSimpleMarkDownMsg(anyString(), eq("test-env"), eq("https://hook.test"));
     }
 
     @Test
-    void shouldUpdateTimestampAfterProcessing() throws Exception {
-        long expectedTs = NOW_MS - 60_000L;
-        service.initLastTsMap("test-env_test-app", NOW_MS - 999_000L);
-
+    void shouldUpdateTimestampAfterProcessing() {
         enqueueLokiResponse(entry(60, "normal log"));
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(logCollectTimeInfoService).updateOrSave(eq("test-env"), eq("test-app"), anyLong());
+        runCycle();
+        verify(ruleService).updateLastTs(eq(10L), eq("test-env"), eq(1L), eq(NOW_MS - 60_000L), anyLong());
     }
 
-    // ==================== processMonitor - pagination ====================
+    // ==================== pagination ====================
 
     @Test
-    void shouldStopPaginationWhenBatchCountLessThanLimit() throws Exception {
+    void shouldStopPaginationWhenBatchCountLessThanLimit() {
         List<Map.Entry<Long, String>> logs = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             logs.add(entry(100 + i, "normal log " + i));
         }
         enqueueLokiResponse(logs);
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        runCycle();
+        assertEquals(1, mockServer.getRequestCount());
     }
 
     @Test
-    void shouldContinuePaginationWhenBatchCountEqualsLimit() throws Exception {
+    void shouldContinuePaginationWhenBatchCountEqualsLimit() {
         List<Map.Entry<Long, String>> batch1 = new ArrayList<>();
         for (int i = 0; i < 500; i++) {
             batch1.add(entry(200 + i, "log " + i));
@@ -281,82 +298,83 @@ class GrafanaLogServiceImpTest {
 
         enqueueLokiResponse(batch1);
         enqueueLokiResponse(batch2);
+        runCycle();
 
-        invokeProcessMonitor(grafanaInfo, monitorRule);
-
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        assertEquals(2, mockServer.getRequestCount());
     }
 
-    // ==================== processMonitor - error handling ====================
+    // ==================== error handling ====================
 
     @Test
-    void shouldHandleNullBodyGracefully() throws Exception {
-        enqueueEmptyResponse();
-
-        assertDoesNotThrow(() -> invokeProcessMonitor(grafanaInfo, monitorRule));
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+    void shouldHandleNullBodyGracefully() {
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json").setBody("{}"));
+        assertDoesNotThrow(this::runCycle);
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
     @Test
-    void shouldHandleEmptyResultGracefully() throws Exception {
+    void shouldHandleEmptyResultGracefully() {
         enqueueLokiResponse(Collections.emptyList());
-
-        assertDoesNotThrow(() -> invokeProcessMonitor(grafanaInfo, monitorRule));
-        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString());
+        assertDoesNotThrow(this::runCycle);
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
     @Test
     void shouldCatchExceptionPerMonitorInSupplement() {
-        monitorRule.setEnabled(true);
-        grafanaInfo.setWeek(null);
-        grafanaInfo.setStartTime(null);
-        grafanaInfo.setEndTime(null);
-        MonitorRules rule2 = new MonitorRules();
-        rule2.setName("failing-rule");
-        rule2.setQueryExpr("{service=\"fail\"}");
-        rule2.setKeywords(Collections.singletonList("ERROR"));
-        rule2.setEnabled(true);
-        grafanaInfo.setMonitors(Arrays.asList(monitorRule, rule2));
+        GrafanaMonitorRule failingRule = new GrafanaMonitorRule();
+        failingRule.setId(11L);
+        failingRule.setDataSourceId(1L);
+        failingRule.setName("failing-rule");
+        failingRule.setQueryExpr("{service=\"fail\"}");
+        failingRule.setKeywords("[\"ERROR\"]");
+        failingRule.setEnabled(1);
 
-        assertDoesNotThrow(() -> service.supplement());
+        when(ruleService.listEnabledByDataSourceId(1L)).thenReturn(Arrays.asList(rule, failingRule));
+        when(ruleService.list()).thenReturn(Collections.singletonList(rule));
+        when(ruleService.getById(11L)).thenThrow(new RuntimeException("db down"));
+
+        enqueueLokiResponse(entry(120, "normal log"));
+
+        assertDoesNotThrow(() -> {
+            service.refreshConfig();
+            service.supplement();
+        });
+        verify(sendDispatchService, never()).sendSimpleMarkDownMsg(anyString(), anyString(), anyString());
     }
 
-    // ==================== processMonitor - multiple streams ====================
+    // ==================== multiple streams ====================
 
     @Test
     @SuppressWarnings("unchecked")
-    void shouldProcessMultipleStreams() throws Exception {
-        monitorRule.setExclusionKeywords(Collections.emptyList());
-
+    void shouldProcessMultipleStreams() {
         Map<String, Object> stream1 = new HashMap<>();
         stream1.put("values", Arrays.asList(
                 Arrays.asList(String.valueOf(NOW_MS * 1_000_000L), "ERROR stream1"),
                 Arrays.asList(String.valueOf((NOW_MS + 1000L) * 1_000_000L), "stream1 normal")
         ));
-
         Map<String, Object> stream2 = new HashMap<>();
         stream2.put("values", Arrays.asList(
                 Arrays.asList(String.valueOf((NOW_MS + 2000L) * 1_000_000L), "stream2 normal"),
                 Arrays.asList(String.valueOf((NOW_MS + 3000L) * 1_000_000L), "ERROR stream2")
         ));
-
         List<Map<String, Object>> streams = Arrays.asList(stream1, stream2);
         Map<String, Object> data = new HashMap<>();
         data.put("result", streams);
         Map<String, Object> body = new HashMap<>();
         body.put("data", data);
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json").setBody(json(body)));
 
-        enqueueResponse(json(body));
-
-        invokeProcessMonitor(grafanaInfo, monitorRule);
+        runCycle();
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture());
+        verify(sendDispatchService).sendSimpleMarkDownMsg(captor.capture(), eq("test-env"), eq("https://hook.test"));
         assertTrue(captor.getValue().contains("ERROR stream1"));
         assertTrue(captor.getValue().contains("ERROR stream2"));
     }
 
-    // ==================== Helper methods ====================
+    // ==================== helpers ====================
 
     private void enqueueLokiResponse(Map.Entry<Long, String>... entries) {
         enqueueLokiResponse(Arrays.asList(entries));
@@ -373,30 +391,14 @@ class GrafanaLogServiceImpTest {
             stream.put("values", values);
             resultStreams.add(stream);
         }
-        enqueueResponse(json(buildLokiResponseBody(resultStreams)));
-    }
-
-    private void enqueueEmptyResponse() {
-        enqueueResponse("{}");
-    }
-
-    private void enqueueResponse(String body) {
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody(body));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> buildLokiResponseBody(List<Map<String, Object>> streams) {
         Map<String, Object> data = new HashMap<>();
-        data.put("result", streams);
+        data.put("result", resultStreams);
         Map<String, Object> body = new HashMap<>();
         body.put("data", data);
-        return body;
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json").setBody(json(body)));
     }
 
-    @SuppressWarnings("unchecked")
     private static String json(Map<String, Object> map) {
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(map);
@@ -405,28 +407,11 @@ class GrafanaLogServiceImpTest {
         }
     }
 
-    private void invokeProcessMonitor(GrafanaConfig.GrafanaInfo info, MonitorRules rule) throws Exception {
-        Method method = GrafanaLogServiceImp.class.getDeclaredMethod(
-                "processMonitor", MonitorRules.class, WebClient.class, GrafanaConfig.GrafanaInfo.class);
-        method.setAccessible(true);
-
-        Field webClientField = GrafanaLogServiceImp.class.getDeclaredField("webClientMap");
-        webClientField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        TreeMap<String, WebClient> clientMap = (TreeMap<String, WebClient>) webClientField.get(service);
-        WebClient client = clientMap.get(info.getEnvironmentName());
-
-        method.invoke(service, rule, client, info);
-    }
-
-    private GrafanaConfig.GrafanaInfo createGrafanaInfo(String name, String url) {
-        GrafanaConfig.GrafanaInfo info = new GrafanaConfig.GrafanaInfo();
-        info.setEnvironmentName(name);
-        info.setUrl(url);
-        info.setDatasourceId("1");
-        info.setUsername("u");
-        info.setPassword("p");
-        info.setMonitors(Collections.emptyList());
-        return info;
+    private static String toJson(List<Integer> list) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(list);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
