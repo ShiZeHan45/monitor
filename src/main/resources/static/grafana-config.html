@@ -512,8 +512,8 @@
                 document.getElementById('ruleContextLines').value = rule.contextLines || 5;
                 document.getElementById('ruleWebhook').value = rule.webhook || '';
                 document.getElementById('ruleEnabled').value = rule.enabled;
-                const lastTime = rule.lastTime ? formatTime(rule.lastTime) : '';
-                document.getElementById('ruleLastTime').value = lastTime;
+                const lastDate = rule.lastTs ? new Date(rule.lastTs) : null;
+                document.getElementById('ruleLastTime').value = lastDate ? formatTime(lastDate) : '';
                 document.getElementById('ruleModal').classList.remove('hidden');
                 if (ruleFp) ruleFp.destroy();
                 ruleFp = flatpickr("#ruleLastTime", {
@@ -521,9 +521,11 @@
                     enableSeconds: true,
                     time_24hr: true,
                     locale: "zh",
-                    dateFormat: "Y-m-d H:i:s",
-                    defaultDate: lastTime || new Date(),
-                    minuteIncrement: 1
+                    dateFormat: "Y-m-d H:i:S",
+                    defaultDate: lastDate || new Date(),
+                    minuteIncrement: 1,
+                    onReady: function(selectedDates) { this.input.value = formatTime(selectedDates[0]); },
+                    onChange: function(selectedDates) { this.input.value = formatTime(selectedDates[0]); }
                 });
             } catch (error) {
                 console.error('获取规则信息失败:', error);
@@ -738,9 +740,11 @@
                 enableSeconds: true,
                 time_24hr: true,
                 locale: "zh",
-                dateFormat: "Y-m-d H:i:s",
+                dateFormat: "Y-m-d H:i:S",
                 defaultDate: new Date(),
-                minuteIncrement: 1
+                minuteIncrement: 1,
+                onReady: function(selectedDates) { this.input.value = formatTime(selectedDates[0]); },
+                onChange: function(selectedDates) { this.input.value = formatTime(selectedDates[0]); }
             });
         }
 
