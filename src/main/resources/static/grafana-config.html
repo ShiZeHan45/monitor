@@ -258,6 +258,27 @@
             return y + '-' + m + '-' + day + ' ' + h + ':' + min + ':' + s;
         }
 
+        // 从 flatpickr 实例读取并规范化采集起始时间为 yyyy-MM-dd HH:mm:ss（固定补齐秒位两位）
+        function getRuleLastTime() {
+            const el = document.getElementById('ruleLastTime');
+            const fp = ruleFp;
+            if (fp && fp.selectedDates && fp.selectedDates.length) {
+                const d = fp.selectedDates[0];
+                const p = n => String(n).padStart(2, '0');
+                return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+                    + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+            }
+            const raw = el ? el.value : '';
+            if (!raw) return '';
+            // 兜底：对已有字符串补齐缺失的秒
+            const m = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{1,2}))?$/);
+            if (m) {
+                const sec = m[6] ? String(m[6]).padStart(2, '0') : '00';
+                return m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + sec;
+            }
+            return raw;
+        }
+
         function escapeHtml(str) {
             if (str == null) return '';
             const div = document.createElement('div');
@@ -732,7 +753,9 @@
             const id = document.getElementById('ruleId').value;
             const keywords = document.getElementById('ruleKeywords').value;
             const exclusionKeywords = document.getElementById('ruleExclusionKeywords').value;
-            
+            // 提前读取采集起始时间（在关弹窗销毁 flatpickr 前规范化为 yyyy-MM-dd HH:mm:ss）
+            const lastTime = getRuleLastTime();
+
             const data = {
                 id: id ? parseInt(id) : null,
                 dataSourceId: parseInt(document.getElementById('ruleDataSourceId').value),
@@ -757,8 +780,6 @@
                     alert(result.message);
                     closeRuleModal();
                     loadRules(selectedDataSourceId);
-                    // 新增规则时如果有采集时间，通过 last-ts 接口单独提交
-                    const lastTime = document.getElementById('ruleLastTime').value;
                     if (lastTime) {
                         const ruleId = result.id || id;
                         if (ruleId) {
