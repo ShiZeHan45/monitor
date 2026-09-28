@@ -9,7 +9,6 @@ public class LogDownloadTask {
     public static final String STATUS_RUNNING = "RUNNING";
     public static final String STATUS_SUCCESS = "SUCCESS";
     public static final String STATUS_FAILED = "FAILED";
-    public static final String STATUS_EXPIRED = "EXPIRED";
 
     private String taskId;
     private String environmentName;

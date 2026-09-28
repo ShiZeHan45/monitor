@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,6 +22,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -57,6 +59,9 @@ class LogDownloadServiceImpTest {
     private GrafanaDataSource dataSource;
     private GrafanaMonitorRule rule;
     private MockWebServer mockServer;
+
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -491,8 +496,51 @@ class LogDownloadServiceImpTest {
         assertTrue(lines.stream().allMatch(l -> l.contains("ERROR")));
     }
 
+    // ==================== 任务列表 / 手动删除 ====================
+
     @Test
-    void cleanupExpiredFilesShouldDeleteOldFiles() throws Exception {
+    void listTasksShouldReturnAllTasksSortedByCreateTimeDesc() throws Exception {
+        // 两个慢任务提交后立即查询（不等待完成），验证按提交时间倒序
+        for (int i = 0; i < 2; i++) {
+            mockServer.enqueue(lokiResponseWithDelay(new Object[][]{{NOW_MS - 1000, "log-" + i}}, 1500));
+        }
+        String t1 = service.submitTask(request("test-env", "test-app", formatTime(NOW_MS - 600_000), formatTime(NOW_MS), null, null));
+        Thread.sleep(10);
+        String t2 = service.submitTask(request("test-env", "test-app", formatTime(NOW_MS - 600_000), formatTime(NOW_MS), null, null));
+
+        List<LogDownloadTask> list = service.listTasks();
+        assertEquals(2, list.size());
+        assertEquals(t2, list.get(0).getTaskId(), "最新提交的任务应排在最前");
+        assertEquals(t1, list.get(1).getTaskId());
+    }
+
+    @Test
+    void deleteTaskShouldRemoveTaskAndFile() throws Exception {
+        mockServer.enqueue(lokiResponse(new Object[][]{{NOW_MS - 1000, "hello"}}));
+        String taskId = service.submitTask(request("test-env", "test-app",
+                formatTime(NOW_MS - 600_000), formatTime(NOW_MS), null, null));
+        awaitStatus(taskId, LogDownloadTask.STATUS_SUCCESS, 15_000);
+
+        LogDownloadTask task = service.getTask(taskId);
+        File file = new File(task.getFilePath());
+        assertTrue(file.exists());
+        assertTrue(service.listTasks().stream().anyMatch(t -> taskId.equals(t.getTaskId())));
+
+        service.deleteTask(taskId);
+
+        assertFalse(file.exists(), "删除任务时应同时删除文件");
+        assertNull(service.getTask(taskId));
+        assertFalse(service.listTasks().stream().anyMatch(t -> taskId.equals(t.getTaskId())));
+    }
+
+    @Test
+    void deleteTaskShouldRejectUnknownTask() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteTask("no-such-task"));
+    }
+
+    @Test
+    void finishedFilesShouldNotBeAutoDeleted() throws Exception {
+        // 完成超过 30 分钟的文件也必须保留，由用户手动删除
         mockServer.enqueue(lokiResponse(new Object[][]{{NOW_MS - 1000, "hello"}}));
         String taskId = service.submitTask(request("test-env", "test-app",
                 formatTime(NOW_MS - 600_000), formatTime(NOW_MS), null, null));
@@ -502,13 +550,34 @@ class LogDownloadServiceImpTest {
         File file = new File(task.getFilePath());
         assertTrue(file.exists());
 
-        // 模拟 30 分钟前完成
+        // 模拟 31 分钟前完成
         task.setFinishTime(System.currentTimeMillis() - 31 * 60 * 1000L);
-        service.cleanupExpiredFiles();
 
-        assertFalse(file.exists(), "过期文件应被清理");
-        assertEquals(LogDownloadTask.STATUS_EXPIRED, task.getStatus());
-        assertNull(task.getFilePath());
+        assertTrue(file.exists(), "文件不应被自动清理");
+        assertEquals(LogDownloadTask.STATUS_SUCCESS, task.getStatus());
+        assertEquals(taskId, service.getTask(taskId).getTaskId());
+        assertTrue(file.delete());
+    }
+
+    @Test
+    void constructorShouldSweepOrphanFilesOlderThan7Days() throws Exception {
+        File dir = tempDir.toFile();
+        File oldFile = new File(dir, "old.log");
+        assertTrue(oldFile.createNewFile());
+        assertTrue(oldFile.setLastModified(System.currentTimeMillis() - 8L * 24 * 60 * 60 * 1000));
+        File freshFile = new File(dir, "fresh.log");
+        assertTrue(freshFile.createNewFile());
+
+        System.setProperty("log.download.dir", dir.getAbsolutePath());
+        try {
+            new LogDownloadServiceImp(dataSourceService, ruleService);
+        } finally {
+            System.clearProperty("log.download.dir");
+        }
+
+        assertFalse(oldFile.exists(), "7 天以上的孤儿文件应被启动清扫删除");
+        assertTrue(freshFile.exists(), "7 天以内的文件不应被清理");
+        assertTrue(freshFile.delete());
     }
 
     // ==================== helpers ====================

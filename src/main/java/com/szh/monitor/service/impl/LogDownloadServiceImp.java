@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -45,6 +44,7 @@ import java.util.stream.Collectors;
  * 分页拉取（limit=1000，游标=本批最大时间戳+1ms）流式落盘，防止内存溢出；
  * 后台线程池最多 2 个并发任务，超出排队；兜底上限 100 万条/500MB 截断并在文件头注明；
  * 不读取也不更新现有采集游标 lastTsMap。
+ * 文件长期保留，由用户在页面上手动删除；启动时仅清扫 7 天以上的孤儿文件。
  */
 @Service
 public class LogDownloadServiceImp implements LogDownloadService {
@@ -54,7 +54,7 @@ public class LogDownloadServiceImp implements LogDownloadService {
     static final int PAGE_LIMIT = 1000;
     static final long MAX_LINES = 1_000_000L;
     static final long MAX_BYTES = 500L * 1024 * 1024;
-    private static final long RETENTION_MS = 30 * 60 * 1000L;
+    private static final long ORPHAN_SWEEP_MS = 7L * 24 * 60 * 60 * 1000;
     private static final int PREVIEW_LIMIT = 100;
     private static final DateTimeFormatter REQ_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter LINE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
@@ -71,12 +71,32 @@ public class LogDownloadServiceImp implements LogDownloadService {
     });
 
     private final ConcurrentHashMap<String, LogDownloadTask> tasks = new ConcurrentHashMap<>();
-    private final String baseDir = System.getProperty("java.io.tmpdir") + File.separator + "log-download";
+    private final String baseDir = resolveBaseDir().getAbsolutePath();
+
+    /**
+     * 文件存放目录：优先系统属性 log.download.dir / 环境变量 LOG_DOWNLOAD_DIR；
+     * 服务器上自动落在 /soft/actuator/log-download（避开 /tmp 被系统定期清理）；本地开发用临时目录。
+     */
+    private static File resolveBaseDir() {
+        String configured = System.getProperty("log.download.dir");
+        if (configured == null || configured.trim().isEmpty()) {
+            configured = System.getenv("LOG_DOWNLOAD_DIR");
+        }
+        if (configured != null && !configured.trim().isEmpty()) {
+            return new File(configured.trim());
+        }
+        File serverDir = new File("/soft/actuator");
+        if (serverDir.isDirectory()) {
+            return new File(serverDir, "log-download");
+        }
+        return new File(System.getProperty("java.io.tmpdir"), "log-download");
+    }
 
     public LogDownloadServiceImp(GrafanaDataSourceService dataSourceService,
                                   GrafanaMonitorRuleService ruleService) {
         this.dataSourceService = dataSourceService;
         this.ruleService = ruleService;
+        sweepOrphanFiles();
     }
 
     /** Loki 批次拉取器（抽象出 HTTP 细节，便于单元测试分页/过滤/上限逻辑） */
@@ -126,6 +146,28 @@ public class LogDownloadServiceImp implements LogDownloadService {
     }
 
     @Override
+    public List<LogDownloadTask> listTasks() {
+        List<LogDownloadTask> list = new ArrayList<>(tasks.values());
+        list.sort((a, b) -> Long.compare(b.getCreateTime(), a.getCreateTime()));
+        return list;
+    }
+
+    @Override
+    public void deleteTask(String taskId) {
+        LogDownloadTask task = tasks.remove(taskId);
+        if (task == null) {
+            throw new IllegalArgumentException("任务不存在");
+        }
+        if (task.getFilePath() != null) {
+            deleteQuietly(new File(task.getFilePath()));
+        }
+        // 运行中任务的临时 part 文件一并清理
+        deleteQuietly(new File(baseDir, taskId + ".part"));
+        logger.info("日志下载任务已删除: {} 环境: {} 服务: {}",
+                taskId, task.getEnvironmentName(), task.getService());
+    }
+
+    @Override
     public List<String> preview(LogDownloadRequest request) {
         ResolvedRequest resolved = resolve(request);
         WebClient client = buildWebClient(resolved.dataSource);
@@ -146,25 +188,6 @@ public class LogDownloadServiceImp implements LogDownloadService {
             }
         }
         return lines;
-    }
-
-    @Scheduled(initialDelay = 60_000, fixedRate = 60_000)
-    @Override
-    public void cleanupExpiredFiles() {
-        long now = System.currentTimeMillis();
-        for (LogDownloadTask task : tasks.values()) {
-            if (task.getFinishTime() > 0
-                    && now - task.getFinishTime() > RETENTION_MS
-                    && !LogDownloadTask.STATUS_EXPIRED.equals(task.getStatus())) {
-                File file = task.getFilePath() == null ? null : new File(task.getFilePath());
-                if (file != null && file.exists() && !file.delete()) {
-                    logger.warn("清理过期下载文件失败: {}", task.getFilePath());
-                    continue;
-                }
-                task.setFilePath(null);
-                task.setStatus(LogDownloadTask.STATUS_EXPIRED);
-            }
-        }
     }
 
     // ==================== 任务执行 ====================
@@ -220,6 +243,24 @@ public class LogDownloadServiceImp implements LogDownloadService {
             task.setFinishTime(System.currentTimeMillis());
             task.setError(e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
             task.setStatus(LogDownloadTask.STATUS_FAILED);
+        }
+    }
+
+    /** 启动时清扫 7 天以上的孤儿文件（任务为内存态，重启后无从引用），防止磁盘占满 */
+    private void sweepOrphanFiles() {
+        try {
+            File[] files = new File(baseDir).listFiles();
+            if (files == null) {
+                return;
+            }
+            long cutoff = System.currentTimeMillis() - ORPHAN_SWEEP_MS;
+            for (File f : files) {
+                if (f.isFile() && f.lastModified() < cutoff) {
+                    deleteQuietly(f);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("启动清扫历史下载文件失败", e);
         }
     }
 

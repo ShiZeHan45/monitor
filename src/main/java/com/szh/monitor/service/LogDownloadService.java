@@ -19,9 +19,12 @@ public interface LogDownloadService {
     /** 查询任务；不存在返回 null */
     LogDownloadTask getTask(String taskId);
 
+    /** 全部任务列表（按提交时间倒序） */
+    List<LogDownloadTask> listTasks();
+
+    /** 手动删除任务及其文件；任务不存在抛 IllegalArgumentException */
+    void deleteTask(String taskId);
+
     /** 预览：拉取第一批日志，应用关键词过滤后返回前 100 条格式化行 */
     List<String> preview(LogDownloadRequest request);
-
-    /** 清理完成超过 30 分钟的任务文件（定时执行） */
-    void cleanupExpiredFiles();
 }

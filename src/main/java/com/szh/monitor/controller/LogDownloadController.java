@@ -11,7 +11,9 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 日志下载 Controller：服务列表查询、异步任务提交、进度轮询、文件下载、预览
+ * 日志下载 Controller：服务列表查询、异步任务提交、进度轮询、文件下载、预览、任务列表与删除
  */
 @RestController
 @RequestMapping("/api/logs/download")
@@ -118,6 +120,38 @@ public class LogDownloadController {
     }
 
     /**
+     * 查询全部下载任务列表（按提交时间倒序）
+     */
+    @GetMapping("/tasks")
+    public ResponseEntity<List<LogDownloadTask>> listTasks() {
+        return ResponseEntity.ok(logDownloadService.listTasks());
+    }
+
+    /**
+     * 删除指定任务及其已生成的日志文件（手工清理）
+     */
+    @DeleteMapping("/tasks/{taskId}")
+    @OperationLog(module = "日志下载", operationType = "DELETE", description = "删除日志下载任务及文件")
+    public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable String taskId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            logDownloadService.deleteTask(taskId);
+            result.put("success", true);
+            result.put("message", "任务已删除");
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(result);
+        } catch (Exception e) {
+            logger.error("删除日志下载任务失败", e);
+            result.put("success", false);
+            result.put("message", "删除失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
+
+    /**
      * 下载已完成的日志文件（流式响应）
      */
     @GetMapping("/file")
@@ -138,7 +172,7 @@ public class LogDownloadController {
             File file = new File(task.getFilePath());
             if (!file.exists() || !file.isFile()) {
                 result.put("success", false);
-                result.put("message", "文件已过期或被清理，请重新提交下载任务");
+                result.put("message", "日志文件不存在，请重新提交下载任务");
                 return ResponseEntity.badRequest().body(result);
             }
             String fileName = task.getFileName() != null ? task.getFileName() : file.getName();

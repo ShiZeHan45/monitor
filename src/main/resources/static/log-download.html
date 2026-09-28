@@ -51,10 +51,10 @@
             </nav>
         </div>
 
-        <div class="ml-64 p-8 flex-1">
+        <div class="ml-64 p-8 flex-1 min-w-0">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">日志下载</h2>
-                <p class="text-gray-500 mt-1">按服务与时间范围从 Loki 导出全量原始日志（异步任务，文件保留 30 分钟）</p>
+                <p class="text-gray-500 mt-1">按服务与时间范围从 Loki 导出全量原始日志（异步任务，文件长期保留，请及时清理）</p>
             </div>
 
             <!-- 查询条件 -->
@@ -111,25 +111,35 @@
                 </div>
             </div>
 
-            <!-- 下载任务 -->
-            <div id="taskPanel" class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden">
-                <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fa fa-tasks mr-2"></i>下载任务
-                </h3>
-                <div class="flex items-center justify-between flex-wrap gap-4">
-                    <div class="flex items-center gap-4">
-                        <span id="taskStatusBadge" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">排队中</span>
-                        <div class="text-sm text-gray-600">
-                            <div>任务ID：<span id="taskTaskId" class="font-mono">-</span></div>
-                            <div class="mt-1">已处理 <span id="taskProcessedLines" class="font-semibold text-blue-600">0</span> 行</div>
-                            <div id="taskError" class="mt-1 text-red-600 hidden"></div>
-                            <div id="taskTruncated" class="mt-1 text-yellow-600 hidden">
-                                <i class="fa fa-exclamation-triangle mr-1"></i>日志量已达上限被截断（100万行 / 500MB）
-                            </div>
-                        </div>
-                    </div>
-                    <div id="taskActions" class="flex items-center gap-3"></div>
+            <!-- 下载任务列表（常驻显示） -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fa fa-tasks mr-2"></i>下载任务
+                    </h3>
+                    <button onclick="loadTasks()" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
+                        <i class="fa fa-refresh mr-1"></i>刷新
+                    </button>
                 </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">提交时间</th>
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">环境</th>
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">服务</th>
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">时间范围</th>
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">状态</th>
+                                <th class="py-2 pr-4 font-medium whitespace-nowrap">已处理行数</th>
+                                <th class="py-2 font-medium whitespace-nowrap">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskListBody">
+                            <tr><td colspan="7" class="py-4 text-center text-gray-400">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-400 mt-3"><i class="fa fa-info-circle mr-1"></i>日志文件长期保留，请通过删除操作及时清理不需要的任务。</p>
             </div>
 
             <!-- 预览结果 -->
@@ -140,7 +150,7 @@
                     </h3>
                     <span class="text-sm text-gray-500">共 <span id="previewCount">0</span> 条</span>
                 </div>
-                <pre id="previewBox" class="bg-gray-900 text-gray-100 text-xs font-mono p-4 rounded-lg overflow-auto max-h-96 whitespace-pre"></pre>
+                <pre id="previewBox" class="bg-gray-900 text-gray-100 text-xs font-mono p-4 rounded-lg overflow-auto max-h-96 whitespace-pre-wrap break-all"></pre>
             </div>
         </div>
     </div>
@@ -355,9 +365,8 @@
                 }
                 currentTaskId = result.taskId;
                 stopPolling();
-                updateTaskPanel({ taskId: result.taskId, status: 'QUEUED', processedLines: 0 });
-                document.getElementById('taskPanel').classList.remove('hidden');
-                startPolling(result.taskId);
+                loadTasks();
+                startPolling();
                 showToast('任务已提交，正在下载...');
             } catch (error) {
                 console.error('提交下载任务失败:', error);
@@ -368,9 +377,9 @@
             }
         }
 
-        function startPolling(taskId) {
-            pollTimer = setInterval(pollProgress, 1500);
-            pollProgress();
+        function startPolling() {
+            pollTimer = setInterval(loadTasks, 1500);
+            loadTasks();
         }
 
         function stopPolling() {
@@ -380,81 +389,101 @@
             }
         }
 
-        async function pollProgress() {
-            if (!currentTaskId) { stopPolling(); return; }
+        async function loadTasks() {
             try {
-                const response = await fetch('/api/logs/download/progress?taskId=' + encodeURIComponent(currentTaskId));
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                    stopPolling();
-                    showToast(result.message || '进度查询失败', 'error');
-                    return;
-                }
-                updateTaskPanel(result);
-                if (result.status === 'SUCCESS' || result.status === 'FAILED' || result.status === 'EXPIRED') {
-                    stopPolling();
-                    if (result.status === 'SUCCESS') {
-                        showToast('日志下载完成，可保存文件');
-                    } else if (result.status === 'FAILED') {
-                        showToast('日志下载失败：' + (result.error || '未知错误'), 'error');
+                const response = await fetch('/api/logs/download/tasks');
+                if (!response.ok) return;
+                const tasks = await response.json();
+                renderTasks(tasks || []);
+                if (currentTaskId) {
+                    const current = (tasks || []).find(t => t.taskId === currentTaskId);
+                    if (current && (current.status === 'SUCCESS' || current.status === 'FAILED')) {
+                        stopPolling();
+                        if (current.status === 'SUCCESS') {
+                            showToast('日志下载完成：' + (current.fileName || '可保存文件'));
+                        } else {
+                            showToast('日志下载失败：' + (current.error || '未知错误'), 'error');
+                        }
+                        currentTaskId = null;
                     }
                 }
             } catch (error) {
-                console.error('轮询进度失败:', error);
+                console.error('加载任务列表失败:', error);
             }
         }
 
-        function updateTaskPanel(task) {
-            const badge = document.getElementById('taskStatusBadge');
+        function fmtTs(ms) {
+            if (!ms) return '-';
+            const d = new Date(ms);
+            const p = n => String(n).padStart(2, '0');
+            return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+        }
+
+        function renderTasks(tasks) {
+            const body = document.getElementById('taskListBody');
+            if (!tasks.length) {
+                body.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-gray-400">暂无下载任务</td></tr>';
+                return;
+            }
+            body.innerHTML = tasks.map(renderTaskRow).join('');
+        }
+
+        function renderTaskRow(task) {
             const statusMap = {
-                'QUEUED': { text: '排队中', cls: 'bg-gray-100 text-gray-600' },
+                'QUEUED': { text: '排队中（并发已满）', cls: 'bg-gray-100 text-gray-600' },
                 'RUNNING': { text: '下载中', cls: 'bg-blue-100 text-blue-600' },
                 'SUCCESS': { text: '已完成', cls: 'bg-green-100 text-green-600' },
-                'FAILED': { text: '失败', cls: 'bg-red-100 text-red-600' },
-                'EXPIRED': { text: '已过期', cls: 'bg-gray-100 text-gray-500' }
+                'FAILED': { text: '失败', cls: 'bg-red-100 text-red-600' }
             };
             const st = statusMap[task.status] || statusMap['QUEUED'];
-            badge.textContent = st.text + (task.status === 'QUEUED' ? '（并发已满，等待执行）' : '');
-            badge.className = 'px-3 py-1 rounded-full text-sm font-medium ' + st.cls;
-
-            document.getElementById('taskTaskId').textContent = task.taskId || '-';
-            document.getElementById('taskProcessedLines').textContent = task.processedLines || 0;
-
-            const errorEl = document.getElementById('taskError');
+            let statusCell = `<span class="px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}">${st.text}</span>`;
+            if (task.status === 'RUNNING' || task.status === 'QUEUED') {
+                statusCell += ' <i class="fa fa-spinner fa-spin text-blue-500"></i>';
+            }
             if (task.error) {
-                errorEl.textContent = '错误：' + task.error;
-                errorEl.classList.remove('hidden');
-            } else {
-                errorEl.classList.add('hidden');
+                statusCell += `<div class="text-xs text-red-500 mt-1 max-w-xs break-all" title="${escapeHtml(task.error)}">${escapeHtml(task.error)}</div>`;
             }
-
-            const truncatedEl = document.getElementById('taskTruncated');
             if (task.truncated) {
-                truncatedEl.classList.remove('hidden');
-            } else {
-                truncatedEl.classList.add('hidden');
+                statusCell += '<div class="text-xs text-yellow-600 mt-1"><i class="fa fa-exclamation-triangle mr-1"></i>日志量达到上限被截断</div>';
             }
+            let actions = '';
+            if (task.status === 'SUCCESS' && task.fileName) {
+                actions += `<button onclick="downloadFile('${task.taskId}')" title="${escapeHtml(task.fileName)}" class="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs whitespace-nowrap"><i class="fa fa-save mr-1"></i>保存文件</button> `;
+            }
+            actions += `<button onclick="deleteTask('${task.taskId}')" class="px-3 py-1 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-xs whitespace-nowrap"><i class="fa fa-trash mr-1"></i>删除</button>`;
+            const range = fmtTs(task.startTimeMs) + ' ~ ' + fmtTs(task.endTimeMs);
+            return `<tr class="border-b last:border-b-0">
+                <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">${fmtTs(task.createTime)}</td>
+                <td class="py-2 pr-4">${escapeHtml(task.environmentName || '-')}</td>
+                <td class="py-2 pr-4">${escapeHtml(task.service || '-')}</td>
+                <td class="py-2 pr-4 text-gray-600 text-xs whitespace-nowrap">${range}</td>
+                <td class="py-2 pr-4">${statusCell}</td>
+                <td class="py-2 pr-4 font-semibold text-blue-600">${task.processedLines || 0}</td>
+                <td class="py-2 whitespace-nowrap">${actions}</td>
+            </tr>`;
+        }
 
-            const actions = document.getElementById('taskActions');
-            if (task.status === 'SUCCESS') {
-                actions.innerHTML = `
-                    <button onclick="downloadFile()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
-                        <i class="fa fa-save mr-2"></i>保存文件${task.fileName ? '（' + escapeHtml(task.fileName) + '）' : ''}
-                    </button>
-                `;
-            } else if (task.status === 'EXPIRED') {
-                actions.innerHTML = '<span class="text-sm text-gray-500">文件已过保留期（30分钟），请重新提交下载任务</span>';
-            } else if (task.status === 'FAILED') {
-                actions.innerHTML = '';
-            } else {
-                actions.innerHTML = '<i class="fa fa-spinner fa-spin text-blue-500 text-xl"></i>';
+        async function deleteTask(taskId) {
+            if (!confirm('确定删除该任务及其日志文件？删除后不可恢复。')) return;
+            try {
+                const response = await fetch('/api/logs/download/tasks/' + encodeURIComponent(taskId), { method: 'DELETE' });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    showToast(result.message || '删除失败', 'error');
+                    return;
+                }
+                showToast('任务已删除');
+                loadTasks();
+            } catch (error) {
+                console.error('删除任务失败:', error);
+                showToast('删除失败: ' + error.message, 'error');
             }
         }
 
-        function downloadFile() {
-            if (!currentTaskId) return;
+        function downloadFile(taskId) {
+            if (!taskId) return;
             const a = document.createElement('a');
-            a.href = '/api/logs/download/file?taskId=' + encodeURIComponent(currentTaskId);
+            a.href = '/api/logs/download/file?taskId=' + encodeURIComponent(taskId);
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -463,6 +492,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initPickers();
             loadEnvironments();
+            loadTasks();
         });
     </script>
 </body>

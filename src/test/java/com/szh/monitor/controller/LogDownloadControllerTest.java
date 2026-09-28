@@ -19,9 +19,11 @@ import java.util.Arrays;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -165,6 +167,47 @@ class LogDownloadControllerTest {
                 .andExpect(jsonPath("$.message").value("任务不存在"));
     }
 
+    // ---------- GET /api/logs/download/tasks ----------
+
+    @Test
+    void tasksShouldReturnTaskList() throws Exception {
+        LogDownloadTask task = sampleTask(LogDownloadTask.STATUS_SUCCESS);
+        task.setFilePath("D:/some/file.log");
+        when(logDownloadService.listTasks()).thenReturn(Arrays.asList(task));
+
+        mockMvc.perform(get("/api/logs/download/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].taskId").value("task-1"))
+                .andExpect(jsonPath("$[0].environmentName").value("test-env"))
+                .andExpect(jsonPath("$[0].service").value("order-service"))
+                .andExpect(jsonPath("$[0].status").value("SUCCESS"))
+                .andExpect(jsonPath("$[0].processedLines").value(1100))
+                .andExpect(jsonPath("$[0].fileName").value("order-service_20260928_110000.log"));
+    }
+
+    // ---------- DELETE /api/logs/download/tasks/{taskId} ----------
+
+    @Test
+    void deleteTaskShouldSucceed() throws Exception {
+        mockMvc.perform(delete("/api/logs/download/tasks/task-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(logDownloadService).deleteTask("task-1");
+    }
+
+    @Test
+    void deleteTaskShouldReturn404WhenUnknown() throws Exception {
+        doThrow(new IllegalArgumentException("任务不存在"))
+                .when(logDownloadService).deleteTask("nope");
+
+        mockMvc.perform(delete("/api/logs/download/tasks/nope"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("任务不存在"));
+    }
+
     // ---------- GET /api/logs/download/file ----------
 
     @Test
@@ -203,7 +246,7 @@ class LogDownloadControllerTest {
         mockMvc.perform(get("/api/logs/download/file").param("taskId", "task-1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("文件已过期或被清理，请重新提交下载任务"));
+                .andExpect(jsonPath("$.message").value("日志文件不存在，请重新提交下载任务"));
     }
 
     // ---------- POST /api/logs/download/preview ----------
