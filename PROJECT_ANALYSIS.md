@@ -2,7 +2,7 @@
 
 > **文档目的**: 帮助 AI 模型或其他开发人员快速理解项目架构、代码逻辑和开发流程  
 > **项目类型**: Spring Boot 后端监控系统  
-> **最后更新**: 2026-08-31
+> **最后更新**: 2026-09-28
 
 ---
 
@@ -188,7 +188,8 @@ z:\monitor/
     │   │   │   ├── GrafanaController.java    # Grafana 数据源+规则 CRUD
     │   │   │   ├── SqlController.java        # SQL 数据源 CRUD
     │   │   │   ├── OperationLogController.java # 操作日志查询
-    │   │   │   └── SystemConfigController.java # 系统配置（webhook/免打扰/补推时间）
+    │   │   │   ├── SystemConfigController.java # 系统配置（webhook/免打扰/补推时间）
+    │   │   │   └── LogDownloadController.java  # ⭐ 日志下载（任务提交/进度/列表/删除/文件/预览）
     │   │   │
     │   │   ├── entity/                  # 数据库实体（8 个）
     │   │   │   ├── GrafanaDataSource.java    # Grafana 数据源
@@ -221,9 +222,10 @@ z:\monitor/
     │   │   │   ├── SqlExecuteRuleService.java
     │   │   │   ├── MsgSendLogService.java
     │   │   │   ├── OperationLogService.java
-    │   │   │   └── SystemConfigService.java
+    │   │   │   ├── SystemConfigService.java
+    │   │   │   └── LogDownloadService.java     # ⭐ 日志下载服务接口
     │   │   │
-    │   │   ├── service/impl/            # 服务实现（15 个）
+    │   │   ├── service/impl/            # 服务实现（16 个）
     │   │   │   ├── DispatchLogService.java       # 日志监听分发
     │   │   │   ├── GrafanaLogServiceImp.java     # ⭐ Grafana Loki 日志采集
     │   │   │   ├── LocalLogFileServiceImp.java   # 本地日志监听
@@ -238,7 +240,8 @@ z:\monitor/
     │   │   │   ├── SqlExecuteRuleServiceImp.java
     │   │   │   ├── MsgSendLogServiceImp.java
     │   │   │   ├── OperationLogServiceImp.java
-    │   │   │   └── SystemConfigServiceImp.java
+    │   │   │   ├── SystemConfigServiceImp.java
+    │   │   │   └── LogDownloadServiceImp.java   # ⭐ 日志下载（分页拉取+流式落盘+任务管理）
     │   │   │
     │   │   ├── scheduled/               # 定时任务（5 个）
     │   │   │   ├── ExecutorScheduler.java         # SQL 执行调度（4分钟，按环境隔离）
@@ -249,10 +252,12 @@ z:\monitor/
     │   │   │
     │   │   ├── form/                    # 表单对象
     │   │   │   ├── MsgForm.java         # 消息表单（含 webhook 字段）
-    │   │   │   └── WechatMessage.java   # 企业微信消息实体
+    │   │   │   ├── WechatMessage.java   # 企业微信消息实体
+    │   │   │   └── LogDownloadRequest.java # 日志下载请求（环境/服务/时间范围/关键词）
     │   │   │
     │   │   ├── vo/                      # 视图对象
-    │   │   │   └── MsgVO.java
+    │   │   │   ├── MsgVO.java
+    │   │   │   └── LogDownloadTask.java # 日志下载任务（状态/行数/文件路径等）
     │   │   │
     │   │   ├── enums/
     │   │   │   └── MsgType.java         # 消息类型枚举
@@ -264,15 +269,16 @@ z:\monitor/
     │   │   ├── application.yml         # ⭐ 主配置文件
     │   │   ├── db/schema.sql           # SQLite 表结构（含数据迁移SQL）
     │   │   ├── db/datainit.sql         # 初始数据
-    │   │   └── static/                 # 前端静态页面（8 个）
+    │   │   └── static/                 # 前端静态页面（9 个）
     │   │       ├── index.html          # ⭐ 仪表盘首页
     │   │       ├── grafana-config.html # Grafana 数据源配置（含采集起始时间）
     │   │       ├── sql-config.html     # SQL 数据源配置
     │   │       ├── sql-rules.html      # SQL 执行规则管理
-    │   │       ├── sql-upload.html     # SQL 文件上传/编辑
+    │   │       ├── sql-upload.html     # SQL 文件上传/编辑（含运行调试）
     │   │       ├── push-records.html   # 推送记录查询
     │   │       ├── operation-logs.html # 操作日志查询（flatpickr 日期范围）
-    │   │       └── system-config.html  # 推送配置（webhook/免打扰/补推时间）
+    │   │       ├── system-config.html  # 推送配置（webhook/免打扰/补推时间）
+    │   │       └── log-download.html   # ⭐ 日志下载（环境/服务/时间范围/关键词过滤/任务列表）
     │   │
     │   └── resources/mapper/           # MyBatis XML（部分用注解替代）
     │
@@ -296,6 +302,8 @@ z:\monitor/
 | `GrafanaDataSourceHealthChecker.java` | ⭐⭐ | Grafana 健康检查（WebClient + 连接池 + 重试） |
 | `SqlDataSourceHealthChecker.java` | ⭐⭐ | SQL 健康检查（DriverManager 直连） |
 | `MonitorController.java` | ⭐⭐ | 核心 API：统计、规则、文件、环境、调试 |
+| `LogDownloadServiceImp.java` | ⭐⭐ | 日志下载：分页拉取+流式落盘+异步任务管理（并发 2，上限 100万行/500MB） |
+| `LogDownloadController.java` | ⭐⭐ | 日志下载 API：服务列表/提交/进度/任务列表/删除/文件/预览 |
 
 ---
 
@@ -412,6 +420,7 @@ pushMsg():
 | `push-records.html` | 推送记录查询 | 分页查询，环境下拉含全部环境 |
 | `operation-logs.html` | 操作日志 | flatpickr 日期范围组件、快捷选项、类型/模块筛选 |
 | `system-config.html` | 推送配置 | webhook/免打扰时段/补推时间配置 |
+| `log-download.html` | 日志下载 | 环境/服务联动、时间范围（flatpickr+快捷）、包含/排除关键词、预览前100条、常驻任务列表（状态/行数/保存文件/删除）、异步下载+轮询 |
 
 ### 4.5 操作日志系统
 
@@ -463,6 +472,34 @@ pushMsg():
 | `quiet_start` | 20 | 免打扰开始小时 |
 | `quiet_end` | 8 | 免打扰结束小时 |
 | `push_time` | 09:30 | 每日补推时间 |
+
+### 4.8 日志下载模块
+
+**职责**: 按环境/服务/时间范围/关键词从 Grafana Loki 导出全量原始日志，解决生产日志只能通过 Grafana 网页查看、无法离线归档分析的问题。
+
+**核心类**:
+- `LogDownloadServiceImp.java` - 下载逻辑（分页拉取 + 流式落盘 + 异步任务管理）
+- `LogDownloadController.java` - REST API
+- `LogDownloadRequest.java`（form）/ `LogDownloadTask.java`（vo）
+
+**设计要点**:
+```
+1. 复用现有 Grafana → Loki 查询链路（Basic Auth + proxy URL + query_range）
+2. 异步任务 + 轮询模式：提交返回 taskId，前端 1.5s 轮询进度
+   - 避免 nginx /api/ 代理 60s 超时导致连接被掐断
+3. 分页拉取：limit=1000，游标 = 本批最大时间戳 + 1ms（batchMaxTs 初始化为 Long.MIN_VALUE）
+   - 流式落盘，避免内存溢出
+4. 并发限制：后台线程池 newFixedThreadPool(2)，最多 2 个任务并发，超出排队
+5. 兜底截断：100 万行 / 500MB，超限截断并在文件头注明
+6. 文件长期保留，通过 DELETE /api/logs/download/tasks/{id} 手动删除；
+   启动时仅清扫 7 天以上孤儿文件（sweepOrphanFiles）
+7. 文件目录解析顺序：系统属性 log.download.dir → 环境变量 LOG_DOWNLOAD_DIR
+   → /soft/actuator/log-download → {java.io.tmpdir}/log-download
+```
+
+**任务状态机**: `QUEUED（排队）→ RUNNING（下载中）→ SUCCESS（完成）/ FAILED（失败）`
+
+**关键陷阱（已修复）**: 分页游标 `batchMaxTs` 若初始化为当前游标，当整批条目早于游标时会导致游标原地 +1 死循环；TDD 红阶段的防御性测试（fetcher 永远返回同一批满页数据）直接暴露了该 bug。
 
 ---
 
@@ -894,6 +931,35 @@ pushMsg(): // @Scheduled(fixedRate=60s) 轮询
 | GET | `/api/datasources` | 获取 SQL 数据源名称列表 |
 | GET | `/api/push-records` | 推送记录分页查询 |
 
+### 7.8 日志下载 API
+
+> 基础路径 `/api/logs/download`，用于从 Grafana Loki 导出全量原始日志。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/logs/download/services?env=` | 查询指定环境下可下载的服务列表（来自该环境监控规则名） |
+| POST | `/api/logs/download` | 提交下载任务（异步，返回 taskId 供轮询） |
+| GET | `/api/logs/download/progress?taskId=` | 查询任务进度（前端 1.5s 轮询） |
+| GET | `/api/logs/download/tasks` | 查询全部任务列表（按提交时间倒序） |
+| DELETE | `/api/logs/download/tasks/{taskId}` | 删除任务及其日志文件（手动清理） |
+| GET | `/api/logs/download/file?taskId=` | 下载已完成的日志文件（流式响应） |
+| POST | `/api/logs/download/preview` | 预览日志（按过滤条件拉取前 100 条格式化行，不入库不落盘） |
+
+**提交请求体（LogDownloadRequest）**:
+```json
+{
+  "env": "郑州生产",
+  "service": "order-service",
+  "startTime": "2026-09-28 10:00:00",
+  "endTime": "2026-09-28 11:00:00",
+  "includeKeywords": "ERROR,Exception",
+  "excludeKeywords": "health-check,心跳"
+}
+```
+
+**任务对象（LogDownloadTask）字段**:
+`taskId` / `environmentName` / `service` / `startTimeMs` / `endTimeMs` / `status`（QUEUED/RUNNING/SUCCESS/FAILED）/ `processedLines` / `fileName` / `filePath` / `error` / `truncated` / `createTime` / `finishTime`
+
 ---
 
 ## 8. 数据库设计
@@ -1078,6 +1144,13 @@ pushMsg(): // @Scheduled(fixedRate=60s) 轮询
 ### 11.1 最近提交记录
 
 ```
+2026-09-28 de0465b feat: 日志下载任务改为长期保留并支持手动删除
+2026-09-28 607045d feat: 新增日志下载功能(TDD开发)
+2026-09-28 b11fa58 fix: flatpickr采集起始时间秒位补零显示(改用onReady/onChange formatTime)并改用毫秒时间戳构造日期
+2026-09-28 501a249 fix: 保存Grafana采集起始时间前规范化时间格式,补齐秒位避免DateTimeParseException
+2026-08-31 7f8876b feat: SQL调试弹窗数据源默认选择第一个
+2026-08-31 4f10589 feat: SQL文件维护编辑弹窗支持运行调试; docs: 修正前端部署scp路径
+2026-08-31 f3c97a0 docs: 同步PROJECT_ANALYSIS.md至v2026-08-31最新代码状态
 2026-08-31 1eac01c fix: Grafana健康检查不依赖响应体非空判断在线
 2026-08-31 5025c22 fix: supplement网络调用移出webClientMap锁，避免阻塞refreshConfig
 2026-08-17 2415d43 fix: 新增监控规则弹窗flatpickr的dateFormat修正为H:i:s
@@ -1179,6 +1252,14 @@ pushMsg(): // @Scheduled(fixedRate=60s) 轮询
 - **supplement 锁优化**: 网络调用移出 webClientMap 锁，避免阻塞 refreshConfig
 - **Grafana 在线判定修复**: /api/org 返回空 body 时不误判离线（HTTP 200 即在线）
 
+#### 第十一阶段：日志下载能力（2026-08-31 ~ 09-28）
+- **SQL 文件维护增强**: 编辑弹窗新增「运行调试」按钮，调试弹窗数据源默认选择第一个
+- **前端部署路径修正**: scp 源路径修正为 `src/main/resources/static/*.html`
+- **采集起始时间秒位修复**: flatpickr 秒位补零，提交前规范化时间格式，避免 `DateTimeParseException`
+- **日志下载功能（TDD 开发）**: 复用 Grafana→Loki 链路，异步任务+轮询模式，分页拉取（limit=1000）+流式落盘，服务列表/提交/进度/文件/预览 5 接口上线
+- **任务长期保留 + 手动删除**: 移除 30 分钟自动清理，改为文件长期保留、页面「删除」按钮手动清理，启动仅清扫 7 天以上孤儿文件
+- **前端样式修复**: 预览长日志 flex 布局撑爆修复（min-w-0 + break-all）；导航入口缓存问题（nginx Cache-Control no-cache）
+
 ### 11.3 关键技术决策
 
 | 决策 | 说明 |
@@ -1197,6 +1278,10 @@ pushMsg(): // @Scheduled(fixedRate=60s) 轮询
 | 补推无事务 | 每条消息独立保存，一条失败不影响其他消息 |
 | 按环境隔离 | executeSingle() 单环境执行，一个环境失败不影响其他环境 |
 | 数据源ID自动获取 | 前端填 URL/用户名/密码后自动查 Grafana Loki id，避免手动输入出错 |
+| 异步任务+轮询 | 下载走后台任务+前端轮询，避免 nginx /api/ 代理 60s 超时掐断连接 |
+| 分页拉取+流式落盘 | limit=1000 分页 + 游标推进 + 边下边写，避免大日志量内存溢出 |
+| 并发限制 2 | 后台线程池最多 2 个下载任务并发，防止压垮 Loki |
+| 文件长期保留 | 下载文件不自动清理，由用户手动删除；启动仅清扫 7 天以上孤儿文件 |
 
 ---
 
@@ -1327,6 +1412,9 @@ netstat -tlnp | grep -E '4000|18081'
 14. **FA 图标 title** — `::before` 伪元素不响应 hover，title 需放到外层元素上
 15. **supplement 锁** — 网络调用不要放 `synchronized(webClientMap)` 锁内，会阻塞 refreshConfig
 16. **Grafana 空 body** — `/api/org` 可能返回 HTTP 200 但空 body，在线判断不要用 `response.isEmpty()`
+17. **日志下载游标死循环** — 分页游标 `batchMaxTs` 必须初始化为 `Long.MIN_VALUE`（而非当前游标），否则整批条目早于游标时游标原地 +1 死循环
+18. **flex 布局撑爆** — 预览长日志行不可断行会撑爆 flex 容器（min-width:auto 陷阱），内容容器加 `min-w-0`，`<pre>` 用 `whitespace-pre-wrap break-all`
+19. **前端静态页缓存** — 页面更新后旧缓存不刷新，nginx `location /` 加 `Cache-Control no-cache, must-revalidate`
 
 ### 13.3 性能优化
 
@@ -1429,6 +1517,6 @@ keepalive-time: 15000
 
 ---
 
-**文档版本**: v4.0  
-**最后更新**: 2026-08-31  
-**更新内容**: 同步至 v2026-08-31 最新代码。新增 SQL 规则批量复制、Grafana 数据源 ID 自动获取、星期圆形多选、时间选择器组件、supplement 锁优化（网络调用移出锁）、Grafana 空 body 误判离线修复、分页插件挂载修复、flatpickr dateFormat 修复等。
+**文档版本**: v5.0  
+**最后更新**: 2026-09-28  
+**更新内容**: 新增日志下载模块（4.8）与 API（7.8）。新增 `LogDownloadServiceImp`/`LogDownloadController`/`LogDownloadRequest`/`LogDownloadTask` 四个类与 `log-download.html` 页面；静态页面 8→9 个、服务实现 15→16 个。补充异步任务+轮询、分页拉取+流式落盘、并发限制 2、文件长期保留+手动删除等关键决策；记录采集起始时间秒位修复、SQL 调试增强、前端 flex 撑爆与 nginx 缓存问题修复。
